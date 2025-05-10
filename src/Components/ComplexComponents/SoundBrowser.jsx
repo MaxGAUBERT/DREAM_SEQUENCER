@@ -60,7 +60,7 @@ const SoundBrowser = (props) => {
         top: 45,
         left: 0,
         height: "100%",
-        width: 250,
+        width: 345,
         overflowY: 'auto',
       }}
       onMouseEnter={props.onMouseEnter}
