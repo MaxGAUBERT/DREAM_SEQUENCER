@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
+import * as Tone from "tone";
 import { Box, Button, Typography, TextField, Radio } from "@mui/material";
 import { FaRegPlayCircle, FaRegStopCircle } from "react-icons/fa";
 import { BsFillSignStopFill, BsFillTrashFill, BsFillRecordCircleFill } from "react-icons/bs";
 import { MdReplay, MdRepeat, MdRepeatOne, MdOutlineFastForward, MdOutlineFastRewind } from "react-icons/md";
-import * as Tone from "tone";
 
-const Transport = ({ 
-  stepValue, 
+const Transport = ({ stepValue, 
   players, 
   grids, 
   playlist, 
@@ -28,143 +27,64 @@ const Transport = ({
   const [playbackTimeouts, setPlaybackTimeouts] = useState([]);
   const [stepRow, setLocalStepRow] = useState(0); // Add local stepRow state
 
-  // Transport specific for playlist playback
+  const stepRowRef = useRef(0);
+  const playersRef = useRef(players);
+  const gridsRef = useRef(grids);
+  const loopIdRef = useRef(null);
+  const playlistRef = useRef(playlist);
+  const patternsRef = useRef(patterns);
+
+   // Transport specific for playlist playback
   const [songMode, setSongMode] = useState(false);
   const [currentPlaylistRow, setCurrentPlaylistRow] = useState(0);
   const [currentPlaylistCol, setCurrentPlaylistCol] = useState(0);
   const [loopMode, setLoopMode] = useState("none"); // none, all, pattern
   const [playlistInterval, setPlaylistInterval] = useState(null);
 
-  const pianoNotes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
-  
-  // Créer des refs pour accéder aux valeurs les plus récentes dans les fonctions de callback
-  const gridsRef = useRef(grids);
-  const playlistRef = useRef(playlist);
-  const patternsRef = useRef(patterns);
-  const playersRef = useRef(players);
   const currentPlaylistRowRef = useRef(currentPlaylistRow);
   const currentPlaylistColRef = useRef(currentPlaylistCol);
-  const stepRowRef = useRef(stepRow); // Add ref for stepRow
 
-  // Mettre à jour les refs quand les données changent
-  useEffect(() => {
-    gridsRef.current = grids;
-  }, [grids]);
+  useEffect(() => { playersRef.current = players; }, [players]);
+  useEffect(() => { gridsRef.current = grids; }, [grids]);
+  useEffect(() => { Tone.Transport.bpm.value = bpm; }, [bpm]);
 
-  useEffect(() => {
-    playlistRef.current = playlist;
-  }, [playlist]);
-  
-  useEffect(() => {
-    patternsRef.current = patterns;
-  }, [patterns]);
-  
-  useEffect(() => {
-    playersRef.current = players;
-  }, [players]);
-  
-  useEffect(() => {
-    currentPlaylistRowRef.current = currentPlaylistRow;
-    // Sync with parent component
-    if (setParentCurrentPlaylistRow) {
-      setParentCurrentPlaylistRow(currentPlaylistRow);
-    }
-  }, [currentPlaylistRow, setParentCurrentPlaylistRow]);
-  
-  useEffect(() => {
-    currentPlaylistColRef.current = currentPlaylistCol;
-    // Sync with parent component
-    if (setParentCurrentPlaylistCol) {
-      setParentCurrentPlaylistCol(currentPlaylistCol);
-    }
-  }, [currentPlaylistCol, setParentCurrentPlaylistCol]);
+  const pianoNotes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
 
-  useEffect(() => {
-    stepRowRef.current = stepRow;
-  }, [stepRow]);
-
-  // Sync isPlaying with parent component
-  useEffect(() => {
-    if (setParentIsPlaying) {
-      setParentIsPlaying(isPlaying);
-    }
-  }, [isPlaying, setParentIsPlaying]);
-
-  // Sync songMode with parent component
-  useEffect(() => {
-    if (setParentSongMode) {
-      setParentSongMode(songMode);
-    }
-  }, [songMode, setParentSongMode]);
-
-  // Update both local stepRow and parent component's stepRow
-  const updateStepRow = (newValue) => {
-    setLocalStepRow(newValue);
-    if (setStepRow) {
-      setStepRow(newValue);
-    }
+  const updateStepRow = (val) => {
+    stepRowRef.current = val;
+    setStepRow(val);
   };
 
-  // Mettre à jour le tempo
   useEffect(() => {
-    Tone.Transport.bpm.value = bpm;
-  }, [bpm]);
+    if (!isPlaying || !Object.keys(playersRef.current).length) return;
 
-  const recordSequence = (instrument, note, step) => {
-    if (!isRecording) return;
-    setRecordedSequence(prevSeq => [
-      ...prevSeq,
-      { instrument, note, step, time: Date.now() }
-    ]);
-  };
+    const loop = (time) => {
+      const nextStep = (stepRowRef.current + 1) % stepValue;
+      updateStepRow(nextStep);
+      const currentGrids = gridsRef.current;
 
-  // Gérer les survols
-  const handleElementHover = () => {
-    onMouseEnter("Transport");
-  };
-
-  const handleSpecificHover = (label) => {
-    onMouseEnter(label);
-  };
-
-  // Cette fonction joue un seul pattern
-  useEffect(() => {
-    if (!isPlaying || songMode || !players || Object.keys(players).length === 0) return;
-
-    const secondsPerBeat = 60 / bpm;
-    const stepsPerBeat = 4; // (1 beat = 4 steps)
-    const secondsPerStep = secondsPerBeat / stepsPerBeat;
-    const intervalTime = secondsPerStep * 1000;
-
-
-    const interval = setInterval(() => {
-      updateStepRow(prevStep => {
-        const nextStep = (prevStep + 1) % stepValue;
-
-        const currentGrids = gridsRef.current;
-
-        Object.entries(currentGrids).forEach(([instrument, instrumentGrid]) => {
-          if (instrumentGrid && Array.isArray(instrumentGrid)) {
-            instrumentGrid.forEach((row, noteIndex) => {
-              if (row && row[nextStep]) {
-                const note = pianoNotes[noteIndex];
-                if (playersRef.current[instrument]) {
-                  playersRef.current[instrument].triggerAttackRelease(note, "4n");
-                  if (isRecording) {
-                    recordSequence(instrument, note, nextStep);
-                  }
-                }
-              }
-            });
+      for (const [instrument, grid] of Object.entries(currentGrids)) {
+        const instrumentGrid = grid;
+        if (!instrumentGrid) continue;
+        for (let i = 0; i < instrumentGrid.length; i++) {
+          const row = instrumentGrid[i];
+          if (row && row[nextStep]) {
+            const note = pianoNotes[i];
+            const player = playersRef.current[instrument];
+            if (player) player.triggerAttackRelease(note, "4n", time);
           }
-        });
+        }
+      }
+    };
 
-        return nextStep;
-      });
-    }, intervalTime);
+    loopIdRef.current = Tone.Transport.scheduleRepeat(loop, "16n");
+    Tone.Transport.start();
 
-    return () => clearInterval(interval);
-  }, [isPlaying, bpm, songMode, isRecording, stepValue, setStepRow]);
+    return () => {
+      Tone.Transport.clear(loopIdRef.current);
+      Tone.Transport.stop();
+    };
+  }, [isPlaying, stepValue]);
 
   // Cette fonction gère la lecture de la playlist
   const PlaySong = () => {
@@ -268,37 +188,77 @@ const Transport = ({
     Tone.Transport.start();
   };
 
-  // Cette fonction joue un pattern spécifié par son ID
-  /*
-  const playPattern = (patternId) => {
-    const patternToPlay = patternsRef.current.find(p => p.id === patternId);
-    if (!patternToPlay || !patternToPlay.grids) return;
-    
-    // Parcourir tous les instruments et notes du pattern
-    Object.entries(patternToPlay.grids).forEach(([instrument, instrumentGrid]) => {
-      if (!instrumentGrid || !Array.isArray(instrumentGrid)) return;
-      
-      instrumentGrid.forEach((row, noteIndex) => {
-        if (!row) return;
-        
-        // Jouer chaque note activée à la position actuelle (0)
-        if (row[0]) {
-          const note = pianoNotes[noteIndex];
-          if (playersRef.current[instrument]) {
-            playersRef.current[instrument].triggerAttackRelease(note, "4n");
-          }
-        }
-      });
-    });
+  // Mettre à jour les refs quand les données changent
+  useEffect(() => {
+    gridsRef.current = grids;
+  }, [grids]);
+
+  useEffect(() => {
+    playlistRef.current = playlist;
+  }, [playlist]);
+  
+  useEffect(() => {
+    patternsRef.current = patterns;
+  }, [patterns]);
+  
+  useEffect(() => {
+    playersRef.current = players;
+  }, [players]);
+  
+  useEffect(() => {
+    currentPlaylistRowRef.current = currentPlaylistRow;
+    // Sync with parent component
+    if (setParentCurrentPlaylistRow) {
+      setParentCurrentPlaylistRow(currentPlaylistRow);
+    }
+  }, [currentPlaylistRow, setParentCurrentPlaylistRow]);
+  
+  useEffect(() => {
+    currentPlaylistColRef.current = currentPlaylistCol;
+    // Sync with parent component
+    if (setParentCurrentPlaylistCol) {
+      setParentCurrentPlaylistCol(currentPlaylistCol);
+    }
+  }, [currentPlaylistCol, setParentCurrentPlaylistCol]);
+
+  useEffect(() => {
+    stepRowRef.current = stepRow;
+  }, [stepRow]);
+
+  // Sync isPlaying with parent component
+  useEffect(() => {
+    if (setParentIsPlaying) {
+      setParentIsPlaying(isPlaying);
+    }
+  }, [isPlaying, setParentIsPlaying]);
+
+  // Sync songMode with parent component
+  useEffect(() => {
+    if (setParentSongMode) {
+      setParentSongMode(songMode);
+    }
+  }, [songMode, setParentSongMode]);
+
+  // Mettre à jour le tempo
+  useEffect(() => {
+    Tone.Transport.bpm.value = bpm;
+  }, [bpm]);
+
+  const recordSequence = (instrument, note, step) => {
+    if (!isRecording) return;
+    setRecordedSequence(prevSeq => [
+      ...prevSeq,
+      { instrument, note, step, time: Date.now() }
+    ]);
   };
-  */
+
   const PlayPattern = () => {
     if (!playersRef.current || Object.keys(playersRef.current).length === 0) return;
     Tone.Transport.start();
     setIsPlaying(true);
   };
-  
-  const StopPattern = () => {
+
+   const StopPattern = () => {
     setIsPlaying(false);
     updateStepRow(0);
   };
@@ -364,9 +324,8 @@ const Transport = ({
     setPlaybackTimeouts([]);
     setIsReplaying(false);
   };
-  
 
-  // Fonction pour passer rapidement à la ligne suivante ou précédente
+   // Fonction pour passer rapidement à la ligne suivante ou précédente
   const nextPlaylistCol = () => {
     if (!playlistRef.current?.initGrid || playlistRef.current.initGrid[0].length === 0) return;
     setCurrentPlaylistCol((prev) => (prev + 1) % playlistRef.current.initGrid[0].length);
@@ -396,6 +355,16 @@ const Transport = ({
         return <MdRepeat size={20} style={{ opacity: 0.5 }} />;
     }
   };
+
+  // Gérer les survols
+  const handleElementHover = () => {
+    onMouseEnter("Transport");
+  };
+
+  const handleSpecificHover = (label) => {
+    onMouseEnter(label);
+  };
+
 
   return (
     <Box
