@@ -67,8 +67,20 @@ export default function Playlist({
   };
 
   return (
-    <Container sx={{ overflow: "hidden", width: 1000, position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-       <Paper sx={{ backgroundColor: "#2c2c2c", width: "100%", position: "relative", top: 65, alignContent: "center", borderStyle: "inset", borderColor: "white", borderWidth: 5}}>
+  <Box
+    sx={{
+      position: "relative",
+      width: { xs: '100%', md: 'calc(100% - 300px)' },
+      ml: { md: '250px' },
+      height: '100%',
+      overflow: 'auto',
+      pt: 2
+    }}
+    onMouseEnter={onMouseEnter}
+    onMouseLeave={onMouseLeave}
+    >
+
+      <Paper sx={{ backgroundColor: "#2c2c2c", width: "100%", position: "relative", mt: 1, p: 1, mb: 1 }} elevation={1}>
         <Box 
           sx={{ 
             display: "flex", 
@@ -333,6 +345,6 @@ export default function Playlist({
           100% { opacity: 0.3; }
         }
       `}</style>
-    </Container>
+    </Box>
   );
 }
