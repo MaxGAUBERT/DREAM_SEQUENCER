@@ -1,4 +1,4 @@
-import React,{useEffect, useRef, useState} from "react";
+import React, {useState} from "react";
 import { Select, MenuItem, Box, Typography, Button, Input} from "@mui/material";
 import FormatPaintIcon from '@mui/icons-material/FormatPaint';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
@@ -70,14 +70,17 @@ const PianoRoll = ({ grid, clearGrid, onGridToggle, noteMode, fillMode, onFillSt
   ]  
 
   return (
-    <Box sx={{ p: 2, border: "10px inset white",
+  <Box sx={{ p: 1, border: "8px inset white",
       borderRadius: "8px",
       color: "black",
       mt: 2, position: "fixed",
-      top: "50%", left: "50%", 
+      top: "50%", left: "46.2%", 
+      width: {xs: "15%", sm: "35%", md: "20%", lg: "15%", xl: "41.2%"},
+      height: {xs: "40%", sm: "55%", md: "20%", lg: "15%", xl: "88%"},
       transform: "translate(-50%, -50%)", overflow: "auto" }}>
+
       
-    <Typography variant="h6" sx={{ mb: 1, fontFamily: "Silkscreen, cursive", color: "white" }}>
+    <Typography variant="h6" sx={{ fontFamily: "Silkscreen, cursive", color: "white", display: "flex", justifyContent: "right"}}>
       Piano Roll - {selectedInstrument}
     </Typography>
   
@@ -85,7 +88,7 @@ const PianoRoll = ({ grid, clearGrid, onGridToggle, noteMode, fillMode, onFillSt
     <Select
       value={selectedInstrument}
       onChange={(e) => onInstrumentChange(e.target.value)}
-      sx={{ mb: 2, width: 80, backgroundColor: "white" }}
+      sx={{ width: 85, height: 35, position: "relative", top: -38, left: 10, backgroundColor: "white" }}
     >
       {channels.map((ch, i) => (
         <MenuItem key={i} value={ch}>
@@ -186,7 +189,7 @@ const PianoRoll = ({ grid, clearGrid, onGridToggle, noteMode, fillMode, onFillSt
 
 
     {/* Affichage de la grille */}
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: "50vh", maxWidth: "95vh", overflow: "auto" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: "66.8vh", maxWidth: "100vh", overflow: "auto" }}>
       {grid.map((row, rowIdx) => (
         <Box key={rowIdx} sx={{ display: "flex", flexDirection: "row", gap: 1, minWidth: `${grid[0].length * 47}px`}}>
           {row.map((step, stepIdx) => (
