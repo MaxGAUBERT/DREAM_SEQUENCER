@@ -3,8 +3,7 @@ import { Box, Button, Typography, TextField, Radio } from "@mui/material";
 import * as Tone from "tone";
 import { FaRegPlayCircle, FaRegStopCircle } from "react-icons/fa";
 import { BsFillSignStopFill, BsFillTrashFill, BsFillRecordCircleFill } from "react-icons/bs";
-import { MdReplay, MdRepeat, MdRepeatOne, MdOutlineFastForward, MdOutlineFastRewind } from "react-icons/md";
-import { Label } from "@headlessui/react";
+import { MdReplay } from "react-icons/md";
 
 
 const Transport = ({
@@ -261,8 +260,7 @@ const Transport = ({
     onMouseLeave={onMouseLeave}
     sx={{
       p: 2,
-      bgcolor: 'grey.900',
-      color: 'white',
+      bgcolor: 'gray.900',
       borderRadius: 2,
       boxShadow: 3,
       display: 'flex',
@@ -272,20 +270,12 @@ const Transport = ({
   >
     <Box sx={{ display: 'flex', position: 'absolute', top: 0, left: 420, alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
       <Button
-        onClick={handlePlayClick}
-        variant="contained"
-        color={isPlaying ? 'success' : 'primary'}
-        onMouseEnter={() => handleSpecificHover('Play')}
+        onClick={isPlaying ? handleStopClick : handlePlayClick}
+        variant={isPlaying ? 'secondary' : 'primary'}
+        sx={{ backgroundColor: isPlaying ? 'red' : 'green', color: 'white' }}
+        onMouseEnter={() => handleSpecificHover('Play / STOP')}
       >
-        {isPlaying ? 'Playing' : 'Play'}
-      </Button>
-      <Button
-        onClick={handleStopClick}
-        variant="outlined"
-        color="secondary"
-        onMouseEnter={() => handleSpecificHover('Stop')}
-      >
-        Stop
+        {isPlaying ? <FaRegStopCircle size={20} /> : <FaRegPlayCircle size={20} />}
       </Button>
       <Button
         onClick={handleRecordClick}
@@ -293,16 +283,17 @@ const Transport = ({
         color="error"
         onMouseEnter={() => handleSpecificHover('Record')}
       >
-        {isRecording ? 'Recording...' : 'Record'}
+        {isRecording ? <BsFillSignStopFill size={20} /> : <BsFillRecordCircleFill size={20} />}
       </Button>
       <Button
         onClick={handleReplayClick}
         variant="outlined"
+        color="secondary"
         sx={{color: 'red'}}
         onMouseEnter={() => handleSpecificHover('Replay')}
         disabled={recordedSequence.length === 0}
       >
-        Replay
+        <MdReplay color="white" size={20} />
       </Button>
       <Button
         onClick={handleClearClick}
@@ -310,7 +301,7 @@ const Transport = ({
         color="warning"
         onMouseEnter={() => handleSpecificHover('Clear')}
       >
-        Clear
+        <BsFillTrashFill color="white" size={20} />
       </Button>
     </Box>
 
@@ -318,7 +309,7 @@ const Transport = ({
       <Button
         onClick={handleSongModeToggle}
         variant={songMode ? 'contained' : 'outlined'}
-        color="secondary"
+        sx={{ backgroundColor: songMode ? 'blue' : 'gray', color: 'white' }}
         onMouseEnter={() => handleSpecificHover('Song Mode')}
       >
         {songMode ? 'Song Mode' : 'Pattern Mode'}
@@ -326,7 +317,7 @@ const Transport = ({
       <Button
         onClick={handleLoopModeToggle}
         variant="outlined"
-        color={loopMode === 'all' ? 'success' : 'inherit'}
+        sx={{ backgroundColor: loopMode === 'none' ? 'gray' : 'blue', color: 'white' }}
         onMouseEnter={() => handleSpecificHover('Loop Mode')}
       >
         {loopMode === 'none' ? 'No Loop' : 'Loop All'}
@@ -346,4 +337,5 @@ const Transport = ({
 };
 
 export default Transport;
+
 
