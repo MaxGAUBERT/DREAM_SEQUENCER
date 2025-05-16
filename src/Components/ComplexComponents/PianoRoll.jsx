@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import { Select, MenuItem, Box, Typography, Button, Input} from "@mui/material";
+import { Paper, Select, MenuItem, Box, Typography, Button, Input} from "@mui/material";
 import FormatPaintIcon from '@mui/icons-material/FormatPaint';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 const PianoRoll = ({ grid, clearGrid, onGridToggle, noteMode, fillMode, onFillSteps, stepRow, channels, selectedInstrument, onInstrumentChange, numRows, numCols, setRows, setCols, onColsChange}) => {
@@ -74,10 +74,14 @@ const PianoRoll = ({ grid, clearGrid, onGridToggle, noteMode, fillMode, onFillSt
       borderRadius: "8px",
       color: "black",
       mt: 2, position: "fixed",
-      top: "50%", left: "46.2%", 
-      width: {xs: "15%", sm: "35%", md: "20%", lg: "15%", xl: "41.2%"},
-      height: {xs: "40%", sm: "55%", md: "20%", lg: "15%", xl: "88%"},
-      transform: "translate(-50%, -50%)", overflow: "auto" }}>
+      top: "45.5%",
+      left: "50%",
+      zIndex: 1000,
+      width: "58%",
+      height: "80%",
+      transform: "translate(-50%, -50%)",
+      bgcolor: "black",
+      overflow: "auto" }}>
 
       
     <Typography variant="h6" sx={{ fontFamily: "Silkscreen, cursive", color: "white", display: "flex", justifyContent: "right"}}>
@@ -185,11 +189,11 @@ const PianoRoll = ({ grid, clearGrid, onGridToggle, noteMode, fillMode, onFillSt
     >
       Fill
     </Button>
-
+      
 
 
     {/* Affichage de la grille */}
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: "66.8vh", maxWidth: "100vh", overflow: "auto" }}>
+    <Box sx={{ display: "flex", alignItems: "center", flexFlow: "row wrap", flexDirection: "column", gap: 1, mt: 5,overflow: "auto" }}>
       {grid.map((row, rowIdx) => (
         <Box key={rowIdx} sx={{ display: "flex", flexDirection: "row", gap: 1, minWidth: `${grid[0].length * 47}px`}}>
           {row.map((step, stepIdx) => (
@@ -199,23 +203,24 @@ const PianoRoll = ({ grid, clearGrid, onGridToggle, noteMode, fillMode, onFillSt
               sx={{
                 width: 50,
                 height: 50,
-                backgroundColor: step ? "red" : "#ddd",
+                backgroundColor: step ? "green" : "#ddd",
                 borderColor: stepRow === stepIdx ? "green" : "black",
                 border: stepRow === stepIdx ? "3px solid green" : "1px solid black",
                 borderRadius: "4px",
                 cursor: "pointer",
-                transition: "background-color 0.1s ease",
+                transition: "background-color 0.1s in-out",
                 "&:hover": {
-                  backgroundColor: step ? "#f66" : "#ccc",
+                  backgroundColor: step ? "red" : "green",
                 }
               }}
-              {...(stepRow === rowIdx && stepIdx === step ? { border: "2px solid red" } : {})}
+              {...(stepRow === rowIdx && stepIdx === step ? { border: "2px solid green" } : {})}
             />
           ))}
         </Box>
       ))}
     </Box>
   </Box>
+
   );
 };
 
