@@ -89,6 +89,8 @@ const ChannelRack = ({onSamplesUpdated, onUrlUpdated, onGridsUpdated, onPatterns
 
     const handleFillSteps = (note, fill, selectedInstrument) => {
         console.log("Filling with:", note, fill, selectedInstrument);
+
+        if (!note || !fill || !selectedInstrument) return;
     
         // correspondance des noms de notes aux index de ligne
         const noteToRowIndex = {
@@ -470,16 +472,16 @@ const ChannelRack = ({onSamplesUpdated, onUrlUpdated, onGridsUpdated, onPatterns
 
     return (
         <Box onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} sx={{
-            border: "10px inset white",
-            borderRadius: "8px",
+            border: "8px inset white",
+            borderRadius: "5px",
             color: "black",                   
-            boxSizing: "border-box",
             bgcolor: colors.channelRackColor,
             position: "absolute",
             top: 60,
             right: 0,
             maxHeight: "850px",
             overflow: "auto",
+            maxWidth: "370px",
         }}>
             <Typography variant="h5" sx={{ fontFamily: "Silkscreen, cursive"}}>Channel Rack</Typography>
             
@@ -494,10 +496,10 @@ const ChannelRack = ({onSamplesUpdated, onUrlUpdated, onGridsUpdated, onPatterns
                     sx={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 2,
+                        gap: 1,
                         mb: 1,
                         border: "1px dashed white",
-                        padding: "4px",
+                        padding: "2px",
                         transition: "all 0.2s ease",
                         '&.drag-over': {
                             backgroundColor: "#4a4a4a",
@@ -533,6 +535,7 @@ const ChannelRack = ({onSamplesUpdated, onUrlUpdated, onGridsUpdated, onPatterns
                         accept="audio/*"
                         onChange={(event) => handleLoadSample(channelName, event.target.files[0])}
                         multiple
+                        size={5}
                     />
                     </Button>
 
@@ -540,7 +543,7 @@ const ChannelRack = ({onSamplesUpdated, onUrlUpdated, onGridsUpdated, onPatterns
                         sx={{ fontFamily: "Arial", color: "black" }}
                         onClick={() => handleDisplayPianoRoll(channelName)}
                     >
-                        <CgPiano size={25} />
+                        <CgPiano size={20} />
                     </Button>
 
                     <Button
@@ -558,7 +561,7 @@ const ChannelRack = ({onSamplesUpdated, onUrlUpdated, onGridsUpdated, onPatterns
                         sx={{ fontFamily: "Arial", color: "black" }}
                         onClick={() => handleRemoveChannel(channelName)}
                     >
-                        <MdDelete size={25} />
+                        <MdDelete size={20} />
                     </Button>
                 </Box>
             ))}
