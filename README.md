@@ -20,7 +20,6 @@
 ## After opening the application, click on **New Project**, then choose a project name.
 ## Next, an animation appears.
 ## Here you are on the interface!
-## Here's a simple demo: https://github.com/user-attachments/assets/3d01df64-1338-47f4-87fc-0e913dc56a9f
 
 
 
