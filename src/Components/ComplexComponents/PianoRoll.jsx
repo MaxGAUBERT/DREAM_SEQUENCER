@@ -1,226 +1,173 @@
-import React, {useState} from "react";
-import { Paper, Select, MenuItem, Box, Typography, Button, Input} from "@mui/material";
-import FormatPaintIcon from '@mui/icons-material/FormatPaint';
-import MusicNoteIcon from '@mui/icons-material/MusicNote';
-const PianoRoll = ({ grid, clearGrid, onGridToggle, noteMode, fillMode, onFillSteps, stepRow, channels, selectedInstrument, onInstrumentChange, numRows, numCols, setRows, setCols, onColsChange}) => {
-  
-  const [openFillOptions, setOpenFillOptions] = useState(false);
-  const [openNotesOptions, setOpenNotesOptions] = useState(false);
+import React, {useCallback, useContext, useState} from "react";
+import { Box, Button, Typography} from "@mui/material";
+import * as ReactIcons from "react-icons/md";
+import * as Tone from "tone";
+import PianoMenu from "../FrontEnd/PianoMenu";
+import { useCursorManager } from "../Contexts/CursorManager";
 
-  const handleColsChange = (newCols) => {
-    setCols(Number(newCols));
-    // Notify parent component
-    if (onColsChange) {
-      onColsChange(Number(newCols));
+// Génère une liste de notes ascendantes (C3 → B5) en fonction du nombre de lignes
+const generateNoteList = (num) => {
+  const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const result = [];
+  let octave = 3;
+  let noteIndex = 0;
+  for (let i = 0; i < num; i++) {
+    result.push(notes[noteIndex] + octave);
+    noteIndex++;
+    if (noteIndex >= notes.length) {
+      noteIndex = 0;
+      octave++;
     }
-  };
+  }
+  return result;
+};
 
-  const fillOptions = [
-    {
-      text: "1/8 steps",
-    },
-    {
-      text: "1/4 steps",
-    },
-    {
-      text: "1/2 steps",
-    },
-    {
-      text: "1 step",
-    },
-    {
-      text: "2 steps",
-    },
-    {
-      text: "4 steps",
-    },
-    {
-      text: "8 steps",
-    },
-    {
-      text: "All steps"
-    }
-  ]
+const isBlackKey = (note) => note.includes("#");
 
-  const notesOptions = [
-    {
-      text: "A4",
-    },
-    {
-      text: "C4",
-    },
-    {
-      text: "D4",
-    },
-    {
-      text: "E4",
-    },
-    {
-      text: "F4",
-    },
-    {
-      text: "G4",
-    },
-    {
-      text: "A5",
-    },
-    {
-      text: "C5",
-    },
-  ]  
+const PianoRoll = ({
+  grid,
+  onGridToggle,
+  rows,
+  cols,
+  onColsChange,
+  onClearGrid,
+  onCopy,
+  onPaste,
+  selectedInstrument
+}) => {
+const noteList = generateNoteList(rows).reverse(); // pour avoir aigu en haut
+const { cursor, setCursor } = useCursorManager();
+const [drawMode, setDrawMode] = useState(false);
 
-  return (
-  <Box sx={{ p: 1, border: "8px inset white",
-      borderRadius: "8px",
-      color: "black",
-      mt: 2, position: "fixed",
-      top: "45.5%",
-      left: "50%",
-      zIndex: 1000,
-      width: "58%",
-      height: "80%",
-      transform: "translate(-50%, -50%)",
-      bgcolor: "black",
-      overflow: "auto" }}>
+const playNote = (note) => {
+  const synth = new Tone.Synth().toDestination();
+  synth.triggerAttackRelease(note, "8n");
+};
 
-      
-    <Typography variant="h6" sx={{ fontFamily: "Silkscreen, cursive", color: "white", display: "flex", justifyContent: "right"}}>
-      Piano Roll - {selectedInstrument}
-    </Typography>
-  
-     {/* Sélection de l'instrument */}
-    <Select
-      value={selectedInstrument}
-      onChange={(e) => onInstrumentChange(e.target.value)}
-      sx={{ width: 85, height: 35, position: "relative", top: -38, left: 10, backgroundColor: "white" }}
-    >
-      {channels.map((ch, i) => (
-        <MenuItem key={i} value={ch}>
-          {ch}
-        </MenuItem>
-      ))}
-    </Select>
+const handleToggleDrawMode = () => {
+  setDrawMode((prev) => !prev);
+  setCursor("crosshair");
+}
 
-    {/* Bouton pour ouvrir les options de dimensions de grille */}
 
-    <Box sx={{ position: "static", top: 0, right: 1000, zIndex: 1, gap: 1, mb: 2 }}>
 
-      <Typography sx={{ color: "white" }}>Steps length:</Typography>
-      <Input 
-        type="number"
-        value={numCols}
-        onChange={(e) => handleColsChange(Number(e.target.value))}
-        inputProps={{ min: 5, max: 100 }}
-        sx={{ backgroundColor: "white", width: 80 }}
-      />
-    </Box>
-
-   {/* Bouton pour ouvrir les options de remplissage */}
-    <Button
-      sx={{ mb: 2, position: "absolute", top: 0, left: 0, backgroundColor: "white", color: "black", zIndex: 1, "&:hover": { backgroundColor: "gray" } }}
-      onClick={() => {
-        setOpenFillOptions(!openFillOptions);
-        setOpenNotesOptions(false);
-      }}
-      
-    >
-      {openFillOptions ? "Select" : <FormatPaintIcon color="black" size={20} />}
-      {openFillOptions && (
-        <Box sx={{ position: "absolute", top: 30, left: 0, backgroundColor: "white", zIndex: 1 }}>
-          {fillOptions.map((option, i) => (
-            <MenuItem
-              key={i}
-              onClick={() => {
-                fillMode(option.text);               // définir le fill
-                setOpenFillOptions(false);           // fermer le menu fill
-                setOpenNotesOptions(true);           // ouvrir le menu notes
-              }}
-            >
-              {option.text}
-            </MenuItem>
-          ))}
-        </Box>
-      )}
-    </Button>
-
-    {/* Bouton qui efface la grille */}
-    <Button
-      sx={{ mb: 2, position: "absolute", top: 0, left: 220, backgroundColor: "white", color: "black", zIndex: 1, "&:hover": { backgroundColor: "gray" } }}
-      onClick={clearGrid}
-    >
-      Clear
-    </Button>
-
-    {/* Bouton pour ouvrir les options de note */}
-    <Button
-      sx={{ mb: 2, position: "absolute", top: 0, left: 70, backgroundColor: "white", color: "black", zIndex: 1, "&:hover": { backgroundColor: "gray" } }}
-      onClick={() => {
-        setOpenNotesOptions(!openNotesOptions);
-        setOpenFillOptions(false);
-      }}
-    >
-      {openNotesOptions ? "Select" : <MusicNoteIcon color="black" size={20} />}
-      {openNotesOptions && (
-        <Box sx={{ position: "absolute", top: 30, left: 0, backgroundColor: "white", zIndex: 1 }}>
-          {notesOptions.map((note, i) => (
-            <MenuItem
-              key={i}
-              onClick={() => {
-                noteMode(note.text);               // définir la note
-                setOpenNotesOptions(false);        // fermer le menu notes
-              }}
-            >
-              {note.text}
-            </MenuItem>
-          ))}
-        </Box>
-      )}
-    </Button>
-
+return (
+    <Box
     
-    <Button
-      sx={{ mb: 2, position: "absolute", top: 0, left: 140, backgroundColor: "white", color: "black", zIndex: 1, "&:hover": { backgroundColor: "gray" }}}
-      onClick={() => {
-        console.log("Filling with:", noteMode, fillMode);
-        onFillSteps(noteMode, fillMode);                // Appelle handleFillSteps(noteToFill, fill)
-        setOpenFillOptions(false);
-        setOpenNotesOptions(false);
+      sx={{
+        display: "flex",
+        position: "fixed",
+        top: "58%",
+        left: "46%",
+        transform: "translate(-50%, -50%)",
+        bgcolor: "#111",
+        border: "6px inset #fff",
+        borderRadius: 2,
+        width: "50%",
+        height: "80%",
+        overflow: "auto",
+        p: 2,
+        cursor: cursor
       }}
     >
-      Fill
-    </Button>
-      
+      <Typography variant="h6" gutterBottom sx={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", color: "#fff" }}>
+        Piano Roll - {selectedInstrument}
+      </Typography>
+      {/* Controls */}
+      <Box sx={{ position: "absolute", top: 10, left: 20, display: "flex", gap: 2 }}>
+        <PianoMenu onCut={onClearGrid} onCopy={onCopy} onPaste={onPaste}/>
+        <Button
+          onClick={handleToggleDrawMode}
+          sx={{ fontSize: 12, bgcolor: "transparent", color: "#fff", fontFamily: "monospace" }}
+        >
+          <ReactIcons.MdDraw size={20} />
+        </Button>
+      </Box>
 
-
-    {/* Affichage de la grille */}
-    <Box sx={{ display: "flex", alignItems: "center", flexFlow: "row wrap", flexDirection: "column", gap: 1, mt: 5,overflow: "auto" }}>
-      {grid.map((row, rowIdx) => (
-        <Box key={rowIdx} sx={{ display: "flex", flexDirection: "row", gap: 1, minWidth: `${grid[0].length * 47}px`}}>
-          {row.map((step, stepIdx) => (
+      {/* Grille complète avec piano intégré */}
+      <Box sx={{ display: "flex", flexDirection: "column", width: "100%", mt: 4 }}>
+        {/* Step headers */}
+        <Box sx={{ display: "flex", flexDirection: "row", ml: 8.8 }}>
+          {Array.from({ length: cols }, (_, idx) => (
             <Box
-              key={stepIdx}
-              onClick={() => onGridToggle(rowIdx, stepIdx)}
+              key={idx}
               sx={{
-                width: 50,
-                height: 50,
-                backgroundColor: step ? "green" : "#ddd",
-                borderColor: stepRow === stepIdx ? "green" : "black",
-                border: stepRow === stepIdx ? "3px solid green" : "1px solid black",
-                borderRadius: "4px",
-                cursor: "pointer",
-                transition: "background-color 0.1s in-out",
-                "&:hover": {
-                  backgroundColor: step ? "red" : "green",
-                }
+                width: 30,
+                height: 20,
+                color: "white",
+                fontSize: "0.9rem",
+                fontFamily: "initial",
+                fontWeight: "bold",
+                color: "white",
+                textAlign: "center",
+                borderBottom: "1px solid #555",
+                bgcolor: idx % 4 === 0 ? "#333" : "transparent"
               }}
-              {...(stepRow === rowIdx && stepIdx === step ? { border: "2px solid green" } : {})}
-            />
+            >
+              {idx + 1}
+            </Box>
           ))}
         </Box>
-      ))}
-    </Box>
-  </Box>
 
+        {/* Grid rows with integrated piano keys */}
+        {noteList.map((note, rowIdx) => (
+          <Box key={rowIdx} sx={{ display: "flex", flexDirection: "row" }}>
+            {/* Piano key */}
+            <Box
+              onClick={() => playNote(note)}
+              sx={{
+                width: 90,
+                minWidth: 60,
+                height: 22,
+                backgroundColor: isBlackKey(note) ? "#333" : "#fff",
+                color: isBlackKey(note) ? "#eee" : "#000",
+                borderRight: "1px solid #666",
+                borderBottom: "1px solid #444",
+                display: "flex",
+                alignItems: "center",
+                paddingLeft: 1,
+                cursor: "pointer",
+                fontSize: "0.8rem",
+                fontFamily: "monospace",
+                position: "sticky",
+                left: 0,
+                zIndex: 2,
+                boxShadow: "2px 0px 5px rgba(0,0,0,0.3)"
+              }}
+            >
+              {note}
+            </Box>
+
+            {/* Grid cells for this row */}
+            {grid[rowIdx].map((step, colIdx) => (
+              <Box
+                key={colIdx}
+                onClick={() => onGridToggle(rowIdx, colIdx)}
+                sx={{
+                  width: 30,
+                  height: 22,
+                  bgcolor: step 
+                    ? "#4caf50" 
+                    : isBlackKey(note) 
+                      ? "#1a1a1a" 
+                      : "#222",
+                  borderBottom: `1px solid ${isBlackKey(note) ? "#2a2a2a" : "#333"}`,
+                  borderRight: "1px dotted #444",
+                  "&:hover": {
+                    bgcolor: step ? "#f44336" : "#555",
+                    cursor: "pointer"
+                  },
+                  // Highlight beats
+                  ...(colIdx % 4 === 0 && {
+                    borderLeft: "1px solid #666"
+                  })
+                }}
+              />
+            ))}
+          </Box>
+        ))}
+      </Box>
+    </Box>
   );
 };
 

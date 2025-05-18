@@ -1,9 +1,28 @@
 import React, { useState } from 'react';
 import { Box, Typography, Button, List, ListItem, ListItemText, Divider, Input } from '@mui/material';
 import * as Tone from 'tone';
+import PluginViewer from './pluginViewer'; // Assurez-vous que ce chemin est correct
 
 const SoundBrowser = (props) => {
   const [samples, setSamples] = useState([]);
+  const [viewPlugins, setViewPlugins] = useState(false);
+  const [pluginData, setPluginData] = useState([
+          {
+              name: "MODULATOR",
+              description: "FM Synthesizer",
+              icon: "icon1.png",
+          },
+          {
+              name: "Classic Tone",
+              description: "Analog Synthesizer",
+              icon: "icon2.png",
+          },
+          {
+              name: "WAVEFORMER",
+              description: "Wavetable Synthesizer",
+              icon: "icon3.png",
+          }
+  ]);
 
   const handleFolderSelect = (e) => {
     const files = Array.from(e.target.files).filter(file =>
@@ -70,14 +89,30 @@ const SoundBrowser = (props) => {
         Sound Browser
       </Typography>
 
-      <Button
-        variant="contained"
-        fullWidth
-        sx={{ mb: 2 }}
-        onClick={() => document.getElementById("folderInput").click()}
-      >
-        Import
-      </Button>
+
+
+        <Button
+          variant="contained"
+          width="10%"
+          sx={{mb: 2, bgcolor: '#555', color: 'white', '&:hover': { bgcolor: '#777' }}}
+          onClick={() => document.getElementById("folderInput").click()}
+          onMouseEnter={props.onMouseEnterBtn1}
+          onMouseLeave={props.onMouseLeaveBtn1}
+        >
+          Import Samples
+        </Button>
+
+        <Button
+          variant="contained"
+          width="10%"
+          sx={{mb: 2, ml: 2, bgcolor: '#555', color: 'white', '&:hover': { bgcolor: '#777' }}}
+          onClick={() => setViewPlugins(!viewPlugins)}
+          onMouseEnter={props.onMouseEnterBtn2}
+          onMouseLeave={props.onMouseLeaveBtn2}
+        >
+
+          View Plugins
+        </Button>
       <Input
         id="folderInput"
         type="file"
@@ -141,6 +176,13 @@ const SoundBrowser = (props) => {
           No samples loaded
         </Typography>
       )}
+
+      {viewPlugins && (
+       
+        <PluginViewer plugin={pluginData} onClose={() => setViewPlugins(false)} />
+
+      )}
+
     </Box>
   );
 };
