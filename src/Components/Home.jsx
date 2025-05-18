@@ -9,6 +9,7 @@ import PatternManager from "./ComplexComponents/PatternManager";
 import ComponentManager from "./Contexts/ComponentManager";
 import MainPanel from "./FrontEnd/MainPanel";
 import ProjectManager from "./SystemTools/ProjectManager";
+
 const Home = () => {
   const [players, setPlayers] = useState({});
   const [channelSources, setChannelSources] = useState({});
@@ -31,6 +32,9 @@ const Home = () => {
   
 
   const navigate = useNavigate();
+
+  // Afficher les plugins
+  const [showPlugins, setShowPlugins] = useState(false);
 
   // Initialisation de la playlist avec les dimensions correctes
   const [playlist, setPlaylist] = useState({
@@ -139,7 +143,6 @@ const saveCurrentProject = () => {
   };
   // État pour l'information à afficher sur le panneau principal
   const [infoOnMouseHover, setInfoOnMouseHover] = useState("");
-  
 
   const [openComponents, setOpenComponents] = useState({
     ChannelRack: true,
@@ -391,24 +394,6 @@ const saveCurrentProject = () => {
     setGrids(deepCopyGrids);
   };
   
-  /*
-  const handleNewProject = () => {
-    setOpenComponents({
-      ChannelRack: true,
-      Browser: true,
-      Playlist: false,
-      "AnalogSynth": false,
-      Modulator: false,
-    });
-    // Réinitialisation de la playlist
-    setPlaylist({ initGrid: Array.from({ length: rows }, () => Array.from({ length: cols }, () => null)) });
-    setLoadView(false);
-    nav("/");
-  };
-  */
-
-    
-
   // Cette fonction est appelée par le composant Playlist quand un pattern est placé dans la grille
   const handlePlacePattern = (row, col, pattern) => {
     setPlaylist((prev) => {
