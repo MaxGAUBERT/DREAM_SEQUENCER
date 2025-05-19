@@ -89,21 +89,45 @@ const ChannelRack = ({
   const ensureGridSize = (grid) => Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => grid?.[r]?.[c] || false));
 
   const handleRenameChannel = () => {
-    if (!selectedChannel || !renamedChannel) return;
-    setChannels(prev => {
-      const { [selectedChannel]: val, ...rest } = prev;
-      return { ...rest, [renamedChannel]: val };
-    });
-
-    updateGrids(prev => {
-      const { [selectedChannel]: val, ...rest } = prev;
-      return { ...rest, [renamedChannel]: val };
-    });
-
-    setSelectedChannel(renamedChannel);
-    setRenamedChannel("");
-    setShowRename(false);
-  };
+  if (!selectedChannel || !renamedChannel) return;
+  
+  // Préserver l'ordre des canaux en créant un nouvel objet ordonné
+  setChannels(prev => {
+    const entries = Object.entries(prev);
+    const result = {};
+    
+    // Reconstruire l'objet avec le même ordre, mais en remplaçant le nom du canal
+    for (const [key, value] of entries) {
+      if (key === selectedChannel) {
+        result[renamedChannel] = value;
+      } else {
+        result[key] = value;
+      }
+    }
+    
+    return result;
+  });
+  
+  // Faire de même pour les grids
+  updateGrids(prev => {
+    const entries = Object.entries(prev);
+    const result = {};
+    
+    for (const [key, value] of entries) {
+      if (key === selectedChannel) {
+        result[renamedChannel] = value;
+      } else {
+        result[key] = value;
+      }
+    }
+    
+    return result;
+  });
+  
+  setSelectedChannel(renamedChannel);
+  setRenamedChannel("");
+  setShowRename(false);
+};
 
   const handleCreateChannel = () => {
     if (!newChannelName) return;
@@ -134,6 +158,33 @@ const ChannelRack = ({
       onUrlUpdated({ ...channelSources, [channel]: url });
     };
     reader.readAsDataURL(audioFile);
+  };
+
+   const handleRemoveChannel = (channelId) => {
+    if (!channelId) return;
+
+    setChannels(prev => {
+      const updated = { ...prev };
+      delete updated[channelId];
+      
+      // Si le canal supprimé était le canal sélectionné,
+      // sélectionner le premier canal disponible s'il y en a
+      if (channelId === selectedChannel) {
+        const remainingChannels = Object.keys(updated);
+        if (remainingChannels.length > 0) {
+          setSelectedChannel(remainingChannels[0]);
+        } else {
+          setSelectedChannel(null);
+        }
+      } else if (channelId !== selectedChannel) {
+        const remainingChannels = Object.keys(updated);
+        setSelectedChannel(prev => (remainingChannels.includes(prev) ? prev : remainingChannels[0]));
+
+      }
+        
+      
+      return updated;
+    });
   };
 
 
@@ -180,7 +231,7 @@ const ChannelRack = ({
 
           <Button onClick={() => { setSelectedChannel(name); setShowPianoRoll(!showPianoRoll); }}><CgPiano size={25} color="black"/></Button>
           <Button onClick={() => { setSelectedChannel(name); setShowRename(true); }}><MdOutlineDriveFileRenameOutline size={25} color="black"/></Button>
-          <Button onClick={() => setChannels(prev => { const { [name]: _, ...rest } = prev; return rest; })}><MdDelete size={25} color="black"/></Button>
+          <Button onClick={() => handleRemoveChannel(name)}><MdDelete size={25} color="black"/></Button>
         </Box>
       ))}
 

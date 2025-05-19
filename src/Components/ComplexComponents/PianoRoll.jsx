@@ -1,11 +1,11 @@
-import React, {useCallback, useContext, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import { Box, Button, Typography} from "@mui/material";
 import * as ReactIcons from "react-icons/md";
 import * as Tone from "tone";
 import PianoMenu from "../FrontEnd/PianoMenu";
 import { useCursorManager } from "../Contexts/CursorManager";
 import { IoMove } from "react-icons/io5";
-import { RxWidth } from "react-icons/rx";
+import { PiPaintBrushHousehold } from "react-icons/pi";
 
 // Génère une liste de notes ascendantes (C3 → B5) en fonction du nombre de lignes
 const generateNoteList = (num) => {
@@ -41,8 +41,42 @@ const noteList = generateNoteList(rows).reverse(); // pour avoir aigu en haut
 const { cursor, setCursor } = useCursorManager();
 const [drawMode, setDrawMode] = useState(false);
 const [moveMode, setMoveMode] = useState(false);
-const [extendMode, setExtendMode] = useState(false);
+const [paintMode, setPaintMode] = useState(false);
 const [movingNote, setMovingNote] = useState(null); // { fromRow, fromCol }
+const [isPainting, setIsPainting] = useState(false);
+
+// Empêcher le comportement par défaut du navigateur lors du maintien du clic
+useEffect(() => {
+  const preventDefaultDrag = (e) => {
+    if (paintMode) {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  document.addEventListener('dragstart', preventDefaultDrag);
+  document.addEventListener('selectstart', preventDefaultDrag);
+  
+  return () => {
+    document.removeEventListener('dragstart', preventDefaultDrag);
+    document.removeEventListener('selectstart', preventDefaultDrag);
+  };
+}, [paintMode]);
+
+// Ajouter un mousedown global pour gérer la peinture
+useEffect(() => {
+  const handleGlobalMouseUp = () => {
+    setIsPainting(false);
+    setMovingNote(null);
+  };
+
+  // Ajouter l'écouteur pour détecter quand le bouton est relâché, même en dehors du composant
+  document.addEventListener('mouseup', handleGlobalMouseUp);
+  
+  return () => {
+    document.removeEventListener('mouseup', handleGlobalMouseUp);
+  };
+}, []);
 
 
 const playNote = (note) => {
@@ -52,8 +86,8 @@ const playNote = (note) => {
 
 const setMode = (mode) => {
   setDrawMode(mode === "draw");
+  setPaintMode(mode === "paint");
   setMoveMode(mode === "move");
-  setExtendMode(mode === "extend");
   setMovingNote(null);
   setCursor(mode === "draw" ? "crosshair" : mode === "move" ? "move" : "default");
 };
@@ -63,28 +97,48 @@ const handleMouseDown = (row, col) => {
     setMovingNote({ fromRow: row, fromCol: col });
   } else if (drawMode) {
     onGridToggle(row, col);
-  } 
+  } else if (paintMode) {
+    // Activer le mode peinture en cours
+    setIsPainting(true);
+    // Toujours activer la note (pas de toggle)
+    if (!grid[row][col]) {
+      onGridToggle(row, col);
+    }
+  }
 };
 
 const handleMouseEnter = (row, col) => {
-  if (movingNote && moveMode) {
+  if (moveMode && movingNote) {
     const { fromRow, fromCol } = movingNote;
     if (row !== fromRow || col !== fromCol) {
       onGridToggle(fromRow, fromCol);
       onGridToggle(row, col);
       setMovingNote({ fromRow: row, fromCol: col });
     }
+  } else if (paintMode && isPainting) {
+    // Si on est en mode peinture et qu'on maintient le bouton enfoncé, 
+    // alors on active la note au passage
+    // Important: ici nous forçons l'activation plutôt que de basculer
+    if (!grid[row][col]) {
+      onGridToggle(row, col);
+    }
   }
 };
 
 const handleMouseUp = () => {
+  // Arrêter la peinture quand on relâche le bouton de la souris
+  setIsPainting(false);
   setMovingNote(null);
+};
+
+const handleMouseLeave = () => {
+  // Pour les cas où la souris quitte le composant sans mouseup
+  setIsPainting(false);
 };
 
 
 return (
     <Box
-    
       sx={{
         display: "flex",
         position: "fixed",
@@ -98,8 +152,15 @@ return (
         height: "80%",
         overflow: "auto",
         p: 2,
-        cursor: cursor
+        cursor: cursor,
+        // Désactiver la sélection de texte dans tout le piano roll
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MozUserSelect: "none",
+        msUserSelect: "none"
       }}
+      // Empêcher le comportement par défaut du navigateur lors du drag
+      onDragStart={(e) => e.preventDefault()}
     >
       <Typography variant="h6" gutterBottom sx={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", color: "#fff" }}>
         Piano Roll - {selectedInstrument}
@@ -115,17 +176,17 @@ return (
         </Button>
 
         <Button
+          onClick={() => setMode("paint")}
+          sx={{ fontSize: 12, bgcolor: paintMode ? "#444" : "transparent", color: "#fff", fontFamily: "monospace" }}
+        >
+          <PiPaintBrushHousehold size={20} />
+        </Button>
+
+        <Button
           onClick={() => setMode("move")}
           sx={{ fontSize: 12, bgcolor: moveMode ? "#444" : "transparent", color: "#fff", fontFamily: "monospace" }}
         >
           <IoMove size={20} />
-        </Button>
-
-        <Button
-          onClick={() => setMode("extend")}
-          sx={{ fontSize: 12, bgcolor: extendMode ? "#444" : "transparent", color: "#fff", fontFamily: "monospace" }}
-        >
-          <RxWidth size={20} />
         </Button>
 
       </Box>
@@ -137,9 +198,6 @@ return (
           {Array.from({ length: cols }, (_, idx) => (
             <Box
               key={idx}
-              onMouseDown={() => handleMouseDown(idx, cols)}
-              onMouseEnter={() => handleMouseEnter(idx, cols)}
-              onMouseUp={handleMouseUp}
               sx={{
                 width: 30,
                 height: 20,
@@ -147,7 +205,6 @@ return (
                 fontSize: "0.9rem",
                 fontFamily: "initial",
                 fontWeight: "bold",
-                color: "white",
                 textAlign: "center",
                 borderBottom: "1px solid #555",
                 bgcolor: idx % 4 === 0 ? "#333" : "transparent"
@@ -164,9 +221,6 @@ return (
             {/* Piano key */}
             <Box
               onClick={() => playNote(note)}
-              onMouseDown={() => handleMouseDown(rowIdx, colIdx)}
-              onMouseEnter={() => handleMouseEnter(rowIdx, colIdx)}
-              onMouseUp={handleMouseUp}
               sx={{
                 width: 90,
                 minWidth: 60,
@@ -194,9 +248,19 @@ return (
             {grid[rowIdx].map((step, colIdx) => (
               <Box
                 key={colIdx}
-                onMouseDown={() => handleMouseDown(rowIdx, colIdx)}
-                onMouseEnter={() => handleMouseEnter(rowIdx, colIdx)}
+                onMouseDown={(e) => {
+                  // Empêcher la sélection de texte au niveau de chaque cellule
+                  e.preventDefault();
+                  handleMouseDown(rowIdx, colIdx);
+                }}
+                onMouseEnter={(e) => {
+                  // Vérifier si le bouton de souris est enfoncé durant le survol
+                  if (e.buttons === 1) { // 1 = bouton gauche enfoncé
+                    handleMouseEnter(rowIdx, colIdx);
+                  }
+                }}
                 onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
                 sx={{
                   width: 30,
                   height: 22,
@@ -213,7 +277,9 @@ return (
                   },
                   ...(colIdx % 4 === 0 && {
                     borderLeft: "1px solid #666"
-                  })
+                  }),
+                  // Empêcher la sélection de texte
+                  userSelect: "none"
                 }}
               />
               ))}
