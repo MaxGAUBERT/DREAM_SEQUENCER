@@ -38,6 +38,7 @@ const SoundBrowser = (props) => {
     setSamples(sampleList);
   };
 
+
   const handlePreview = async (url) => {
     try {
       await Tone.start(); // Nécessaire pour autoriser le son
@@ -79,7 +80,7 @@ const SoundBrowser = (props) => {
         top: 45,
         left: 0,
         height: "100%",
-        width: 345,
+        width: 350,
         overflowY: 'auto',
       }}
       onMouseEnter={props.onMouseEnter}
@@ -129,6 +130,7 @@ const SoundBrowser = (props) => {
             key={index}
             draggable="true"
             onDragStart={(e) => handleDragStart(e, sample)}
+            onDragOver={(e) => handleDragOver(e, sample)}
             sx={{ 
               cursor: 'grab',
               '&:hover': {

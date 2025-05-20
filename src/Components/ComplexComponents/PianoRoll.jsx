@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from "react";
+import React, {useCallback, useRef,useEffect, useState} from "react";
 import { Box, Button, Typography} from "@mui/material";
 import * as ReactIcons from "react-icons/md";
 import * as Tone from "tone";
@@ -35,7 +35,8 @@ const PianoRoll = ({
   onClearGrid,
   onCopy,
   onPaste,
-  selectedInstrument
+  selectedInstrument,
+  isPlaying
 }) => {
 const noteList = generateNoteList(rows).reverse(); // pour avoir aigu en haut
 const { cursor, setCursor } = useCursorManager();
@@ -44,6 +45,8 @@ const [moveMode, setMoveMode] = useState(false);
 const [paintMode, setPaintMode] = useState(false);
 const [movingNote, setMovingNote] = useState(null); // { fromRow, fromCol }
 const [isPainting, setIsPainting] = useState(false);
+const fileInputRef = useRef(null);
+
 
 // Empêcher le comportement par défaut du navigateur lors du maintien du clic
 useEffect(() => {
@@ -77,8 +80,7 @@ useEffect(() => {
     document.removeEventListener('mouseup', handleGlobalMouseUp);
   };
 }, []);
-
-
+ 
 const playNote = (note) => {
   const synth = new Tone.Synth().toDestination();
   synth.triggerAttackRelease(note, "8n");
@@ -142,13 +144,13 @@ return (
       sx={{
         display: "flex",
         position: "fixed",
-        top: "58%",
-        left: "46%",
+        top: "56%",
+        left: "50%",
         transform: "translate(-50%, -50%)",
         bgcolor: "#111",
         border: "6px inset #fff",
         borderRadius: 2,
-        width: "50%",
+        width: "60%",
         height: "80%",
         overflow: "auto",
         p: 2,
@@ -162,7 +164,7 @@ return (
       // Empêcher le comportement par défaut du navigateur lors du drag
       onDragStart={(e) => e.preventDefault()}
     >
-      <Typography variant="h6" gutterBottom sx={{ position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)", color: "#fff" }}>
+      <Typography variant="h6" gutterBottom sx={{ position: "fixed", top: 10, right: 15, justifyContent: "right", display: "flex", width: "100%", color: "#fff" }}>
         Piano Roll - {selectedInstrument}
       </Typography>
       {/* Controls */}
@@ -202,7 +204,7 @@ return (
                 width: 30,
                 height: 20,
                 color: "white",
-                fontSize: "0.9rem",
+                fontSize: "0.5rem",
                 fontFamily: "initial",
                 fontWeight: "bold",
                 textAlign: "center",
@@ -238,7 +240,8 @@ return (
                 position: "sticky",
                 left: 0,
                 zIndex: 2,
-                boxShadow: "2px 0px 5px rgba(0,0,0,0.3)"
+                boxShadow: "2px 0px 5px rgba(0,0,0,0.3)",
+                
               }}
             >
               {note}
@@ -279,7 +282,10 @@ return (
                     borderLeft: "1px solid #666"
                   }),
                   // Empêcher la sélection de texte
-                  userSelect: "none"
+                  userSelect: "none",
+                  
+                  
+                  
                 }}
               />
               ))}

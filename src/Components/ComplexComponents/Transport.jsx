@@ -1,68 +1,77 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Box, Button, Typography, TextField, Radio } from "@mui/material";
+import { Box, Button, Typography, TextField } from "@mui/material";
 import * as Tone from "tone";
 import { FaRegPlayCircle, FaRegStopCircle } from "react-icons/fa";
-import { BsFillSignStopFill, BsFillTrashFill, BsFillRecordCircleFill } from "react-icons/bs";
-import { MdReplay } from "react-icons/md";
 
 
 const Transport = ({
   stepValue,
   players,
   grids,
-  playlist,
-  patterns,
   setStepRow,
   onMouseEnter,
   onMouseLeave,
   setIsPlaying: setParentIsPlaying,
-  setSongMode: setParentSongMode,
-  setCurrentPlaylistRow: setParentCurrentPlaylistRow,
-  setCurrentPlaylistCol: setParentCurrentPlaylistCol,
 }) => {
+  // États essentiels
   const [isPlaying, setIsPlaying] = useState(false);
   const [bpm, setBPM] = useState(120);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordedSequence, setRecordedSequence] = useState([]);
-  const [isReplaying, setIsReplaying] = useState(false);
-  const [isClearing, setIsClearing] = useState(false);
-  const [playbackTimeouts, setPlaybackTimeouts] = useState([]);
   const [stepRow, setLocalStepRow] = useState(0);
-  const [songMode, setSongMode] = useState(false);
-  const [currentPlaylistRow, setCurrentPlaylistRow] = useState(0);
-  const [currentPlaylistCol, setCurrentPlaylistCol] = useState(0);
-  const [loopMode, setLoopMode] = useState("none");
-  const [playlistInterval, setPlaylistInterval] = useState(null);
 
-  const pianoNotes = useMemo(() => ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"], []);
+  // Génère la liste de notes en correspondance avec le PianoRoll (C3 → B5)
+  const generateNoteList = useCallback((num) => {
+    const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const result = [];
+    let octave = 3;
+    let noteIndex = 0;
+    for (let i = 0; i < num; i++) {
+      result.push(notes[noteIndex] + octave);
+      noteIndex++;
+      if (noteIndex >= notes.length) {
+        noteIndex = 0;
+        octave++;
+      }
+    }
+    return result.reverse(); // Inversion pour avoir les notes aiguës en haut comme dans PianoRoll
+  }, []);
 
-  // Refs
+  const [time, setTime] = useState(0);
+  
+  // Liste complète des notes du piano (C3 → B5)
+  const pianoNotes = useMemo(() => generateNoteList(36), [generateNoteList]);
+  
+  // Références pour éviter les problèmes de fermeture
   const gridsRef = useRef(grids);
-  const playlistRef = useRef(playlist);
-  const patternsRef = useRef(patterns);
   const playersRef = useRef(players);
-  const currentPlaylistRowRef = useRef(currentPlaylistRow);
-  const currentPlaylistColRef = useRef(currentPlaylistCol);
   const stepRowRef = useRef(stepRow);
+  const repeatIdRef = useRef(null);
 
-  // Sync refs
+  // Maintenir les refs à jour
   useEffect(() => { gridsRef.current = grids; }, [grids]);
-  useEffect(() => { playlistRef.current = playlist; }, [playlist]);
-  useEffect(() => { patternsRef.current = patterns; }, [patterns]);
   useEffect(() => { playersRef.current = players; }, [players]);
-  useEffect(() => {
-    currentPlaylistRowRef.current = currentPlaylistRow;
-    setParentCurrentPlaylistRow?.(currentPlaylistRow);
-  }, [currentPlaylistRow]);
-  useEffect(() => {
-    currentPlaylistColRef.current = currentPlaylistCol;
-    setParentCurrentPlaylistCol?.(currentPlaylistCol);
-  }, [currentPlaylistCol]);
   useEffect(() => { stepRowRef.current = stepRow; }, [stepRow]);
-  useEffect(() => { setParentIsPlaying?.(isPlaying); }, [isPlaying]);
-  useEffect(() => { setParentSongMode?.(songMode); }, [songMode]);
+  useEffect(() => { setParentIsPlaying?.(isPlaying); }, [isPlaying, setParentIsPlaying]);
   useEffect(() => { Tone.Transport.bpm.value = bpm; }, [bpm]);
 
+   // Minutes calculation
+  const minutes = Math.floor((time % 360000) / 6000);
+  // Seconds calculation
+  const seconds = Math.floor((time % 6000) / 100);
+  // Milliseconds calculation
+  const milliseconds = time % 100;
+
+  useEffect(() => {
+    let intervalId;
+    if (isPlaying) {
+      intervalId = setInterval(() => {
+        setTime(Math.floor(Tone.Transport.seconds * 100)); // ou .toFixed(2)
+      }, 50); // toutes les 50ms
+    }
+    return () => clearInterval(intervalId);
+  }, [isPlaying]);
+
+
+  // Fonction d'update du step courant
   const updateStepRow = useCallback((newValueOrUpdater) => {
     const newValue = typeof newValueOrUpdater === "function"
       ? newValueOrUpdater(stepRowRef.current)
@@ -72,11 +81,7 @@ const Transport = ({
     setStepRow?.(newValue);
   }, [setStepRow]);
 
-  const recordSequence = useCallback((instrument, note, step) => {
-    if (!isRecording) return;
-    setRecordedSequence(prev => [...prev, { instrument, note, step, time: Date.now() }]);
-  }, [isRecording]);
-
+  // Fonction de gestion des hovers pour l'aide contextuelle
   const handleElementHover = useCallback(() => {
     onMouseEnter?.("Transport");
   }, [onMouseEnter]);
@@ -85,257 +90,166 @@ const Transport = ({
     onMouseEnter?.(label);
   }, [onMouseEnter]);
 
-  // Pattern playback
   useEffect(() => {
-    if (!isPlaying || songMode || !players || Object.keys(players).length === 0) return;
+  if (!isPlaying || !players || Object.keys(players).length === 0) return;
 
-    const intervalTime = (60 / bpm / 4) * 1000;
+  // Supprimer les éventuels événements précédents
+  if (repeatIdRef.current) {
+    Tone.Transport.clear(repeatIdRef.current);
+  }
 
-    const interval = setInterval(() => {
-      updateStepRow(prevStep => {
-        const nextStep = (prevStep + 1) % stepValue;
-        const currentGrids = gridsRef.current;
+  // Schedule une répétition tous les 16e de note ("16n")
+  repeatIdRef.current = Tone.Transport.scheduleRepeat((time) => {
+    // Calcul du step suivant
+    updateStepRow(prevStep => {
+      const nextStep = (prevStep + 1) % stepValue;
+      const currentGrids = gridsRef.current;
 
-        Object.entries(currentGrids).forEach(([instrument, instrumentGrid]) => {
-          instrumentGrid?.forEach((row, noteIndex) => {
-            if (row?.[nextStep]) {
-              const note = pianoNotes[noteIndex];
-              const player = playersRef.current[instrument];
-              player?.triggerAttackRelease(note, "4n");
-              if (isRecording) recordSequence(instrument, note, nextStep);
-            }
-          });
-        });
-
-        return nextStep;
-      });
-    }, intervalTime);
-
-    return () => clearInterval(interval);
-  }, [isPlaying, bpm, songMode, isRecording, stepValue, updateStepRow, recordSequence, pianoNotes]);
-
-  const StopSong = useCallback(() => {
-    if (playlistInterval) clearInterval(playlistInterval);
-    setPlaylistInterval(null);
-    setIsPlaying(false);
-    Tone.Transport.stop();
-  }, [playlistInterval]);
-
-  const PlaySong = useCallback(() => {
-    if (!playersRef.current || Object.keys(playersRef.current).length === 0 || !playlistRef.current) return;
-
-    if (playlistInterval) clearInterval(playlistInterval);
-
-    setCurrentPlaylistRow(0);
-    setCurrentPlaylistCol(0);
-    updateStepRow(0);
-
-    const intervalTime = (60 / bpm / 4) * 1000;
-    let currentStep = 0;
-
-    const interval = setInterval(() => {
-      const playlistGrid = playlistRef.current?.initGrid;
-      if (!playlistGrid || playlistGrid.length === 0) return;
-
-      const row = currentPlaylistRowRef.current;
-      const col = currentPlaylistColRef.current;
-
-      if (row >= playlistGrid.length || col >= playlistGrid[0].length) {
-        StopSong();
-        return;
-      }
-
-      const patternRef = playlistGrid[row]?.[col];
-      const pattern = patternsRef.current.find(p => p.id === patternRef?.id);
-
-      if (pattern?.grids) {
-        Object.entries(pattern.grids).forEach(([instrument, instrumentGrid]) => {
-          instrumentGrid?.forEach((row, noteIndex) => {
-            if (row?.[currentStep]) {
-              const note = pianoNotes[noteIndex];
-              const player = playersRef.current[instrument];
-              player?.triggerAttackRelease(note, "4n");
-              if (isRecording) recordSequence(instrument, note, currentStep);
-            }
-          });
-        });
-      }
-
-      currentStep++;
-      updateStepRow(currentStep);
-
-      if (currentStep >= stepValue) {
-        currentStep = 0;
-        updateStepRow(0);
-
-        let nextRow = row + 1;
-        let nextCol = col;
-
-        if (nextRow >= playlistGrid.length) {
-          nextRow = 0;
-          nextCol = col + 1;
-          if (nextCol >= playlistGrid[0].length) {
-            if (loopMode === "none") {
-              StopSong();
-              return;
-            }
-            nextCol = loopMode === "all" ? 0 : col;
+      // Lecture des notes de chaque instrument
+      Object.entries(currentGrids).forEach(([instrument, instrumentGrid]) => {
+        instrumentGrid?.forEach((row, rowIndex) => {
+          if (row?.[nextStep]) {
+            const note = pianoNotes[rowIndex];
+            const player = playersRef.current[instrument];
+            console.log(`Playing ${note} on ${instrument} at step ${nextStep}`);
+            player?.triggerAttackRelease(note, "8n", time); // synchronisé !
           }
-        }
+        });
+      });
 
-        setCurrentPlaylistRow(nextRow);
-        setCurrentPlaylistCol(nextCol);
-      }
-    }, intervalTime);
+      // Remet le timer à 0 quand on boucle
+      if (nextStep === 0) setTime(0);
 
-    setPlaylistInterval(interval);
+      return nextStep;
+    });
+  }, "8n"); // une step toutes les 16e notes (4 per beat)
+
+  // Démarre le transport si ce n'est pas déjà fait
+  if (!Tone.Transport.state || Tone.Transport.state !== 'started') {
+    Tone.Transport.start();
+  }
+
+  return () => {
+    if (repeatIdRef.current) {
+      Tone.Transport.clear(repeatIdRef.current);
+      repeatIdRef.current = null;
+    }
+  };
+}, [isPlaying, bpm, stepValue, updateStepRow, pianoNotes]);
+
+  // Gestion du bouton Play
+  const handlePlayClick = useCallback(() => {
     setIsPlaying(true);
     Tone.Transport.start();
-  }, [bpm, stepValue, isRecording, playlistInterval, loopMode, recordSequence, updateStepRow, pianoNotes, StopSong]);
+  }, []);
 
-  // ... retourne la partie JSX de ton UI (non incluse ici pour clarté)
-    const handlePlayClick = useCallback(() => {
-    if (songMode) {
-      PlaySong();
-    } else {
-      setIsPlaying(true);
-      Tone.Transport.start();
-    }
-  }, [songMode, PlaySong]);
-
+  // Gestion du bouton Stop
   const handleStopClick = useCallback(() => {
     setIsPlaying(false);
     updateStepRow(0);
+    setTime(0);
     Tone.Transport.stop();
-    StopSong();
-  }, [updateStepRow, StopSong]);
+    if (repeatIdRef.current) {
+      Tone.Transport.clear(repeatIdRef.current);
+      repeatIdRef.current = null;
+}
 
-  const handleRecordClick = useCallback(() => {
-    setIsRecording(prev => !prev);
-    setRecordedSequence([]);
-  }, []);
-
-  const handleReplayClick = useCallback(() => {
-    if (isReplaying || recordedSequence.length === 0) return;
-
-    setIsReplaying(true);
-    setIsPlaying(false);
-    Tone.Transport.stop();
-
-    const sortedSequence = [...recordedSequence].sort((a, b) => a.time - b.time);
-    const startTime = sortedSequence[0]?.time || 0;
-
-    const timeouts = sortedSequence.map(note => {
-      const delay = note.time - startTime;
-      return setTimeout(() => {
-        const player = players[note.instrument];
-        if (player) player.triggerAttackRelease(note.note, "4n");
-      }, delay);
-    });
-
-    setPlaybackTimeouts(timeouts);
-
-    setTimeout(() => {
-      setIsReplaying(false);
-    }, sortedSequence[sortedSequence.length - 1]?.time - startTime);
-  }, [isReplaying, recordedSequence, players]);
-
-  const handleClearClick = useCallback(() => {
-    setIsClearing(true);
-    setRecordedSequence([]);
-    setTimeout(() => setIsClearing(false), 500);
-  }, []);
-
-  const handleSongModeToggle = useCallback(() => {
-    setSongMode(prev => !prev);
-  }, []);
-
-  const handleLoopModeToggle = useCallback(() => {
-    setLoopMode(prev => (prev === "none" ? "all" : "none"));
-  }, []);
+  }, [updateStepRow]);
 
   return (
-  <Box
-    onMouseEnter={handleElementHover}
-    onMouseLeave={onMouseLeave}
-    sx={{
-      p: 2,
-      bgcolor: 'gray.900',
-      borderRadius: 2,
-      boxShadow: 3,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 2,
-    }}
-  >
-    <Box sx={{ display: 'flex', position: 'absolute', top: 0, left: 420, alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+    <Box
+      onMouseEnter={handleElementHover}
+      onMouseLeave={onMouseLeave}
+      width={"100%"}
+      sx={{
+        p: 2,
+        bgcolor: '#222',
+        width: {
+          xl: '100%',
+          sm: 'auto'
+        },
+        height: '10px',
+        boxShadow: 3,
+        display: 'flex',
+        flexDirection: 'row',
+        gap: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'fixed',
+        top: '0px',
+        left: "38%",
+        transform: 'translateX(-50%)',
+        zIndex: 1
+      }}
+    >
       <Button
-        onClick={isPlaying ? handleStopClick : handlePlayClick}
-        variant={isPlaying ? 'secondary' : 'primary'}
-        sx={{ backgroundColor: isPlaying ? 'red' : 'green', color: 'white' }}
-        onMouseEnter={() => handleSpecificHover('Play / STOP')}
+        onClick={handlePlayClick}
+        variant="contained"
+        sx={{ 
+          bgcolor: 'green',
+          color: 'white',
+          '&:hover': {
+            bgcolor: "gray",
+          }
+        }}
+        onMouseEnter={() => handleSpecificHover('Play')}
       >
-        {isPlaying ? <FaRegStopCircle size={20} /> : <FaRegPlayCircle size={20} />}
+        <FaRegPlayCircle size={20} />
       </Button>
-      <Button
-        onClick={handleRecordClick}
-        variant={isRecording ? 'contained' : 'outlined'}
-        color="error"
-        onMouseEnter={() => handleSpecificHover('Record')}
-      >
-        {isRecording ? <BsFillSignStopFill size={20} /> : <BsFillRecordCircleFill size={20} />}
-      </Button>
-      <Button
-        onClick={handleReplayClick}
-        variant="outlined"
-        color="secondary"
-        sx={{color: 'red'}}
-        onMouseEnter={() => handleSpecificHover('Replay')}
-        disabled={recordedSequence.length === 0}
-      >
-        <MdReplay color="white" size={20} />
-      </Button>
-      <Button
-        onClick={handleClearClick}
-        variant="outlined"
-        color="warning"
-        onMouseEnter={() => handleSpecificHover('Clear')}
-      >
-        <BsFillTrashFill color="white" size={20} />
-      </Button>
-    </Box>
 
-    <Box sx={{ display: 'flex', position: 'absolute', top: 0, left: 900, alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-      <Button
-        onClick={handleSongModeToggle}
-        variant={songMode ? 'contained' : 'outlined'}
-        sx={{ backgroundColor: songMode ? 'blue' : 'gray', color: 'white' }}
-        onMouseEnter={() => handleSpecificHover('Song Mode')}
+      <Button 
+        onClick={handleStopClick}
+        variant="contained"
+        sx={{ 
+          bgcolor: '#f44336', 
+          color: 'white',
+          '&:hover': {
+            bgcolor: '#d32f2f',
+          }
+        }}
+        onMouseEnter={() => handleSpecificHover('Stop')}
       >
-        {songMode ? 'Song Mode' : 'Pattern Mode'}
+        <FaRegStopCircle size={20} />
       </Button>
-      <Button
-        onClick={handleLoopModeToggle}
-        variant="outlined"
-        sx={{ backgroundColor: loopMode === 'none' ? 'gray' : 'blue', color: 'white' }}
-        onMouseEnter={() => handleSpecificHover('Loop Mode')}
-      >
-        {loopMode === 'none' ? 'No Loop' : 'Loop All'}
-      </Button>
+
       <TextField
         label="BPM"
         type="number"
         value={bpm}
-        onChange={(e) => setBPM(parseInt(e.target.value) || 0)}
+        onChange={(e) => setBPM(parseInt(e.target.value) || 120)}
         inputProps={{ min: 30, max: 300 }}
         onMouseEnter={() => handleSpecificHover('BPM')}
         size="small"
+        sx={{
+          width: '100px',
+          '& .MuiInputBase-input': {
+            color: 'white',
+          },
+          '& .MuiInputLabel-root': {
+            color: 'white',
+          },
+          '& .MuiOutlinedInput-root': {
+            '& fieldset': {
+              borderColor: 'white',
+            },
+            '&:hover fieldset': {
+              borderColor: 'white',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: '#4caf50',
+            },
+          },
+        }}
       />
+
+      <Typography variant="body2" onMouseEnter={() => handleSpecificHover('Timer')} sx={{ borderStyle: 'solid', borderWidth: '4px', borderColor: 'white', color: 'red', fontFamily: 'silkscreen', fontSize: '15px' }}>
+        {minutes}:{minutes.toString().padStart(2, "0")}:
+        {seconds.toString().padStart(2, "0")}:
+        {milliseconds.toString().padStart(2, "0")}
+      </Typography>
+      
     </Box>
-  </Box>
-);
+  );
 };
 
 export default Transport;
-
-

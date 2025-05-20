@@ -27,7 +27,7 @@ const suggestions = ["FX", "Synth", "Vocal", "Cymbals", "Bass"];
 const ChannelRack = ({
   onSamplesUpdated, onUrlUpdated, onGridsUpdated, onPatternsUpdated,
   patterns, selectedPattern, stepRow, resetFlag,
-  onMouseEnter, onMouseLeave, onColsChange
+  onMouseEnter, onMouseLeave, onColsChange, isPlaying
 }) => {
   const { colors } = useContext(ColorContext);
   const [channels, setChannels] = useState(defaultInstruments);
@@ -275,6 +275,7 @@ const ChannelRack = ({
           onCopy={handleCopy}
           onPaste={handlePaste}
           selectedInstrument={selectedChannel}
+          isPlaying={isPlaying}
         />
       )}
     </Box>
