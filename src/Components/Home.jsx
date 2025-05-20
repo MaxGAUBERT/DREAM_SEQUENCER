@@ -20,17 +20,15 @@ const Home = () => {
   const [stepRow, setStepRow] = useState(0);
   const [appKey, setAppKey] = useState(0);
   const [rows, setRows]  = useState(8);
-  const [cols, setCols] = useState(16);
+  const [cols, setCols] = useState(50);
   const [loadView, setLoadView] = useState(false);
   const [projectsList, setProjectsList] = useState({});
   // Add missing state variables for playlist tracking
   const [currentPlaylistRow, setCurrentPlaylistRow] = useState(0);
   const [currentPlaylistCol, setCurrentPlaylistCol] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [songMode, setSongMode] = useState(false);
-
-  
-
   const navigate = useNavigate();
 
   // Afficher les plugins
@@ -431,19 +429,15 @@ const saveCurrentProject = () => {
           stepValue={cols}
           players={players}
           grids={grids}
-          playlist={playlist}
           patterns={patterns}
           setStepRow={setStepRow}
           onMouseEnter={handleMouseEnter} 
           onMouseLeave={handleMouseLeave}
-          setIsPlaying={setIsPlaying}
-          setSongMode={setSongMode}
-          setCurrentPlaylistRow={setCurrentPlaylistRow}
-          setCurrentPlaylistCol={setCurrentPlaylistCol}
+          setIsPlaying={setIsPlaying}  
         />
       </Box>
       <Container sx={{ mt: 4 }}>
-        <GraphicEqIcon sx={{ position: "fixed", top: 0, left: 15, color: "white", fontSize: "50px" }} />
+        <GraphicEqIcon sx={{ position: "fixed", top: 0, left: 15, color: "white", fontSize: "45px", zIndex: 2 }} />
         
         <StripMenu
             componentsMap={openComponents}
@@ -499,6 +493,7 @@ const saveCurrentProject = () => {
             onMouseEnter={() => handleMouseEnter("Add / Delete channels") }
             onMouseLeave={handleMouseLeave}
             onColsChange={handleColsChange}
+            isPlaying={isPlaying}
           />
         )}
         </ComponentManager>
