@@ -72,9 +72,6 @@ const NewProject = ({ onNewProject = () => {} }) => {
                 <Button variant="contained" color="black" onClick={() => setShowModal(true)}>
                     New Project
                 </Button>
-                <Button variant="contained" color="black" onClick={() => navigate("/ProjectManager")}>
-                    Load Project
-                </Button>
             </Box>
 
             {/* Modal de création de projet */}
@@ -93,7 +90,7 @@ const NewProject = ({ onNewProject = () => {} }) => {
                                     onChange={(e) => setProjectName(e.target.value)}
                                 />
                                 <Box mt={2} display="flex" justifyContent="space-between">
-                                    <Button onClick={() => setShowModal(false)} color="error">
+                                    <Button onClick={() => setShowModal(!showModal)} color="error">
                                         Cancel
                                     </Button>
                                     <Button variant="contained" color="primary" onClick={handleCreateProject}>
