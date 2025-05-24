@@ -1,5 +1,4 @@
-import React, { useState, useEffect} from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import ChannelRack from "./ComplexComponents/ChannelRack";
 import Transport from "./ComplexComponents/Transport";
 import StripMenu from "./FrontEnd/StripMenu";
@@ -8,88 +7,83 @@ import { Typography, Box, Container} from "@mui/material";
 import PatternManager from "./ComplexComponents/PatternManager";
 import ComponentManager from "./Contexts/ComponentManager";
 import MainPanel from "./FrontEnd/MainPanel";
+import { usePatterns } from "./ComplexComponents/Functions/usePatterns";
 import ProjectManager from "./SystemTools/ProjectManager";
 
 const Home = () => {
-  const [players, setPlayers] = useState({});
-  const [channelSources, setChannelSources] = useState({});
-  const [grids, setGrids] = useState({});
-  const [patterns, setPatterns] = useState([{ players: {}, grids: {}, id: 1, name: "Pattern 1" }]);
-  const [selectedPattern, setSelectedPattern] = useState(patterns[0]);
-  const [projectName, setProjectName] = useState("");
-  const [stepRow, setStepRow] = useState(0);
-  const [appKey, setAppKey] = useState(0);
-  const [rows, setRows]  = useState(8);
-  const [cols, setCols] = useState(50);
-  const [loadView, setLoadView] = useState(false);
-  const [projectsList, setProjectsList] = useState({});
-  // Add missing state variables for playlist tracking
-  const [currentPlaylistRow, setCurrentPlaylistRow] = useState(0);
-  const [currentPlaylistCol, setCurrentPlaylistCol] = useState(0);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [songMode, setSongMode] = useState(false);
-  const navigate = useNavigate();
+    // États de base optimisés
+    const [players, setPlayers] = useState({});
+    const [channelSources, setChannelSources] = useState({});
+    const [grids, setGrids] = useState({});
+    const [patterns, setPatterns] = useState([{ players: {}, grids: {}, id: 1, name: "Pattern 1" }]);
+    const [selectedPattern, setSelectedPattern] = useState(patterns[0]);
+    const [projectName, setProjectName] = useState("");
+    const [stepRow, setStepRow] = useState(0);
+    const [appKey, setAppKey] = useState(0);
+    // États des dimensions - centralisés
+    const [rows, setRows] = useState(8);
+    const [cols, setCols] = useState(16); // Valeur par défaut plus raisonnable
+    // États de l'interface
+    const [loadView, setLoadView] = useState(false);
+    const [projectsList, setProjectsList] = useState({});
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [songMode, setSongMode] = useState(false);
+    const [infoOnMouseHover, setInfoOnMouseHover] = useState("");
 
-  // Afficher les plugins
-  const [showPlugins, setShowPlugins] = useState(false);
+    const { addPattern, duplicatePattern, deletePattern
+    } = usePatterns({ patterns, setPatterns, selectedPattern, setSelectedPattern, channelSources, players, setGrids, grids, rows, cols });
 
-  // Initialisation de la playlist avec les dimensions correctes
-  const [playlist, setPlaylist] = useState({
-    initGrid: Array.from({ length: rows }, () =>
-      Array.from({ length: cols }, () => null) // null = cellule vide
-    ),
-  });
+    // Initialisation optimisée de la playlist avec useMemo
+    const [playlist, setPlaylist] = useState(() => ({
+      initGrid: Array.from({ length: 8 }, () => Array.from({ length: 16 }, () => null))
+    }));
 
-  const handleSamplesUpdated = (updatedPlayers) => setPlayers(updatedPlayers);
-  const handleChannelsUpdated = (updatedChannels) => setPlayers(updatedChannels);
+    const saveCurrentProject = () => {
+      if (!projectName) return; // Ne pas sauvegarder sans nom de projet
 
-  // fonction de sauvegarde des éléments
-   // Chargement initial des projets depuis localStorage
-   useEffect(() => {
+    const dataToSave = { 
+      players: channelSources, 
+      grids, 
+      patterns, 
+      playlist: {
+        initGrid: playlist.initGrid,
+        rows: rows,  // Ajout des rows
+        cols: cols   // Ajout des cols
+      }
+    };
+
     const storedProjects = JSON.parse(localStorage.getItem("projects") || "{}");
-    setProjectsList(storedProjects);
-  }, []);
+      storedProjects[projectName] = dataToSave;
+      localStorage.setItem("projects", JSON.stringify(storedProjects));
+    
+      setProjectsList(storedProjects);
+    console.log(`Projet "${projectName}" sauvegardé:`, dataToSave);
+    };
 
-  // Sauvegarde du nom de projet
-  useEffect(() => {
-    if (projectName) {
-      localStorage.setItem("projectName", projectName);
-    }
-  }, [projectName]);
 
-  // Chargement du nom de projet
-  useEffect(() => {
-    const storedProjectName = localStorage.getItem("projectName");
-    if (storedProjectName) {
-      setProjectName(storedProjectName);
-    }
-  }, []);
+   // fonction de sauvegarde des éléments
+   // Chargement initial des projets depuis localStorage
+    useEffect(() => {
+      const storedProjects = JSON.parse(localStorage.getItem("projects") || "{}");
+      setProjectsList(storedProjects);
+    }, []);
 
-  // Dans la fonction saveCurrentProject
-const saveCurrentProject = () => {
-  if (!projectName) return; // Ne pas sauvegarder sans nom de projet
+    // Sauvegarde du nom de projet
+    useEffect(() => {
+      if (projectName) {
+        localStorage.setItem("projectName", projectName);
+      }
+    }, [projectName]);
 
-  const dataToSave = { 
-    players: channelSources, 
-    grids, 
-    patterns, 
-    playlist: {
-      initGrid: playlist.initGrid,
-      rows: rows,  // Ajout des rows
-      cols: cols   // Ajout des cols
-    }
-  };
+    // Chargement du nom de projet
+    useEffect(() => {
+      const storedProjectName = localStorage.getItem("projectName");
+      if (storedProjectName) {
+        setProjectName(storedProjectName);
+      }
+    }, []);
 
-  const storedProjects = JSON.parse(localStorage.getItem("projects") || "{}");
-  storedProjects[projectName] = dataToSave;
-  localStorage.setItem("projects", JSON.stringify(storedProjects));
-  
-  setProjectsList(storedProjects);
-  console.log(`Projet "${projectName}" sauvegardé:`, dataToSave);
-};
-
-  const handleSaveAs = () => {
+    const handleSaveAs = () => {
     // Demander un nouveau nom via prompt (à remplacer par un modal dans une version plus élaborée)
     const newName = prompt("Entrer un nom pour ce projet:", projectName || "");
     
@@ -116,163 +110,7 @@ const saveCurrentProject = () => {
       setProjectsList(storedProjects);
     }
   };
-  
-  
-  const handleColsChange = (newCols) => {
-    setCols(newCols);
-    
-    // Update the playlist grid if needed
-    setPlaylist((prev) => {
-      // Create a new grid with the new number of columns
-      // but preserve existing data where possible
-      const newGrid = Array.from({ length: rows }, (_, rowIdx) => 
-        Array.from({ length: newCols }, (_, colIdx) => 
-          colIdx < prev.initGrid[rowIdx]?.length 
-            ? prev.initGrid[rowIdx][colIdx] 
-            : null
-        )
-      );
-      
-      return {
-        ...prev,
-        initGrid: newGrid
-      };
-    });
-  };
-  // État pour l'information à afficher sur le panneau principal
-  const [infoOnMouseHover, setInfoOnMouseHover] = useState("");
 
-  const [openComponents, setOpenComponents] = useState({
-    ChannelRack: true,
-    Browser: true,
-    Playlist: false,
-    "Melody Generator": false,
-    Performer: false,
-  });
-
-  // Mapping des noms de composants aux textes d'info
-  const componentInfoMap = {
-    "Browser": "Sound Browser",
-    "Playlist": "Playlist",
-    "Transport": "Transport",
-    "ChannelRack": "Channel Rack",
-  };
-
-  // Gestionnaires d'événements pour le survol
-  const handleMouseEnter = (componentName) => {
-    setInfoOnMouseHover(componentInfoMap[componentName] || componentName);
-  };
-  
-  const handleMouseLeave = () => {
-    setInfoOnMouseHover("");
-  };
-  
-  const handleSubMouseEnter = (label) => {
-    setInfoOnMouseHover(label);
-  };
-  
-  const handleSelectPattern = (newSelectedPattern) => {
-    console.log("🧠 Sauvegarde du pattern actuel :", selectedPattern);
-    console.log("🎹 Grids à sauvegarder :", grids);
-    
-    setPatterns((prevPatterns) => {
-      const updated = prevPatterns.map((pattern) =>
-        pattern.id === selectedPattern.id
-          ? { ...pattern, grids: grids }
-          : pattern
-      );
-      console.log("✅ Patterns mis à jour :", updated);
-      return updated;
-    });
-  
-    setSelectedPattern(newSelectedPattern);
-    setGrids(newSelectedPattern.grids);
-  };
-  
-  const addPattern = () => {
-    if (!Object.keys(players).length) return;
-  
-    const newId = patterns.length + 1;
-    const instrumentGrids = {};
-  
-    // Use channelSources instead of players to ensure consistency
-    Object.keys(channelSources).forEach(instrumentName => {
-      // Initialize the grid properly with your desired dimensions
-      instrumentGrids[instrumentName] = Array.from({ length: rows }, () => Array(cols).fill(false));
-    });
-  
-    const newPattern = {
-      players: { ...channelSources }, // Use channelSources here
-      grids: instrumentGrids,
-      id: newId,
-      name: `Pattern ${newId}`
-    };
-  
-    setPatterns([...patterns, newPattern]);
-    setSelectedPattern(newPattern);
-    // Also update the current grids to match the new pattern
-    setGrids(instrumentGrids);
-  };
-  
-
-  useEffect(() => {
-    const storedProjectName = localStorage.getItem("projectName");
-    if (storedProjectName) {
-      setProjectName(storedProjectName);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (patterns.length > 0) {
-      const patternExists = patterns.some(p => p.id === (selectedPattern?.id || -1));
-      if (!patternExists) {
-        setSelectedPattern(patterns[0]);
-      }
-    } else {
-      setSelectedPattern(null);
-    }
-  }, [patterns, players, grids]);
-  
-
-  
-  
-
-  const deletePattern = () => {
-    if (!selectedPattern || Object.keys(players).length === 0) return;
-
-    setPatterns((prevPatterns) => {
-      if (prevPatterns.length === 1) return prevPatterns;
-
-      const updatedPatterns = prevPatterns.filter(pattern => pattern.id !== selectedPattern.id);
-      const reindexedPatterns = updatedPatterns.map((pattern, index) => ({
-        ...pattern,
-        id: index + 1,
-        name: `Pattern ${index + 1}`
-      }));
-
-      const deletedIndex = prevPatterns.findIndex(p => p.id === selectedPattern.id);
-      const newSelected = reindexedPatterns[Math.min(deletedIndex, reindexedPatterns.length - 1)];
-      setSelectedPattern(newSelected);
-
-      return reindexedPatterns;
-    });
-  };
-
-  const handleGridsUpdated = (updatedGrids) => {
-    setGrids(updatedGrids);
-  
-    // Met à jour les patterns avec les nouveaux grids pour le pattern sélectionné
-    setPatterns((prevPatterns) =>
-      prevPatterns.map((pattern) =>
-        pattern.id === selectedPattern.id
-          ? { ...pattern, grids: updatedGrids }
-          : pattern
-      )
-    );
-  };
-
-  const handleUrlUpdated = (updatedUrl) => setChannelSources(updatedUrl);
-  const handlePatternsUpdated = (updatedPatterns) => setPatterns(updatedPatterns);
 
   const handleMenuClick = (item) => {
     if (item === "New") {
@@ -324,7 +162,7 @@ const saveCurrentProject = () => {
       localStorage.setItem("projectName", projectToLoad.name);
   
       // Restaurer les états du projet
-      setChannelSources(projectToLoad.players || {});
+      setPlayers(projectToLoad.players || {});
       setGrids(projectToLoad.grids || {});
       setPatterns(projectToLoad.patterns || []);
       
@@ -358,54 +196,176 @@ const saveCurrentProject = () => {
       setLoadView(false); // Fermer la vue de chargement
     }
   };
-  
 
-  const duplicatePattern = () => {
-    if (!selectedPattern || Object.keys(players).length === 0) return;
-  
-    const newId = patterns.length + 1;
-  
-    // Create a deep copy of the current grids
-    const deepCopyGrids = {};
-    
-    // Copy each instrument's grid from the current grids
-    Object.keys(grids).forEach(instrumentId => {
-      // Make sure we're creating a proper deep copy of each row
-      deepCopyGrids[instrumentId] = grids[instrumentId].map(row => [...row]);
+    useEffect(() => {
+      if (projectName) {
+        localStorage.setItem("projectName", projectName);
+      }
+    }, [projectName]);
+
+    useEffect(() => {
+      const storedProjectName = localStorage.getItem("projectName");
+      if (storedProjectName) {
+        setProjectName(storedProjectName);
+      }
+    }, [setProjectName]);
+
+    const [openComponents, setOpenComponents] = useState({
+      ChannelRack: true,
+      Browser: true,
+      Playlist: false,
+      "Melody Generator": false,
+      Performer: false,
     });
-  
-    // Create the new pattern with a new ID
-    const newPattern = {
-      ...selectedPattern,
-      id: newId,
-      name: `Pattern ${newId}`,
-      grids: deepCopyGrids // Add grids directly to the pattern
-    };
-  
-    // Add the new pattern to patterns
-    setPatterns(prevPatterns => [...prevPatterns, newPattern]);
-    
-    // Select the new pattern
-    setSelectedPattern(newPattern);
-    
-    // Update the current grids to match the new pattern's grids
-    setGrids(deepCopyGrids);
-  };
-  
-  // Cette fonction est appelée par le composant Playlist quand un pattern est placé dans la grille
-  const handlePlacePattern = (row, col, pattern) => {
-    setPlaylist((prev) => {
-      const newGrid = [...prev.initGrid];
+
+    // Mapping des composants optimisé avec useMemo
+    const componentInfoMap = useMemo(() => ({
+      "Browser": "Sound Browser",
+      "Playlist": "Playlist",
+      "Transport": "Transport",
+      "ChannelRack": "Channel Rack",
+    }), []);
+
+    useEffect(() => {
+      if (loadView) {
+        const storedProjects = JSON.parse(localStorage.getItem("projects") || "{}");
+        setProjectsList(storedProjects);
+      }
+    }, [loadView]);
+
+
+    // Gestionnaires d'événements optimisés avec useCallback
+    const handleMouseEnter = useCallback((componentName) => {
+      setInfoOnMouseHover(componentInfoMap[componentName] || componentName);
+    }, [componentInfoMap]);
+
+    const handleMouseLeave = useCallback(() => {
+      setInfoOnMouseHover("");
+    }, []);
+
+    const handleSubMouseEnter = useCallback((label) => {
+      setInfoOnMouseHover(label);
+    }, []);
+
+    // Gestion optimisée des colonnes avec useCallback
+    const handleColsChange = useCallback((newCols) => {
+      const validCols = Math.max(4, Math.min(256, newCols)); // Limites sécurisées
+      setCols(validCols);
       
-      newGrid[row][col] = pattern;
-  
-      return {
+      // Mise à jour optimisée de la playlist
+      setPlaylist((prev) => ({
         ...prev,
-        initGrid: newGrid
-      };
-    });
-  };
-  
+        initGrid: Array.from({ length: rows }, (_, rowIdx) => 
+          Array.from({ length: validCols }, (_, colIdx) => 
+            colIdx < (prev.initGrid[rowIdx]?.length || 0)
+              ? prev.initGrid[rowIdx][colIdx] 
+              : null
+          )
+        )
+      }));
+
+      // Mise à jour des grilles de patterns existants
+      setGrids(prevGrids => {
+        const updatedGrids = {};
+        Object.keys(prevGrids).forEach(instrument => {
+          updatedGrids[instrument] = Array.from({ length: rows }, (_, rowIdx) =>
+            Array.from({ length: validCols }, (_, colIdx) =>
+              colIdx < (prevGrids[instrument][rowIdx]?.length || 0)
+                ? prevGrids[instrument][rowIdx][colIdx]
+                : false
+            )
+          );
+        });
+        return updatedGrids;
+      });
+
+      // Mise à jour des patterns avec les nouvelles dimensions
+      setPatterns(prevPatterns => 
+        prevPatterns.map(pattern => ({
+          ...pattern,
+          grids: Object.fromEntries(
+            Object.entries(pattern.grids || {}).map(([instrument, grid]) => [
+              instrument,
+              Array.from({ length: rows }, (_, rowIdx) =>
+                Array.from({ length: validCols }, (_, colIdx) =>
+                  colIdx < (grid[rowIdx]?.length || 0) ? grid[rowIdx][colIdx] : false
+                )
+              )
+            ])
+          )
+        }))
+      );
+    }, [rows]);
+
+    // Gestionnaires d'événements optimisés
+    const handleSamplesUpdated = useCallback((updatedPlayers) => {
+      setPlayers(updatedPlayers);
+    }, []);
+
+    const handleChannelsUpdated = useCallback((updatedChannels) => {
+      setPlayers(updatedChannels);
+    }, []);
+
+    const handleUrlUpdated = useCallback((updatedUrl) => {
+      setChannelSources(updatedUrl);
+    }, []);
+
+    const handlePatternsUpdated = useCallback((updatedPatterns) => {
+      setPatterns(updatedPatterns);
+    }, []);
+
+
+
+    // Gestion des patterns optimisée
+    const handleSelectPattern = useCallback((newSelectedPattern) => {
+      console.log("🧠 Sauvegarde du pattern actuel :", selectedPattern);
+      
+      setPatterns((prevPatterns) => {
+        const updated = prevPatterns.map((pattern) =>
+          pattern.id === selectedPattern.id
+            ? { ...pattern, grids: grids }
+            : pattern
+        );
+        return updated;
+      });
+
+      setSelectedPattern(newSelectedPattern);
+      setGrids(newSelectedPattern.grids);
+    }, [selectedPattern, grids]);
+
+
+
+    const handleGridsUpdated = useCallback((updatedGrids) => {
+      setGrids(updatedGrids);
+      
+      setPatterns((prevPatterns) =>
+        prevPatterns.map((pattern) =>
+          pattern.id === selectedPattern.id
+            ? { ...pattern, grids: updatedGrids }
+            : pattern
+        )
+      );
+    }, [selectedPattern]);
+
+    const handlePlacePattern = useCallback((row, col, pattern) => {
+      setPlaylist((prev) => {
+        const newGrid = [...prev.initGrid];
+        newGrid[row][col] = pattern;
+        return { ...prev, initGrid: newGrid };
+      });
+    }, []);
+
+  useEffect(() => {
+    if (patterns.length > 0) {
+      const patternExists = patterns.some(p => p.id === (selectedPattern?.id || -1));
+      if (!patternExists) {
+        setSelectedPattern(patterns[0]);
+      }
+    } else {
+      setSelectedPattern(null);
+    }
+  }, [patterns, selectedPattern]);
+
   return (
     <Box key={appKey}>
       <Typography
@@ -426,7 +386,6 @@ const saveCurrentProject = () => {
 
       <Box sx={{ display: "flex", flexDirection: "column", top: 0, right: 0, mt: 2 }}>
         <Transport 
-          stepValue={cols}
           players={players}
           grids={grids}
           patterns={patterns}
@@ -436,17 +395,18 @@ const saveCurrentProject = () => {
           setIsPlaying={setIsPlaying}  
         />
       </Box>
+
       <Container sx={{ mt: 4 }}>
         <GraphicEqIcon sx={{ position: "fixed", top: 0, left: 15, color: "white", fontSize: "45px", zIndex: 2 }} />
         
         <StripMenu
-            componentsMap={openComponents}
-            handleClickOnItem={handleMenuClick}
-            openComponents={openComponents}
-            setOpenComponents={setOpenComponents}
-            onMouseEnter={() => handleMouseEnter("Manage components")}
-            onMouseSubEnter={(label) => handleSubMouseEnter(label)}
-            onMouseLeave={handleMouseLeave}
+          componentsMap={openComponents}
+          handleClickOnItem={handleMenuClick}
+          openComponents={openComponents}
+          setOpenComponents={setOpenComponents}
+          onMouseEnter={() => handleMouseEnter("Manage components")}
+          onMouseSubEnter={handleSubMouseEnter}
+          onMouseLeave={handleMouseLeave}
         />
 
         <PatternManager
@@ -460,6 +420,8 @@ const saveCurrentProject = () => {
           onMouseLeave={handleMouseLeave}
         />
 
+    
+
         <ComponentManager
           openComponents={openComponents}
           playlistProps={{
@@ -468,39 +430,39 @@ const saveCurrentProject = () => {
             rows,
             cols,
             setRows,
-            setCols,
+            setCols: handleColsChange, // Utilise la fonction optimisée
             onPlacePattern: handlePlacePattern,
             patterns,
-            stepRow,
-            currentPlaylistRow,     
-            currentPlaylistCol,        
+            stepRow,      
             isSongPlaying: isPlaying && songMode 
           }}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-        {openComponents.ChannelRack && (
-          <ChannelRack
-            onSamplesUpdated={handleSamplesUpdated}
-            onUrlUpdated={() => handleUrlUpdated(channelSources)}
-            onChannelsUpdated={() => handleChannelsUpdated(Object.keys(players))}
-            onGridsUpdated={handleGridsUpdated}
-            onPatternsUpdated={() => handlePatternsUpdated(patterns)}
-            patterns={patterns}
-            selectedPattern={selectedPattern}
-            stepRow={stepRow}
-            resetFlag={appKey}
-            onMouseEnter={() => handleMouseEnter("Add / Delete channels") }
-            onMouseLeave={handleMouseLeave}
-            onColsChange={handleColsChange}
-            isPlaying={isPlaying}
-          />
-        )}
+          {openComponents.ChannelRack && (
+            <ChannelRack
+              onSamplesUpdated={handleSamplesUpdated}
+              onUrlUpdated={() => handleUrlUpdated(channelSources)}
+              onChannelsUpdated={() => handleChannelsUpdated(Object.keys(players))}
+              onGridsUpdated={handleGridsUpdated}
+              onPatternsUpdated={() => handlePatternsUpdated(patterns)}
+              patterns={patterns}
+              selectedPattern={selectedPattern}
+              stepRow={stepRow}
+              resetFlag={appKey}
+              onMouseEnter={() => handleMouseEnter("Add / Delete channels") }
+              onMouseLeave={handleMouseLeave}
+              onColsChange={handleColsChange} // Transmission de la fonction optimisée
+              cols={cols} // Transmission de la valeur actuelle
+              rows={rows}
+              isPlaying={isPlaying}
+            />
+          )}
         </ComponentManager>
         
         <MainPanel infoToDisplay={infoOnMouseHover} />
 
-        {loadView && (
+         {loadView && (
           <ProjectManager
             projects={projectsList}
             onLoadProject={(projectName) => {
@@ -528,6 +490,7 @@ const saveCurrentProject = () => {
             setLoadView={setLoadView}
           />
         )}
+
       </Container>
     </Box>
   );
