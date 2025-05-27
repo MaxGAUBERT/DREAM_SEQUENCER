@@ -1,4 +1,4 @@
-import React, {useCallback, useRef,useEffect, useState} from "react";
+import React, {useRef, useEffect, useState, useMemo} from "react";
 import { Box, Button, Typography} from "@mui/material";
 import * as ReactIcons from "react-icons/md";
 import * as Tone from "tone";
@@ -6,6 +6,8 @@ import PianoMenu from "../FrontEnd/PianoMenu";
 import { useCursorManager } from "../Contexts/CursorManager";
 import { IoMove } from "react-icons/io5";
 import { PiPaintBrushHousehold } from "react-icons/pi";
+import PianoRollRow from "./PianoRollRow";
+
 
 // Génère une liste de notes ascendantes (C3 → B5) en fonction du nombre de lignes
 const generateNoteList = (num) => {
@@ -26,7 +28,7 @@ const generateNoteList = (num) => {
 
 const isBlackKey = (note) => note.includes("#");
 
-const PianoRoll = ({
+const PianoRoll = React.memo(({
   grid,
   onGridToggle,
   rows,
@@ -38,7 +40,7 @@ const PianoRoll = ({
   selectedInstrument,
   isPlaying
 }) => {
-const noteList = generateNoteList(rows).reverse(); // pour avoir aigu en haut
+const noteList = useMemo(() => generateNoteList(rows).reverse(), [rows]);
 const { cursor, setCursor } = useCursorManager();
 const [drawMode, setDrawMode] = useState(false);
 const [moveMode, setMoveMode] = useState(false);
@@ -219,81 +221,21 @@ return (
 
         {/* Grid rows with integrated piano keys */}
         {noteList.map((note, rowIdx) => (
-          <Box key={rowIdx} sx={{ display: "flex", flexDirection: "row" }}>
-            {/* Piano key */}
-            <Box
-              onClick={() => playNote(note)}
-              sx={{
-                width: 90,
-                minWidth: 60,
-                height: 22,
-                backgroundColor: isBlackKey(note) ? "#333" : "#fff",
-                color: isBlackKey(note) ? "#eee" : "#000",
-                borderRight: "1px solid #666",
-                borderBottom: "1px solid #444",
-                display: "flex",
-                alignItems: "center",
-                paddingLeft: 1,
-                cursor: "pointer",
-                fontSize: "0.8rem",
-                fontFamily: "monospace",
-                position: "sticky",
-                left: 0,
-                zIndex: 2,
-                boxShadow: "2px 0px 5px rgba(0,0,0,0.3)",
-                
-              }}
-            >
-              {note}
-            </Box>
-
-            {/* Grid cells for this row */}
-            {grid[rowIdx].map((step, colIdx) => (
-              <Box
-                key={colIdx}
-                onMouseDown={(e) => {
-                  // Empêcher la sélection de texte au niveau de chaque cellule
-                  e.preventDefault();
-                  handleMouseDown(rowIdx, colIdx);
-                }}
-                onMouseEnter={(e) => {
-                  // Vérifier si le bouton de souris est enfoncé durant le survol
-                  if (e.buttons === 1) { // 1 = bouton gauche enfoncé
-                    handleMouseEnter(rowIdx, colIdx);
-                  }
-                }}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseLeave}
-                sx={{
-                  width: 30,
-                  height: 22,
-                  bgcolor: step 
-                    ? "#4caf50" 
-                    : isBlackKey(note) 
-                      ? "#1a1a1a" 
-                      : "#222",
-                  borderBottom: `1px solid ${isBlackKey(note) ? "#2a2a2a" : "#333"}`,
-                  borderRight: "1px dotted #444",
-                  "&:hover": {
-                    bgcolor: step ? "#f44336" : "#555",
-                    cursor: "pointer"
-                  },
-                  ...(colIdx % 4 === 0 && {
-                    borderLeft: "1px solid #666"
-                  }),
-                  // Empêcher la sélection de texte
-                  userSelect: "none",
-                  
-                  
-                  
-                }}
-              />
-              ))}
-          </Box>
-        ))}
+        <PianoRollRow
+          key={rowIdx}
+          note={note}
+          rowIdx={rowIdx}
+          rowData={grid[rowIdx]}
+          playNote={playNote}
+          handleMouseDown={handleMouseDown}
+          handleMouseEnter={handleMouseEnter}
+          handleMouseUp={handleMouseUp}
+          handleMouseLeave={handleMouseLeave}
+        />
+      ))}
       </Box>
     </Box>
   );
-};
+});
 
 export default PianoRoll;

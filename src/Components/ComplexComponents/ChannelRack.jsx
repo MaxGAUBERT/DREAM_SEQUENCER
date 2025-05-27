@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo } from "react";
+import React, { useState, useEffect, useContext, useMemo, useCallback } from "react";
 import { Button, Box, Typography, Input } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import * as Tone from "tone";
@@ -8,6 +8,7 @@ import { CgPiano } from "react-icons/cg";
 import { FaFileUpload } from "react-icons/fa";
 import PianoRoll from "./PianoRoll";
 import { ColorContext } from "../Contexts/ColorProvider";
+import { itemsToMapForDisplay } from "../Contexts/ItemsToMapForDisplay";
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -27,7 +28,7 @@ const suggestions = ["FX", "Synth", "Vocal", "Cymbals", "Bass"];
 const ChannelRack = ({
   onSamplesUpdated, onUrlUpdated, onGridsUpdated, onPatternsUpdated,
   patterns, selectedPattern, stepRow, resetFlag,
-  onMouseEnter, onMouseLeave, onColsChange, isPlaying
+  onMouseEnter: infos, onMouseLeave, onColsChange, isPlaying
 }) => {
   const { colors } = useContext(ColorContext);
   const [channels, setChannels] = useState(defaultInstruments);
@@ -41,6 +42,8 @@ const ChannelRack = ({
   const [showPianoRoll, setShowPianoRoll] = useState(false);
   const [rows, setRows] = useState(30);
   const [cols, setCols] = useState(50);
+
+  const {items} = itemsToMapForDisplay();
 
   const createEmptyGrid = () => Array.from({ length: rows }, () => Array(cols).fill(false));
   const filteredSuggestions = useMemo(() =>
@@ -146,6 +149,7 @@ const ChannelRack = ({
       setChannels(prev => ({ ...prev, [channel]: sampler }));
       setChannelSources(prev => ({ ...prev, [channel]: url }));
       onUrlUpdated({ ...channelSources, [channel]: url });
+      //onSamplesUpdated({ ...channels, [channel]: sampler });
     };
     reader.readAsDataURL(audioFile);
   };
@@ -227,25 +231,25 @@ const ChannelRack = ({
   }, [selectedPattern]);
 
   return (
-    <Box onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} sx={{
+    <Box key={items} sx={{
       border: "8px inset white", borderRadius: 1, bgcolor: colors.channelRackColor,
       position: "absolute", top: 60, right: 0, maxHeight: "850px", overflow: "auto", maxWidth: "370px"
     }}>
-      <Typography variant="h5" sx={{ fontFamily: "Silkscreen, cursive" }}>Channel Rack</Typography>
+      <Typography onMouseLeave={onMouseLeave} nMouseEnter={() => infos("ChannelRack")} variant="h5" sx={{ fontFamily: "Silkscreen, cursive" }}>Channel Rack</Typography>
 
       {/* Canaux */}
       {Object.entries(channels).map(([name], i) => (
         <Box key={i} sx={{ display: "flex", gap: 1, alignItems: "center", mb: 1 }}>
           <Typography sx={{ width: "120px", fontFamily: "Silkscreen, cursive" }}>{i + 1} - {name}</Typography>
 
-          <Button component="label" variant="contained" color="gray" startIcon={<FaFileUpload size={15}/>} sx={{ fontSize: 10 }}>
+          <Button onMouseLeave={onMouseLeave}onMouseEnter={() => infos("ChRackUpload")} component="label" variant="contained" color="gray" startIcon={<FaFileUpload size={15}/>} sx={{ fontSize: 10 }}>
             {channels[name] ? "Replace" : "Load"}
             <VisuallyHiddenInput type="file" accept="audio/*" onChange={e => handleLoadSample(name, e.target.files[0])} />
           </Button>
 
-          <Button onClick={() => { setSelectedChannel(name); setShowPianoRoll(!showPianoRoll); }}><CgPiano size={25} color="black"/></Button>
-          <Button onClick={() => { setSelectedChannel(name); setShowRename(true); }}><MdOutlineDriveFileRenameOutline size={25} color="black"/></Button>
-          <Button onClick={() => handleRemoveChannel(name)}><MdDelete size={25} color="black"/></Button>
+          <Button  onMouseLeave={onMouseLeave} onMouseEnter={() => infos("ChRackPiano")} onClick={() => { setSelectedChannel(name); setShowPianoRoll(!showPianoRoll); }}><CgPiano size={25} color="black"/></Button>
+          <Button  onMouseLeave={onMouseLeave} onMouseEnter={() => infos("ChRackRename")} onClick={() => { setSelectedChannel(name); setShowRename(true); }}><MdOutlineDriveFileRenameOutline size={25} color="black"/></Button>
+          <Button  onMouseLeave={onMouseLeave} onMouseEnter={() => infos("ChRackDelete")} onClick={() => handleRemoveChannel(name)}><MdDelete size={25} color="black"/></Button>
         </Box>
       ))}
 
@@ -258,13 +262,13 @@ const ChannelRack = ({
       )}
 
       {/* Ajout */}
-      <Button onClick={() => !showRename && setShowInput(p => !p)}>
+      <Button onMouseEnter={() => infos("ChRackAdd")} onMouseLeave={onMouseLeave} onClick={() => !showRename && setShowInput(p => !p)}>
         {showInput ? <MdCancel size={20} /> : <MdAdd size={25} />}
       </Button>
       {showInput && (
         <Box>
           <Input value={newChannelName} onChange={e => setNewChannelName(e.target.value)} onFocus={() => setShowSuggestions(true)} />
-          <Button onClick={handleCreateChannel}><GiConfirmed size={20}/> Create</Button>
+          <Button onMouseLeave={onMouseLeave} onMouseEnter={() => infos("ChRackCreate")}onClick={handleCreateChannel}><GiConfirmed size={20}/> Create </Button>
         </Box>
       )}
 
