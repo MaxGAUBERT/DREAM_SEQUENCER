@@ -14,6 +14,7 @@ import {usePattern} from "./ComplexComponents/Functions/usePattern";
 import { useChannels } from "./ComplexComponents/Functions/useChannels";
 import { useStorage } from "./ComplexComponents/Functions/useStorage";
 import { useTransport } from "./ComplexComponents/Functions/useTransport";
+import { useMemoizedHandlers } from "./Contexts/memoizedHandlers";
 
 const Home = () => {
   // États principaux
@@ -40,6 +41,71 @@ const Home = () => {
   const [songMode, setSongMode] = useState(false);
   
   const navigate = useNavigate();
+
+    // Gestionnaires d'événements pour le survol
+  const handleMouseEnter = (componentName) => {
+    setInfoOnMouseHover(componentInfoMap[componentName] || componentName);
+  };
+  
+  const handleMouseLeave = () => {
+    setInfoOnMouseHover("");
+  };
+
+  const componentInfoMap = {
+    "Browser": "Sound Browser",
+    "Playlist": "Playlist",
+    "Transport": "Transport",
+    "StripMenu": "Strip Menu",
+    "AnalogSynth": "View Analog Synth",
+    "Modulator": "View Modulator",
+    "New": "Create a new project",
+    "Save As": "Save project As",
+    "Save": "Save current project",
+    "Load": "Load an existing project",
+    "Settings": "Change settings",
+    "Quit": "Quit the application",
+    "ChannelRack": "Add / Delete channels",
+    "ChRackUpload": "Load a sample",
+    "ChRackPiano": "Add pianoRoll",
+    "ChRackDelete": "Delete a channel",
+    "ChRackRename": "Rename a channel",
+    "ChRackCreate": "Confirm channel to add",
+    "ChRackAdd": "Add a new channel",
+    "Play Song": "Play in song mode", 
+    "Play Pattern": "Play current pattern",
+    "Stop Song": "Stop the song",
+    "Stop Pattern": "Stop current pattern", 
+    "Record": "Record sequence", 
+    "Replay": "Replay recorded sequence", 
+    "Clear": "Clear recorded sequence", 
+    "BPM": "Adjust BPM",
+    "LoopMode": "Toggle Loop Mode",
+    "SongMode": "Toggle Song Mode",
+    "PatternMode": "Toggle Pattern Mode",
+
+
+  };
+
+
+  // Mise à jour des colonnes
+  const handleColsChange = (newCols) => {
+    setCols(newCols);
+    
+    setPlaylist((prev) => {
+      const newGrid = Array.from({ length: rows }, (_, rowIdx) => 
+        Array.from({ length: newCols }, (_, colIdx) => 
+          colIdx < prev.initGrid[rowIdx]?.length 
+            ? prev.initGrid[rowIdx][colIdx] 
+            : null
+        )
+      );
+      
+      return {
+        ...prev,
+        initGrid: newGrid
+      };
+    });
+  };
 
   const {} = useTransport({ stepValue: stepRow, players, grids, setStepRow, onMouseEnter: setInfoOnMouseHover,
     onMouseLeave: setInfoOnMouseHover, setIsPlaying });
@@ -84,46 +150,6 @@ const Home = () => {
     Performer: false,
   });
 
-  // Configuration des infos au survol
-  const componentInfoMap = {
-    "Browser": "Sound Browser",
-    "Playlist": "Playlist",
-    "Transport": "Transport",
-    "ChannelRack": "Channel Rack",
-  };
-
-  // Gestionnaires d'événements pour le survol
-  const handleMouseEnter = (componentName) => {
-    setInfoOnMouseHover(componentInfoMap[componentName] || componentName);
-  };
-  
-  const handleMouseLeave = () => {
-    setInfoOnMouseHover("");
-  };
-  
-  const handleSubMouseEnter = (label) => {
-    setInfoOnMouseHover(label);
-  };
-
-  // Mise à jour des colonnes
-  const handleColsChange = (newCols) => {
-    setCols(newCols);
-    
-    setPlaylist((prev) => {
-      const newGrid = Array.from({ length: rows }, (_, rowIdx) => 
-        Array.from({ length: newCols }, (_, colIdx) => 
-          colIdx < prev.initGrid[rowIdx]?.length 
-            ? prev.initGrid[rowIdx][colIdx] 
-            : null
-        )
-      );
-      
-      return {
-        ...prev,
-        initGrid: newGrid
-      };
-    });
-  };
 
   const handleSelectPattern = (newSelectedPattern) => {
     console.log('🔄 Changement de pattern:', selectedPattern?.name, '→', newSelectedPattern?.name);
@@ -153,18 +179,6 @@ const Home = () => {
     }
   };
 
-  // Placement de pattern dans la playlist
-  const handlePlacePattern = (row, col, pattern) => {
-    setPlaylist((prev) => {
-      const newGrid = [...prev.initGrid];
-      newGrid[row][col] = pattern;
-      return {
-        ...prev,
-        initGrid: newGrid
-      };
-    });
-  };
-
   // Fonction pour créer un nouveau projet
   const createNewProject = (projectName) => {
     // Forcer un re-render complet
@@ -191,7 +205,7 @@ const Home = () => {
   // Gestion du menu
   const handleMenuClick = (item) => {
     switch (item) {
-      case "New":
+      case "New":  
         const newProjectName = prompt("Project name:");
         if (newProjectName?.trim()) {
           createNewProject(newProjectName.trim());
@@ -233,6 +247,17 @@ const Home = () => {
       setGrids({});
     }
   }, [patterns]);
+
+  const { mouse, callbacks } = useMemoizedHandlers({
+    handleMouseEnter,
+    handleMouseLeave,
+    handleColsChange,
+    handleSamplesUpdated,
+    handleUrlUpdated,
+    handleChannelsUpdated,
+    handleGridsUpdated,
+    handlePatternsUpdated,
+  });
 
 
   return (
@@ -281,8 +306,7 @@ const Home = () => {
           handleClickOnItem={handleMenuClick}
           openComponents={openComponents}
           setOpenComponents={setOpenComponents}
-          onMouseEnter={() => handleMouseEnter("Manage components")}
-          onMouseSubEnter={handleSubMouseEnter}
+          onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         />
         
@@ -293,8 +317,8 @@ const Home = () => {
           addPattern={addPattern}
           duplicatePattern={duplicatePattern}
           deletePattern={deletePattern}
-          onMouseEnter={() => handleMouseEnter("Add / Delete / Duplicate patterns")}
-          onMouseLeave={handleMouseLeave}
+          onMouseEnter={mouse.onPatternMouseEnter}
+          onMouseLeave={mouse.onMouseLeave}
         />
       
         <ComponentManager
@@ -306,7 +330,6 @@ const Home = () => {
             cols,
             setRows,
             setCols,
-            onPlacePattern: handlePlacePattern,
             patterns,
             stepRow,
             currentPlaylistRow,     
@@ -318,18 +341,18 @@ const Home = () => {
         >
           {openComponents.ChannelRack && (
             <ChannelRack
-              onSamplesUpdated={handleSamplesUpdated}
-              onUrlUpdated={() => handleUrlUpdated(channelSources)}
-              onChannelsUpdated={() => handleChannelsUpdated(Object.keys(players))}
-              onGridsUpdated={handleGridsUpdated}
-              onPatternsUpdated={() => handlePatternsUpdated(patterns)}
+              onSamplesUpdated={callbacks.handleSamplesUpdated}
+              onUrlUpdated={() => callbacks.handleUrlUpdated(channelSources)}
+              onChannelsUpdated={() => callbacks.handleChannelsUpdated(players)}
+              onGridsUpdated={callbacks.handleGridsUpdated}
+              onPatternsUpdated={() => callbacks.handlePatternsUpdated(patterns)}
               patterns={patterns}
               selectedPattern={selectedPattern}
               stepRow={stepRow}
               resetFlag={appKey}
-              onMouseEnter={() => handleMouseEnter("Add / Delete channels")}
+              onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
-              onColsChange={handleColsChange}
+              onColsChange={callbacks.handleColsChange}
               isPlaying={isPlaying}
             />
           )}
