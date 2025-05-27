@@ -1,11 +1,14 @@
 import React, { useState } from "react";
 import { Menu, MenuItem, Button, Stack, Box } from "@mui/material";
+import { itemsToMapForDisplay } from "../Contexts/ItemsToMapForDisplay"; // Assurez-vous que ce chemin est correct
 
-const StripMenu = ({ componentsMap, handleClickOnItem, openComponents, setOpenComponents, onMouseEnter, onMouseLeave }) => {
+const StripMenu = ({ componentsMap, handleClickOnItem, openComponents, setOpenComponents, onMouseEnter: infos, onMouseLeave }) => {
   const [fileAnchor, setFileAnchor] = useState(null);
   const [editAnchor, setEditAnchor] = useState(null);
   const [viewAnchor, setViewAnchor] = useState(null);
   const [toolsAnchor, setToolsAnchor] = useState(null);
+
+  const items = itemsToMapForDisplay();
 
   const handleOpenMenu = (setter) => (event) => setter(event.currentTarget);
   const handleCloseMenu = (setter) => () => setter(null);
@@ -20,7 +23,7 @@ const StripMenu = ({ componentsMap, handleClickOnItem, openComponents, setOpenCo
   };
 
   return (
-    <Box onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
       <Stack
         direction="row"
         spacing={0.5}
@@ -31,19 +34,20 @@ const StripMenu = ({ componentsMap, handleClickOnItem, openComponents, setOpenCo
           backgroundColor: "#1e1e1e",
           padding: "2px",
           boxShadow: "0px 4px 10px rgba(255, 255, 255, 0.5)",
+          zIndex: 1000,
         }}
       >
         {/* FILE */}
         <Button variant="contained" sx={buttonStyle} onClick={handleOpenMenu(setFileAnchor)}>
           File
         </Button>
-        <Menu anchorEl={fileAnchor} open={Boolean(fileAnchor)} onClose={handleCloseMenu(setFileAnchor)}>
-          <MenuItem onClick={() => handleClickOnItem("New")}>New</MenuItem>
-          <MenuItem onClick={() => handleClickOnItem("Save As")}>Save As</MenuItem>
-          <MenuItem onClick={() => handleClickOnItem("Save")}>Save</MenuItem>
-          <MenuItem onClick={() => handleClickOnItem("Load")}>Load</MenuItem>
-          <MenuItem onClick={() => handleClickOnItem("Settings")}>Settings</MenuItem>
-          <MenuItem onClick={() => handleClickOnItem("Quit")}>Quit</MenuItem>
+        <Menu key={items} anchorEl={fileAnchor} open={Boolean(fileAnchor)} onClose={handleCloseMenu(setFileAnchor)}>
+          <MenuItem onMouseEnter={() => infos("New")} onClick={() => handleClickOnItem("New")}>New</MenuItem>
+          <MenuItem onMouseEnter={() => infos("Save As")} onClick={() => handleClickOnItem("Save As")}>Save As</MenuItem>
+          <MenuItem onMouseEnter={() => infos("Save")} onClick={() => handleClickOnItem("Save")}>Save</MenuItem>
+          <MenuItem onMouseEnter={() => infos("Load")} onClick={() => handleClickOnItem("Load")}>Load</MenuItem>
+          <MenuItem onMouseEnter={() => infos("Settings")} onClick={() => handleClickOnItem("Settings")}>Settings</MenuItem>
+          <MenuItem onMouseEnter={() => infos("Quit")} onClick={() => handleClickOnItem("Quit")}>Quit</MenuItem>
         </Menu>
 
         {/* EDIT */}
@@ -60,9 +64,9 @@ const StripMenu = ({ componentsMap, handleClickOnItem, openComponents, setOpenCo
           View
         </Button>
         <Menu anchorEl={viewAnchor} open={Boolean(viewAnchor)} onClose={handleCloseMenu(setViewAnchor)}>
-          <MenuItem onClick={() => handleOpenComponent("ChannelRack")}>ChannelRack</MenuItem>
-          <MenuItem onClick={() => handleOpenComponent("Browser")}>Browser</MenuItem>
-          <MenuItem onClick={() => handleOpenComponent("Playlist")}>Playlist</MenuItem>
+          <MenuItem onMouseEnter={() => infos("Channel Rack")}onClick={() => handleOpenComponent("ChannelRack")}>ChannelRack</MenuItem>
+          <MenuItem onMouseEnter={() => infos("Browser")}onClick={() => handleOpenComponent("Browser")}>Browser</MenuItem>
+          <MenuItem onMouseEnter={() => infos("Playlist")}onClick={() => handleOpenComponent("Playlist")}>Playlist</MenuItem>
         </Menu>
 
         {/* TOOLS */}
@@ -70,8 +74,8 @@ const StripMenu = ({ componentsMap, handleClickOnItem, openComponents, setOpenCo
           Tools
         </Button>
         <Menu anchorEl={toolsAnchor} open={Boolean(toolsAnchor)} onClose={handleCloseMenu(setToolsAnchor)}>
-          <MenuItem onClick={() => handleOpenComponent("AnalogSynth")}>Analog Synth</MenuItem>
-          <MenuItem onClick={() => handleOpenComponent("Modulator")}>Modulator</MenuItem>
+          <MenuItem onMouseEnter={() => infos("AnalogSynth")}onClick={() => handleOpenComponent("AnalogSynth")}>Analog Synth</MenuItem>
+          <MenuItem onMouseEnter={() => infos("Modulator")}onClick={() => handleOpenComponent("Modulator")}>Modulator</MenuItem>
         </Menu>
       </Stack>
 
