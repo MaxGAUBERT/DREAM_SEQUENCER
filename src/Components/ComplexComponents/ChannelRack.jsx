@@ -49,7 +49,7 @@ const ChannelRack = ({
   const [grids, setGrids] = useState(() =>
     Object.fromEntries(Object.keys(channels).map(key => [key, createEmptyGrid()]))
   );
-
+  
   const updateGrids = (updateFn) => {
     setGrids(prev => {
       const updated = updateFn(prev);
@@ -57,6 +57,7 @@ const ChannelRack = ({
       return updated;
     });
   };
+  
 
   const handleCopy = () => {
     // copier les notes de la grille sélectionnée
@@ -85,8 +86,6 @@ const ChannelRack = ({
       }
     });
   };
-
-  const ensureGridSize = (grid) => Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => grid?.[r]?.[c] || false));
 
   const handleRenameChannel = () => {
   if (!selectedChannel || !renamedChannel) return;
@@ -138,15 +137,6 @@ const ChannelRack = ({
     setShowInput(false);
   };
 
-  const handleGridToggle = (inst, rowIdx, colIdx) => {
-    updateGrids(prev => ({
-      ...prev,
-      [inst]: ensureGridSize(prev[inst]).map((row, idx) =>
-        idx === rowIdx ? row.map((cell, i) => (i === colIdx ? !cell : cell)) : row
-      )
-    }));
-  };
-
   const handleLoadSample = (channel, audioFile) => {
     if (!audioFile) return;
     const reader = new FileReader();
@@ -159,6 +149,16 @@ const ChannelRack = ({
     };
     reader.readAsDataURL(audioFile);
   };
+  
+  const handleGridToggle = (inst, rowIdx, colIdx) => {
+    updateGrids(prev => ({
+      ...prev,
+      [inst]: ensureGridSize(prev[inst]).map((row, idx) =>
+        idx === rowIdx ? row.map((cell, i) => (i === colIdx ? !cell : cell)) : row
+      )
+    }));
+  };
+  
 
    const handleRemoveChannel = (channelId) => {
     if (!channelId) return;
@@ -186,6 +186,20 @@ const ChannelRack = ({
       return updated;
     });
   };
+
+  const ensureGridSize = (grid) => {
+  if (!grid || !Array.isArray(grid)) {
+    return Array.from({ length: rows }, () => Array(cols).fill(false));
+  }
+  
+  return Array.from({ length: rows }, (_, rowIdx) =>
+    Array.from({ length: cols }, (_, colIdx) => 
+      grid[rowIdx] && grid[rowIdx][colIdx] !== undefined 
+        ? grid[rowIdx][colIdx] 
+        : false
+    )
+  );
+};
 
 
   useEffect(() => {

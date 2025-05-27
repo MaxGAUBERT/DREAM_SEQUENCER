@@ -6,8 +6,6 @@ import PianoMenu from "../FrontEnd/PianoMenu";
 import { useCursorManager } from "../Contexts/CursorManager";
 import { IoMove } from "react-icons/io5";
 import { PiPaintBrushHousehold } from "react-icons/pi";
-import { FaAngleDoubleUp } from "react-icons/fa";
-import { FaAngleDoubleDown } from "react-icons/fa";
 
 // Génère une liste de notes ascendantes (C3 → B5) en fonction du nombre de lignes
 const generateNoteList = (num) => {
@@ -47,14 +45,7 @@ const [moveMode, setMoveMode] = useState(false);
 const [paintMode, setPaintMode] = useState(false);
 const [movingNote, setMovingNote] = useState(null); // { fromRow, fromCol }
 const [isPainting, setIsPainting] = useState(false);
-const [transposeUp, setTransposeUp] = useState(false);
-const [transposeDown, setTransposeDown] = useState(false);
-const [direction, setDirection] = useState({
-  up: false,
-  down: false
-}); 
-
-
+const fileInputRef = useRef(null);
 
 
 // Empêcher le comportement par défaut du navigateur lors du maintien du clic
@@ -101,7 +92,6 @@ const setMode = (mode) => {
   setMoveMode(mode === "move");
   setMovingNote(null);
   setCursor(mode === "draw" ? "crosshair" : mode === "move" ? "move" : "default");
-  setTransposeMode(mode === "transpose");
 };
 
 const handleMouseDown = (row, col) => {
@@ -199,20 +189,6 @@ return (
           sx={{ fontSize: 12, bgcolor: moveMode ? "#444" : "transparent", color: "#fff", fontFamily: "monospace" }}
         >
           <IoMove size={20} />
-        </Button>
-
-        <Button
-          onClick={() => {setDirection({up: true, down: false}); setMode("transposeUp"); handleTranspose}}
-          sx={{ fontSize: 12, bgcolor: transposeMode ? "#444": "transparent", color: "#fff", fontFamily: "monospace" }}
-        >
-          <FaAngleDoubleUp size={20} />
-        </Button>
-
-        <Button
-          onClick={() =>{setDirection({up: true, down: false}); setMode("transposeDown"); handleTranspose}}
-          sx={{ fontSize: 12, bgcolor: transposeMode ? "#444": "transparent", color: "#fff", fontFamily: "monospace" }}
-        >
-          <FaAngleDoubleDown size={20} />
         </Button>
 
       </Box>
