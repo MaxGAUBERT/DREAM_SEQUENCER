@@ -1,4 +1,4 @@
-import React, {useRef, useEffect, useState, useMemo} from "react";
+import React, {useRef, useEffect, useState, useMemo, useCallback} from "react";
 import { Box, Button, Typography} from "@mui/material";
 import * as ReactIcons from "react-icons/md";
 import * as Tone from "tone";
@@ -42,12 +42,16 @@ const PianoRoll = React.memo(({
 }) => {
 const noteList = useMemo(() => generateNoteList(rows).reverse(), [rows]);
 const { cursor, setCursor } = useCursorManager();
-const [drawMode, setDrawMode] = useState(false);
-const [moveMode, setMoveMode] = useState(false);
-const [paintMode, setPaintMode] = useState(false);
 const [movingNote, setMovingNote] = useState(null); // { fromRow, fromCol }
 const [isPainting, setIsPainting] = useState(false);
-const fileInputRef = useRef(null);
+const [mode, setMode] = useState("draw");
+const drawMode = mode === "draw";
+const paintMode = mode === "paint";
+const moveMode = mode === "move";
+const [isMouseDown, setIsMouseDown] = useState(false);
+
+
+
 
 
 // Empêcher le comportement par défaut du navigateur lors du maintien du clic
@@ -83,57 +87,69 @@ useEffect(() => {
   };
 }, []);
  
-const playNote = (note) => {
+const playNote = useCallback((note) => {
   const synth = new Tone.Synth().toDestination();
   synth.triggerAttackRelease(note, "8n");
-};
+},[]);
 
-const setMode = (mode) => {
-  setDrawMode(mode === "draw");
-  setPaintMode(mode === "paint");
-  setMoveMode(mode === "move");
-  setMovingNote(null);
-  setCursor(mode === "draw" ? "crosshair" : mode === "move" ? "move" : "default");
-};
+const selectMode = useCallback((newMode) => {
+  setMode(newMode);      // "draw", "paint" ou "move"
+  setMovingNote(null);   // reset note en déplacement si besoin
+  setIsPainting(false);  // reset peinture active
+}, []);
 
-const handleMouseDown = (row, col) => {
-  if (moveMode && grid[row][col]) {
-    setMovingNote({ fromRow: row, fromCol: col });
-  } else if (drawMode) {
+const handleMouseDown = useCallback((row, col) => {
+  setIsMouseDown(!isMouseDown);
+
+  if (mode === "move" && grid[row][col]) {
+    setMovingNote({ fromRow: row, fromCol: col, moved: false });
+  } else if (mode === "draw") {
     onGridToggle(row, col);
-  } else if (paintMode) {
-    // Activer le mode peinture en cours
+  } else if (mode === "paint") {
     setIsPainting(true);
-    // Toujours activer la note (pas de toggle)
     if (!grid[row][col]) {
       onGridToggle(row, col);
     }
   }
-};
+}, [mode]);
 
-const handleMouseEnter = (row, col) => {
-  if (moveMode && movingNote) {
-    const { fromRow, fromCol } = movingNote;
-    if (row !== fromRow || col !== fromCol) {
-      onGridToggle(fromRow, fromCol);
-      onGridToggle(row, col);
-      setMovingNote({ fromRow: row, fromCol: col });
-    }
-  } else if (paintMode && isPainting) {
-    // Si on est en mode peinture et qu'on maintient le bouton enfoncé, 
-    // alors on active la note au passage
-    // Important: ici nous forçons l'activation plutôt que de basculer
+const handleMouseEnter = useCallback((row, col) => {
+  if (!isMouseDown) return;
+
+  if (mode === "paint" && isPainting) {
     if (!grid[row][col]) {
       onGridToggle(row, col);
     }
   }
-};
 
-const handleMouseUp = () => {
-  // Arrêter la peinture quand on relâche le bouton de la souris
+  if (mode === "move" && movingNote) {
+    const { fromRow, fromCol, moved } = movingNote;
+
+    if (row === fromRow && col === fromCol) return;
+
+    if (!moved) {
+      onGridToggle(fromRow, fromCol); // supprime l’ancienne
+    }
+
+    if (!grid[row][col]) {
+      onGridToggle(row, col); // pose nouvelle
+      setMovingNote({ fromRow: row, fromCol: col, moved: true });
+    }
+  }
+}, [isMouseDown, mode, isPainting, grid, onGridToggle, movingNote]);
+
+const handleMouseUp = useCallback(() => {
+  setIsMouseDown(false);
   setIsPainting(false);
   setMovingNote(null);
-};
+}, []);
+
+useEffect(() => {
+  const handleUp = () => handleMouseUp();
+  window.addEventListener("mouseup", handleUp);
+  return () => window.removeEventListener("mouseup", handleUp);
+}, [handleMouseUp]);
+
 
 const handleMouseLeave = () => {
   // Pour les cas où la souris quitte le composant sans mouseup
@@ -173,21 +189,21 @@ return (
       <Box sx={{ position: "absolute", top: 10, left: 20, display: "flex", gap: 2 }}>
         <PianoMenu onCut={onClearGrid} onCopy={onCopy} onPaste={onPaste}/>
         <Button
-          onClick={() => setMode("draw")}
+          onClick={() => selectMode("draw")}
           sx={{ fontSize: 12, bgcolor: drawMode ? "#444" : "transparent", color: "#fff", fontFamily: "monospace" }}
         >
           <ReactIcons.MdDraw size={20} />
         </Button>
 
         <Button
-          onClick={() => setMode("paint")}
+          onClick={() => selectMode("paint")}
           sx={{ fontSize: 12, bgcolor: paintMode ? "#444" : "transparent", color: "#fff", fontFamily: "monospace" }}
         >
           <PiPaintBrushHousehold size={20} />
         </Button>
 
         <Button
-          onClick={() => setMode("move")}
+          onClick={() => selectMode("move")}
           sx={{ fontSize: 12, bgcolor: moveMode ? "#444" : "transparent", color: "#fff", fontFamily: "monospace" }}
         >
           <IoMove size={20} />

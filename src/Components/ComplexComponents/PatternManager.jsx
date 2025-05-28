@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { GrDuplicate } from "react-icons/gr";
+import { BiRename } from "react-icons/bi";
+import { PatternRenamer } from "../FrontEnd/PatternRenamer";
 import {
   Box,
   Button,
@@ -19,6 +21,7 @@ const PatternManager = ({
   selectPattern,
   addPattern,
   duplicatePattern,
+  renamePattern,
   deletePattern,
   onMouseEnter,
   onMouseLeave
@@ -98,8 +101,8 @@ const PatternManager = ({
           sx={{
             backgroundColor: "gray.800",
             color: "white",
-            width: 28,
-            height: 28,
+            width: 18,
+            height: 18,
             position: "relative",
             "&:hover": {
               backgroundColor: "gray.900",
@@ -142,7 +145,27 @@ const PatternManager = ({
             <GrDuplicate style={{ marginRight: 8 }} />
             Duplicate
           </MenuItem>
+
+          <MenuItem
+            onClick={() => {
+              renamePattern();
+              handleCloseMenu();
+            }}
+          >
+              <BiRename style={{marginRight: 8}} size={20}/>
+              Rename Pattern
+          </MenuItem>
         </Menu>
+         
+
+        <PatternRenamer
+          selectedPattern={selectedPattern}
+          renamePattern={renamePattern}
+        />
+    
+        
+
+
       </Box>
     </Box>
   );
