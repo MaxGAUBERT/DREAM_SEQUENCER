@@ -1,10 +1,14 @@
-import { useCallback } from "react";
+import {Box, TextField} from "@mui/material";
+import { useCallback, useState } from "react";
+
+
 
 export const usePattern = ({
   patterns,
   selectedPattern,
   setPatterns, setSelectedPattern, players, channelSources, grids, rows, cols, setGrids
 }) => {
+
   const addPattern = useCallback(() => {
     if (!Object.keys(players).length) return;
 
@@ -61,7 +65,8 @@ export const usePattern = ({
     const newPattern = {
       ...selectedPattern,
       id: newId,
-      name: `Pattern ${newId}`,
+      //name: `Pattern ${newId}`,
+      name: selectedPattern.name,
       grids: deepCopyGrids,
     };
 
@@ -70,6 +75,21 @@ export const usePattern = ({
     setGrids(deepCopyGrids);
   }, [selectedPattern, patterns, players, grids, setPatterns, setSelectedPattern, setGrids]);
 
-  return { addPattern, deletePattern, duplicatePattern };
+  const renamePattern = useCallback((newName) => {
+    if (!selectedPattern) return;
+
+    setPatterns(prev => 
+      prev.map(p => p.id === selectedPattern.id ? {...p, name: newName}: p
+
+      ),
+
+    )
+
+    setSelectedPattern(prev => 
+      prev ? {...prev, name: newName}: null
+    );
+  },[selectedPattern, setPatterns, setSelectedPattern]);
+
+  return { addPattern, deletePattern, renamePattern, duplicatePattern };
 };
 
