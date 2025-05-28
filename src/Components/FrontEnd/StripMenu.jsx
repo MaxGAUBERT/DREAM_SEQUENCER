@@ -64,7 +64,7 @@ const StripMenu = ({ componentsMap, handleClickOnItem, openComponents, setOpenCo
           View
         </Button>
         <Menu anchorEl={viewAnchor} open={Boolean(viewAnchor)} onClose={handleCloseMenu(setViewAnchor)}>
-          <MenuItem onMouseEnter={() => infos("Channel Rack")}onClick={() => handleOpenComponent("ChannelRack")}>ChannelRack</MenuItem>
+          <MenuItem onMouseEnter={() => infos("Channel Rack")} onClick={() => handleOpenComponent("ChannelRack")}>ChannelRack</MenuItem>
           <MenuItem onMouseEnter={() => infos("Browser")}onClick={() => handleOpenComponent("Browser")}>Browser</MenuItem>
           <MenuItem onMouseEnter={() => infos("Playlist")}onClick={() => handleOpenComponent("Playlist")}>Playlist</MenuItem>
         </Menu>
