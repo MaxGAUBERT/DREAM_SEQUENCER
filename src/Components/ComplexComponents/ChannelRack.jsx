@@ -9,6 +9,7 @@ import { FaFileUpload } from "react-icons/fa";
 import PianoRoll from "./PianoRoll";
 import { ColorContext } from "../Contexts/ColorProvider";
 import { itemsToMapForDisplay } from "../Contexts/ItemsToMapForDisplay";
+import { RiResetLeftFill } from "react-icons/ri";
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -167,6 +168,9 @@ const ChannelRack = React.memo(({
    const handleRemoveChannel = (channelId) => {
     if (!channelId) return;
 
+    setShowSuggestions(false);
+    setShowInput(false);
+
     setChannels(prev => {
       const updated = { ...prev };
       delete updated[channelId];
@@ -264,10 +268,16 @@ const ChannelRack = React.memo(({
       <Button onMouseEnter={() => infos("ChRackAdd")} onMouseLeave={onMouseLeave} onClick={() => !showRename && setShowInput(p => !p)}>
         {showInput ? <MdCancel size={20} /> : <MdAdd size={25} />}
       </Button>
+      
+      {Object.keys(channels).length === 0 && (
+      <Button onMouseEnter={() => infos("ChReset")} onMouseLeave={onMouseLeave} onClick={() => setChannels(defaultInstruments)}>
+        <RiResetLeftFill size={25} />
+      </Button>
+      )}
       {showInput && (
         <Box>
           <Input value={newChannelName} onChange={e => setNewChannelName(e.target.value)} onFocus={() => setShowSuggestions(true)} />
-          <Button onMouseLeave={onMouseLeave} onMouseEnter={() => infos("ChRackCreate")}onClick={handleCreateChannel}><GiConfirmed size={20}/> Create </Button>
+          <Button onMouseLeave={onMouseLeave} onMouseEnter={() => infos("ChRackCreate")} onClick={handleCreateChannel}><GiConfirmed size={20}/> Create </Button>
         </Box>
       )}
 

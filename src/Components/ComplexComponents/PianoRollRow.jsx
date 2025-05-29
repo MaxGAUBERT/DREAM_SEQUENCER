@@ -42,8 +42,9 @@ const PianoRollRow = React.memo(
               e.preventDefault();
               handleMouseDown(rowIdx, colIdx);
             }}
-            onMouseEnter={(e) => {
-              if (e.buttons === 1) handleMouseEnter(rowIdx, colIdx);
+            onMouseEnter={() => {
+             
+              handleMouseEnter(rowIdx, colIdx);
             }}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseLeave}

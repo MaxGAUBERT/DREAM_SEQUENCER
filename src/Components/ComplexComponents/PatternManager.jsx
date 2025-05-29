@@ -146,15 +146,6 @@ const PatternManager = ({
             Duplicate
           </MenuItem>
 
-          <MenuItem
-            onClick={() => {
-              renamePattern();
-              handleCloseMenu();
-            }}
-          >
-              <BiRename style={{marginRight: 8}} size={20}/>
-              Rename Pattern
-          </MenuItem>
         </Menu>
          
 

@@ -1,5 +1,5 @@
-import React, {useRef, useEffect, useState, useMemo, useCallback} from "react";
-import { Box, Button, Typography} from "@mui/material";
+import React, { useRef, useEffect, useState, useMemo, useCallback } from "react";
+import { Box, Button, Typography } from "@mui/material";
 import * as ReactIcons from "react-icons/md";
 import * as Tone from "tone";
 import PianoMenu from "../FrontEnd/PianoMenu";
@@ -7,7 +7,6 @@ import { useCursorManager } from "../Contexts/CursorManager";
 import { IoMove } from "react-icons/io5";
 import { PiPaintBrushHousehold } from "react-icons/pi";
 import PianoRollRow from "./PianoRollRow";
-
 
 // Génère une liste de notes ascendantes (C3 → B5) en fonction du nombre de lignes
 const generateNoteList = (num) => {
@@ -26,7 +25,6 @@ const generateNoteList = (num) => {
   return result;
 };
 
-const isBlackKey = (note) => note.includes("#");
 
 const PianoRoll = React.memo(({
   grid,
@@ -38,126 +36,235 @@ const PianoRoll = React.memo(({
   onCopy,
   onPaste,
   selectedInstrument,
-  isPlaying
+  isPlaying,
+  currentStep
 }) => {
-const noteList = useMemo(() => generateNoteList(rows).reverse(), [rows]);
-const { cursor, setCursor } = useCursorManager();
-const [movingNote, setMovingNote] = useState(null); // { fromRow, fromCol }
-const [isPainting, setIsPainting] = useState(false);
-const [mode, setMode] = useState("draw");
-const drawMode = mode === "draw";
-const paintMode = mode === "paint";
-const moveMode = mode === "move";
-const [isMouseDown, setIsMouseDown] = useState(false);
-
-
-
-
-
-// Empêcher le comportement par défaut du navigateur lors du maintien du clic
-useEffect(() => {
-  const preventDefaultDrag = (e) => {
-    if (paintMode) {
-      e.preventDefault();
-      return false;
-    }
-  };
-
-  document.addEventListener('dragstart', preventDefaultDrag);
-  document.addEventListener('selectstart', preventDefaultDrag);
+  const noteList = useMemo(() => generateNoteList(rows).reverse(), [rows]);
+  const { cursor, setCursor } = useCursorManager();
   
-  return () => {
-    document.removeEventListener('dragstart', preventDefaultDrag);
-    document.removeEventListener('selectstart', preventDefaultDrag);
-  };
-}, [paintMode]);
+  // État optimisé pour les interactions
+  const [interactionState, setInteractionState] = useState({
+    mode: "draw", // "draw", "paint", "move"
+    isMouseDown: false,
+    isPainting: false,
+    movingNote: null, // { fromRow, fromCol, moved }
+    paintedCells: new Set() // Track painted cells to avoid duplicates
+  });
 
-// Ajouter un mousedown global pour gérer la peinture
-useEffect(() => {
-  const handleGlobalMouseUp = () => {
-    setIsPainting(false);
-    setMovingNote(null);
-  };
+  // Refs pour éviter les re-renders et améliorer les performances
+  const stateRef = useRef(interactionState);
+  const gridRef = useRef(grid);
+  const synthRef = useRef(null);
 
-  // Ajouter l'écouteur pour détecter quand le bouton est relâché, même en dehors du composant
-  document.addEventListener('mouseup', handleGlobalMouseUp);
-  
-  return () => {
-    document.removeEventListener('mouseup', handleGlobalMouseUp);
-  };
-}, []);
- 
-const playNote = useCallback((note) => {
-  const synth = new Tone.Synth().toDestination();
-  synth.triggerAttackRelease(note, "8n");
-},[]);
+  // Mettre à jour les refs à chaque render
+  useEffect(() => {
+    stateRef.current = interactionState;
+    gridRef.current = grid;
+  });
 
-const selectMode = useCallback((newMode) => {
-  setMode(newMode);      // "draw", "paint" ou "move"
-  setMovingNote(null);   // reset note en déplacement si besoin
-  setIsPainting(false);  // reset peinture active
-}, []);
-
-const handleMouseDown = useCallback((row, col) => {
-  setIsMouseDown(!isMouseDown);
-
-  if (mode === "move" && grid[row][col]) {
-    setMovingNote({ fromRow: row, fromCol: col, moved: false });
-  } else if (mode === "draw") {
-    onGridToggle(row, col);
-  } else if (mode === "paint") {
-    setIsPainting(true);
-    if (!grid[row][col]) {
-      onGridToggle(row, col);
+  // Initialiser le synth une seule fois
+  useEffect(() => {
+    if (!synthRef.current) {
+      synthRef.current = new Tone.Synth().toDestination();
     }
-  }
-}, [mode]);
+    return () => {
+      if (synthRef.current) {
+        synthRef.current.dispose();
+      }
+    };
+  }, []);
 
-const handleMouseEnter = useCallback((row, col) => {
-  if (!isMouseDown) return;
-
-  if (mode === "paint" && isPainting) {
-    if (!grid[row][col]) {
-      onGridToggle(row, col);
+  // Optimisation du lecture de note
+  const playNote = useCallback((note) => {
+    if (synthRef.current) {
+      synthRef.current.triggerAttackRelease(note, "8n");
     }
-  }
+  }, []);
 
-  if (mode === "move" && movingNote) {
-    const { fromRow, fromCol, moved } = movingNote;
+  // Fonction utilitaire pour mettre à jour l'état d'interaction
+  const updateInteractionState = useCallback((updates) => {
+    setInteractionState(prev => ({ ...prev, ...updates }));
+  }, []);
 
-    if (row === fromRow && col === fromCol) return;
+  // Sélecteur de mode optimisé
+  const selectMode = useCallback((newMode) => {
+    updateInteractionState({
+      mode: newMode,
+      movingNote: null,
+      isPainting: false,
+      paintedCells: new Set()
+    });
+  }, [updateInteractionState]);
 
-    if (!moved) {
-      onGridToggle(fromRow, fromCol); // supprime l’ancienne
+  const handleMouseDown = useCallback((row, col) => {
+    const currentState = stateRef.current;
+    const currentGrid = gridRef.current;
+
+    updateInteractionState({ isMouseDown: true });
+
+    switch (currentState.mode) {
+      case "move":
+        if (currentGrid[row][col]) {
+          updateInteractionState({
+            movingNote: { fromRow: row, fromCol: col, toRow: row, toCol: col }
+          });
+        }
+        break;
+
+      case "draw":
+        requestAnimationFrame(() => {
+          onGridToggle(row, col);
+        });
+        break;
+
+      case "paint":
+        const paintedCells = new Set();
+        paintedCells.add(`${row}-${col}`);
+        updateInteractionState({ 
+          isPainting: true, 
+          paintedCells 
+        });
+        requestAnimationFrame(() => {
+          onGridToggle(row, col);
+        });
+        break;
     }
+  }, [onGridToggle, updateInteractionState]);
 
-    if (!grid[row][col]) {
-      onGridToggle(row, col); // pose nouvelle
-      setMovingNote({ fromRow: row, fromCol: col, moved: true });
+  const handleMouseEnter = useCallback((row, col) => {
+    const currentState = stateRef.current;
+    const currentGrid = gridRef.current;
+
+    if (!currentState.isMouseDown) return;
+
+    switch (currentState.mode) {
+      case "paint":
+        const cellKey = `${row}-${col}`;
+        if (!currentState.paintedCells.has(cellKey)) {
+          const newPaintedCells = new Set(currentState.paintedCells);
+          newPaintedCells.add(cellKey);
+          updateInteractionState({ paintedCells: newPaintedCells });
+
+          requestAnimationFrame(() => {
+            if (!currentGrid[row][col]) {
+              onGridToggle(row, col);
+            }
+          });
+        }
+        break;
+
+      case "move":
+        const move = currentState.movingNote;
+        if (move) {
+          const { fromRow, fromCol, toRow, toCol } = move;
+
+          if ((row === toRow && col === toCol) || currentGrid[row][col]) return;
+
+          requestAnimationFrame(() => {
+            // Supprime l'ancienne destination (si différente de source)
+            if (!(toRow === fromRow && toCol === fromCol)) {
+              if (currentGrid[toRow][toCol]) {
+                onGridToggle(toRow, toCol);
+              }
+            }
+
+            // Supprime la source si encore existante
+            if (currentGrid[fromRow][fromCol]) {
+              onGridToggle(fromRow, fromCol);
+            }
+
+            // Ajoute à la nouvelle destination
+            onGridToggle(row, col);
+
+            updateInteractionState({
+              movingNote: {
+                fromRow,
+                fromCol,
+                toRow: row,
+                toCol: col
+              }
+            });
+          });
+        }
+        break;
     }
-  }
-}, [isMouseDown, mode, isPainting, grid, onGridToggle, movingNote]);
+  }, [onGridToggle, updateInteractionState]);
 
-const handleMouseUp = useCallback(() => {
-  setIsMouseDown(false);
-  setIsPainting(false);
-  setMovingNote(null);
-}, []);
+  const handleMouseUp = useCallback(() => {
+    const currentState = stateRef.current;
 
-useEffect(() => {
-  const handleUp = () => handleMouseUp();
-  window.addEventListener("mouseup", handleUp);
-  return () => window.removeEventListener("mouseup", handleUp);
-}, [handleMouseUp]);
-
-
-const handleMouseLeave = () => {
-  // Pour les cas où la souris quitte le composant sans mouseup
-  setIsPainting(false);
-};
+    if (currentState.isMouseDown) {
+      updateInteractionState({
+        isMouseDown: false,
+        isPainting: false,
+        movingNote: null,
+      });
+    }
+}, [updateInteractionState]);
 
 
-return (
+  // Gestionnaire MouseLeave optimisé
+  const handleMouseLeave = useCallback(() => {
+    updateInteractionState({
+      isPainting: false
+    });
+  }, [updateInteractionState]);
+
+  // Gestionnaires d'événements globaux optimisés
+  useEffect(() => {
+    const preventDefaultDrag = (e) => {
+      if (interactionState.mode === "paint") {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      handleMouseUp();
+    };
+
+    // Utiliser les options passive pour de meilleures performances
+    document.addEventListener('dragstart', preventDefaultDrag, { passive: false });
+    document.addEventListener('selectstart', preventDefaultDrag, { passive: false });
+    document.addEventListener('mouseup', handleGlobalMouseUp, { passive: true });
+    
+    return () => {
+      document.removeEventListener('dragstart', preventDefaultDrag);
+      document.removeEventListener('selectstart', preventDefaultDrag);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, [interactionState.mode, handleMouseUp]);
+
+  // Optimisation des propriétés calculées
+  const modeStyles = useMemo(() => ({
+    draw: { bgcolor: interactionState.mode === "draw" ? "#444" : "transparent" },
+    paint: { bgcolor: interactionState.mode === "paint" ? "#444" : "transparent" },
+    move: { bgcolor: interactionState.mode === "move" ? "#444" : "transparent" }
+  }), [interactionState.mode]);
+
+  // Optimisation des en-têtes de colonnes
+  const stepHeaders = useMemo(() => 
+    Array.from({ length: cols }, (_, idx) => (
+      <Box
+        key={idx}
+        sx={{
+          width: 30,
+          height: 20,
+          color: "white",
+          fontSize: "0.5rem",
+          fontFamily: "initial",
+          fontWeight: "bold",
+          textAlign: "center",
+          borderBottom: "1px solid #555",
+          bgcolor: idx % 4 === 0 ? "#333" : "transparent"
+        }}
+      >
+        {idx + 1}
+      </Box>
+    )), [cols]
+  );
+
+  return (
     <Box
       sx={{
         display: "flex",
@@ -173,85 +280,100 @@ return (
         overflow: "auto",
         p: 2,
         cursor: cursor,
-        // Désactiver la sélection de texte dans tout le piano roll
         userSelect: "none",
         WebkitUserSelect: "none",
         MozUserSelect: "none",
         msUserSelect: "none"
       }}
-      // Empêcher le comportement par défaut du navigateur lors du drag
       onDragStart={(e) => e.preventDefault()}
     >
-      <Typography variant="h6" gutterBottom sx={{ position: "fixed", top: 10, right: 15, justifyContent: "right", display: "flex", width: "100%", color: "#fff" }}>
+      <Typography 
+        variant="h6" 
+        gutterBottom 
+        sx={{ 
+          position: "fixed", 
+          top: 10, 
+          right: 15, 
+          justifyContent: "right", 
+          display: "flex", 
+          width: "100%", 
+          color: "#fff" 
+        }}
+      >
         Piano Roll - {selectedInstrument}
       </Typography>
-      {/* Controls */}
+
+      {/* Controls optimisés */}
       <Box sx={{ position: "absolute", top: 10, left: 20, display: "flex", gap: 2 }}>
         <PianoMenu onCut={onClearGrid} onCopy={onCopy} onPaste={onPaste}/>
+        
         <Button
           onClick={() => selectMode("draw")}
-          sx={{ fontSize: 12, bgcolor: drawMode ? "#444" : "transparent", color: "#fff", fontFamily: "monospace" }}
+          sx={{ 
+            fontSize: 12, 
+            ...modeStyles.draw, 
+            color: "#fff", 
+            fontFamily: "monospace",
+            minWidth: 40
+          }}
         >
           <ReactIcons.MdDraw size={20} />
         </Button>
 
         <Button
           onClick={() => selectMode("paint")}
-          sx={{ fontSize: 12, bgcolor: paintMode ? "#444" : "transparent", color: "#fff", fontFamily: "monospace" }}
+          sx={{ 
+            fontSize: 12, 
+            ...modeStyles.paint, 
+            color: "#fff", 
+            fontFamily: "monospace",
+            minWidth: 40
+          }}
         >
           <PiPaintBrushHousehold size={20} />
         </Button>
 
         <Button
           onClick={() => selectMode("move")}
-          sx={{ fontSize: 12, bgcolor: moveMode ? "#444" : "transparent", color: "#fff", fontFamily: "monospace" }}
+          sx={{ 
+            fontSize: 12, 
+            ...modeStyles.move, 
+            color: "#fff", 
+            fontFamily: "monospace",
+            minWidth: 40
+          }}
         >
           <IoMove size={20} />
         </Button>
-
       </Box>
 
       {/* Grille complète avec piano intégré */}
       <Box sx={{ display: "flex", flexDirection: "column", width: "100%", mt: 4 }}>
-        {/* Step headers */}
+        {/* Step headers optimisés */}
         <Box sx={{ display: "flex", flexDirection: "row", ml: 8.8 }}>
-          {Array.from({ length: cols }, (_, idx) => (
-            <Box
-              key={idx}
-              sx={{
-                width: 30,
-                height: 20,
-                color: "white",
-                fontSize: "0.5rem",
-                fontFamily: "initial",
-                fontWeight: "bold",
-                textAlign: "center",
-                borderBottom: "1px solid #555",
-                bgcolor: idx % 4 === 0 ? "#333" : "transparent"
-              }}
-            >
-              {idx + 1}
-            </Box>
-          ))}
+          {stepHeaders}
         </Box>
 
-        {/* Grid rows with integrated piano keys */}
+        {/* Grid rows avec piano intégré */}
         {noteList.map((note, rowIdx) => (
-        <PianoRollRow
-          key={rowIdx}
-          note={note}
-          rowIdx={rowIdx}
-          rowData={grid[rowIdx]}
-          playNote={playNote}
-          handleMouseDown={handleMouseDown}
-          handleMouseEnter={handleMouseEnter}
-          handleMouseUp={handleMouseUp}
-          handleMouseLeave={handleMouseLeave}
-        />
-      ))}
+          <PianoRollRow
+            key={`${note}-${rowIdx}`} // Clé plus stable
+            note={note}
+            rowIdx={rowIdx}
+            rowData={grid[rowIdx]}
+            playNote={playNote}
+            handleMouseDown={handleMouseDown}
+            handleMouseEnter={handleMouseEnter}
+            handleMouseUp={handleMouseUp}
+            handleMouseLeave={handleMouseLeave}
+            currentStep={currentStep}
+          />
+        ))}
       </Box>
     </Box>
   );
 });
+
+PianoRoll.displayName = 'PianoRoll';
 
 export default PianoRoll;
