@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Menu, MenuItem, Button, Stack, Box } from "@mui/material";
 import { itemsToMapForDisplay } from "../Contexts/ItemsToMapForDisplay"; // Assurez-vous que ce chemin est correct
 
-const StripMenu = ({ componentsMap, handleClickOnItem, openComponents, setOpenComponents, onMouseEnter: infos, onMouseLeave }) => {
+const StripMenu = React.memo(({ componentsMap, handleClickOnItem, openComponents, setOpenComponents, onMouseEnter: infos, onMouseLeave }) => {
   const [fileAnchor, setFileAnchor] = useState(null);
   const [editAnchor, setEditAnchor] = useState(null);
   const [viewAnchor, setViewAnchor] = useState(null);
@@ -13,14 +13,14 @@ const StripMenu = ({ componentsMap, handleClickOnItem, openComponents, setOpenCo
   const handleOpenMenu = (setter) => (event) => setter(event.currentTarget);
   const handleCloseMenu = (setter) => () => setter(null);
 
-  const handleOpenComponent = (component) => {
+  const handleOpenComponent = useCallback((component) => {
     setOpenComponents((prev) => ({
       ...prev,
       [component]: !prev[component], // toggle l'affichage
     }));
     setViewAnchor(null);
     setToolsAnchor(null);
-  };
+  },[]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -92,7 +92,7 @@ const StripMenu = ({ componentsMap, handleClickOnItem, openComponents, setOpenCo
       ))}
     </Box>
   );
-};
+});
 
 const buttonStyle = {
   color: "white",
