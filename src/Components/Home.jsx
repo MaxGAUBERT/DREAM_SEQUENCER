@@ -41,10 +41,7 @@ const Home = () => {
 
   
   // États de lecture
-  const [currentPlaylistRow, setCurrentPlaylistRow] = useState(0);
-  const [currentPlaylistCol, setCurrentPlaylistCol] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [songMode, setSongMode] = useState(false);
   
   const navigate = useNavigate();
 
@@ -91,35 +88,6 @@ const Home = () => {
     "ChReset": "Set default channels"
   };
 
-
-  // Mise à jour des colonnes
-  const handleColsChange = (newCols) => {
-    setCols(newCols);
-    
-    setPlaylist((prev) => {
-      const newGrid = Array.from({ length: rows }, (_, rowIdx) => 
-        Array.from({ length: newCols }, (_, colIdx) => 
-          colIdx < prev.initGrid[rowIdx]?.length 
-            ? prev.initGrid[rowIdx][colIdx] 
-            : null
-        )
-      );
-      
-      return {
-        ...prev,
-        initGrid: newGrid
-      };
-    });
-  };
-
-
-  // Initialisation de la playlist
-  const [playlist, setPlaylist] = useState({
-    initGrid: Array.from({ length: rows }, () =>
-      Array.from({ length: cols }, () => null)
-    ),
-  });
-
   // Hooks personnalisés
   const { addPattern, duplicatePattern, renamePattern, deletePattern } = usePattern({ patterns, setPatterns,
     selectedPattern, setSelectedPattern, players, channelSources, grids, setGrids, rows, cols,
@@ -137,7 +105,7 @@ const Home = () => {
     handleLoadProject,
     clearProjects,
     datasToSave,
-  } = useStorage({ patterns, channelSources, grids, playlist, setPatterns, setGrids, setProjectName, projectName, setPlaylist, setRows, setCols, setChannelSources, setPlayers, defaultRows: 8, defaultCols: 50,
+  } = useStorage({ patterns, channelSources, grids, setPatterns, setGrids, setProjectName, projectName, setRows, setCols, setChannelSources, setPlayers, defaultRows: 8, defaultCols: 50,
   });
 
   // États des composants ouverts
@@ -188,12 +156,6 @@ const Home = () => {
     setPlayers({});
     setChannelSources({});
     setSelectedPattern(null);
-    setPlaylist({ 
-      initGrid: Array.from({ length: rows }, () => 
-        Array.from({ length: cols }, () => null)
-      ) 
-    });
-    
     // Définir le nom du projet
     setProjectName(projectName);
     
@@ -249,7 +211,6 @@ const Home = () => {
   const { mouse, callbacks } = useMemoizedHandlers({
     handleMouseEnter,
     handleMouseLeave,
-    handleColsChange,
     handleSamplesUpdated,
     handleUrlUpdated,
     handleChannelsUpdated,
@@ -321,19 +282,6 @@ const Home = () => {
 
         <ComponentManager
           openComponents={openComponents}
-          playlistProps={{
-            playlist,
-            setPlaylist,
-            rows,
-            cols,
-            setRows,
-            setCols,
-            patterns,
-            stepRow,
-            currentPlaylistRow,     
-            currentPlaylistCol,        
-            isSongPlaying: isPlaying && songMode 
-          }}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
