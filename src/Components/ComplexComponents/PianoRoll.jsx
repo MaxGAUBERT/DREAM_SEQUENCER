@@ -3,7 +3,6 @@ import { Box, Button, Typography } from "@mui/material";
 import * as ReactIcons from "react-icons/md";
 import * as Tone from "tone";
 import PianoMenu from "../FrontEnd/PianoMenu";
-import { useCursorManager } from "../Contexts/CursorManager";
 import { IoMove } from "react-icons/io5";
 import { PiPaintBrushHousehold } from "react-icons/pi";
 import PianoRollRow from "./PianoRollRow";
@@ -31,7 +30,6 @@ const PianoRoll = React.memo(({
   onGridToggle,
   rows,
   cols,
-  onColsChange,
   onClearGrid,
   onCopy,
   onPaste,
@@ -40,7 +38,6 @@ const PianoRoll = React.memo(({
   currentStep
 }) => {
   const noteList = useMemo(() => generateNoteList(rows).reverse(), [rows]);
-  const { cursor, setCursor } = useCursorManager();
   
   // État optimisé pour les interactions
   const [interactionState, setInteractionState] = useState({
@@ -279,7 +276,6 @@ const PianoRoll = React.memo(({
         height: "80%",
         overflow: "auto",
         p: 2,
-        cursor: cursor,
         userSelect: "none",
         WebkitUserSelect: "none",
         MozUserSelect: "none",
