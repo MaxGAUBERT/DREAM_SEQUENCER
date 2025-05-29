@@ -41,7 +41,7 @@ export const usePattern = ({
       const reindexedPatterns = updatedPatterns.map((pattern, index) => ({
         ...pattern,
         id: index + 1,
-        name: `Pattern ${index + 1}`
+        name: pattern.name
       }));
 
       const deletedIndex = prevPatterns.findIndex(p => p.id === selectedPattern.id);
