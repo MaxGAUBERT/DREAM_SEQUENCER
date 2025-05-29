@@ -1,4 +1,4 @@
-import React, { useState, useEffect} from "react";
+import React, { useState, useEffect, useCallback} from "react";
 import { useNavigate } from "react-router-dom";
 import ChannelRack from "./ComplexComponents/ChannelRack";
 import Transport from "./ComplexComponents/Transport";
@@ -16,6 +16,7 @@ import { useStorage } from "./ComplexComponents/Functions/useStorage";
 import { useTransport } from "./ComplexComponents/Functions/useTransport";
 import { useMemoizedHandlers } from "./Contexts/memoizedHandlers";
 
+
 const Home = () => {
   // États principaux
   const [players, setPlayers] = useState({});
@@ -24,6 +25,10 @@ const Home = () => {
   const [patterns, setPatterns] = useState([{ players: {}, grids: {}, id: 1, name: "Pattern 1" }]);
   const [selectedPattern, setSelectedPattern] = useState("");
   const [projectName, setProjectName] = useState("");
+  // pour le transport
+  const [bpm, setBPM] = useState(120);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedSequence, setRecordedSequence] = useState([]);
   
   // États de l'interface
   const [stepRow, setStepRow] = useState(0);
@@ -33,6 +38,7 @@ const Home = () => {
   const [loadView, setLoadView] = useState(false);
   const [showPlugins, setShowPlugins] = useState(false);
   const [infoOnMouseHover, setInfoOnMouseHover] = useState("");
+
   
   // États de lecture
   const [currentPlaylistRow, setCurrentPlaylistRow] = useState(0);
@@ -82,8 +88,7 @@ const Home = () => {
     "LoopMode": "Toggle Loop Mode",
     "SongMode": "Toggle Song Mode",
     "PatternMode": "Toggle Pattern Mode",
-
-
+    "ChReset": "Set default channels"
   };
 
 
@@ -107,8 +112,6 @@ const Home = () => {
     });
   };
 
-  const {} = useTransport({ stepValue: stepRow, players, grids, setStepRow, onMouseEnter: setInfoOnMouseHover,
-    onMouseLeave: setInfoOnMouseHover, setIsPlaying });
 
   // Initialisation de la playlist
   const [playlist, setPlaylist] = useState({
@@ -118,18 +121,14 @@ const Home = () => {
   });
 
   // Hooks personnalisés
-  const { addPattern, duplicatePattern, deletePattern } = usePattern({ patterns, setPatterns,
+  const { addPattern, duplicatePattern, renamePattern, deletePattern } = usePattern({ patterns, setPatterns,
     selectedPattern, setSelectedPattern, players, channelSources, grids, setGrids, rows, cols,
   });
 
-  const {
-    handleSamplesUpdated,
-    handleChannelsUpdated,
-    handleUrlUpdated,
-    handlePatternsUpdated,
-    handleGridsUpdated,
+  const {handleSamplesUpdated, handleChannelsUpdated, handleUrlUpdated, handlePatternsUpdated, handleGridsUpdated,
   } = useChannels({ setPlayers, setChannelSources, setGrids, setPatterns, selectedPattern,
   });
+
 
   const {
     projectsList,
@@ -146,10 +145,9 @@ const Home = () => {
     ChannelRack: true,
     Browser: true,
     Playlist: false,
-    "Melody Generator": false,
-    Performer: false,
+    AnalogSynth: false,
+    Modulator: false,
   });
-
 
   const handleSelectPattern = (newSelectedPattern) => {
     console.log('🔄 Changement de pattern:', selectedPattern?.name, '→', newSelectedPattern?.name);
@@ -259,7 +257,6 @@ const Home = () => {
     handlePatternsUpdated,
   });
 
-
   return (
     <Box key={appKey}>
       <Typography
@@ -316,11 +313,12 @@ const Home = () => {
           selectPattern={handleSelectPattern}
           addPattern={addPattern}
           duplicatePattern={duplicatePattern}
+          renamePattern={renamePattern}
           deletePattern={deletePattern}
           onMouseEnter={mouse.onPatternMouseEnter}
           onMouseLeave={mouse.onMouseLeave}
         />
-      
+
         <ComponentManager
           openComponents={openComponents}
           playlistProps={{
@@ -339,7 +337,7 @@ const Home = () => {
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {openComponents.ChannelRack && (
+          <Box style={{display: openComponents.ChannelRack ? "block" : "none"}}>
             <ChannelRack
               onSamplesUpdated={callbacks.handleSamplesUpdated}
               onUrlUpdated={() => callbacks.handleUrlUpdated(channelSources)}
@@ -355,7 +353,7 @@ const Home = () => {
               onColsChange={callbacks.handleColsChange}
               isPlaying={isPlaying}
             />
-          )}
+          </Box>
         </ComponentManager>
         
         <MainPanel infoToDisplay={infoOnMouseHover} />
