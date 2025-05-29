@@ -28,8 +28,8 @@ const suggestions = ["FX", "Synth", "Vocal", "Cymbals", "Bass", "Kick", "Snare",
 
 const ChannelRack = React.memo(({
   onSamplesUpdated, onUrlUpdated, onGridsUpdated, onPatternsUpdated,
-  patterns, selectedPattern, stepRow, resetFlag,
-  onMouseEnter: infos, onMouseLeave, onColsChange, isPlaying
+  patterns, selectedPattern, resetFlag,
+  onMouseEnter: infos, onMouseLeave, isPlaying
 }) => {
   const { colors } = useContext(ColorContext);
   const [channels, setChannels] = useState(defaultInstruments);
@@ -91,7 +91,7 @@ const ChannelRack = React.memo(({
     });
   };
 
-  const handleRenameChannel = () => {
+  const handleRenameChannel = useCallback(() => {
   if (!selectedChannel || !renamedChannel) return;
   
   // Préserver l'ordre des canaux en créant un nouvel objet ordonné
@@ -110,6 +110,7 @@ const ChannelRack = React.memo(({
     
     return result;
   });
+
   
   // Faire de même pour les grids
   updateGrids(prev => {
@@ -130,18 +131,18 @@ const ChannelRack = React.memo(({
   setSelectedChannel(renamedChannel);
   setRenamedChannel("");
   setShowRename(false);
-};
+},[selectedChannel, renamedChannel]);
 
-  const handleCreateChannel = () => {
+  const handleCreateChannel = useCallback(() => {
     if (!newChannelName) return;
     setChannels(prev => ({ ...prev, [newChannelName]: null }));
     setGrids(prev => ({ ...prev, [newChannelName]: createEmptyGrid() }));
     setSelectedChannel(newChannelName);
     setNewChannelName("");
     setShowInput(false);
-  };
+  },[newChannelName]);
 
-  const handleLoadSample = (channel, audioFile) => {
+  const handleLoadSample = useCallback((channel, audioFile) => {
     if (!audioFile) return;
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -153,7 +154,7 @@ const ChannelRack = React.memo(({
       //onSamplesUpdated({ ...channels, [channel]: sampler });
     };
     reader.readAsDataURL(audioFile);
-  };
+  },[channels, channelSources]);
   
   const handleGridToggle = useCallback((inst, rowIdx, colIdx) => {
     updateGrids(prev => ({
@@ -165,7 +166,7 @@ const ChannelRack = React.memo(({
   }, []);
   
 
-   const handleRemoveChannel = (channelId) => {
+   const handleRemoveChannel = useCallback((channelId) => {
     if (!channelId) return;
 
     setShowSuggestions(false);
@@ -192,7 +193,7 @@ const ChannelRack = React.memo(({
       
       return updated;
     });
-  };
+  },[channels, selectedChannel]);
 
   const ensureGridSize = (grid) => {
   if (!grid || !Array.isArray(grid)) {
