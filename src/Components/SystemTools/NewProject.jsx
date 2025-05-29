@@ -63,7 +63,7 @@ const NewProject = ({ onNewProject = () => {} }) => {
     };
 
     return (
-        <Box textAlign="center" p={3}>
+        <Box sx={{width: "100%", height: "100%", bgcolor: "white"}} textAlign="center" p={3}>
             <GraphicEqIcon sx={{ color: "black", fontSize: "80px", boxShadow: "10px 8px 8px rgba(0, 0, 0, 0.2)" }}/>
             <Typography variant="h2" fontFamily="Silkscreen, cursive" color="black">
                 DREAM SEQUENCER
@@ -79,7 +79,7 @@ const NewProject = ({ onNewProject = () => {} }) => {
                 <Dialog as="div" className="relative z-10" onClose={() => {}} static={true}>
                     <Box sx={{ display: "flex", justifyContent: "center", position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0, 0, 0, 0.5)" }}>
                         <Dialog.Panel>
-                            <Paper elevation={3} sx={{ position: "absolute", top: "70%", left: "50%", transform: "translate(-50%, -50%)", padding: 3, minWidth: 300 }}>
+                            <Paper elevation={3} sx={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", padding: 3, minWidth: 300 }}>
                                 <Typography variant="h6">Create a New Project</Typography>
                                 <TextField
                                     fullWidth
