@@ -1,13 +1,10 @@
 import React, { useState } from "react";
 import { GrDuplicate } from "react-icons/gr";
-import { BiRename } from "react-icons/bi";
 import { PatternRenamer } from "../FrontEnd/PatternRenamer";
 import {
   Box,
-  Button,
   MenuItem,
   Select,
-  InputLabel,
   FormControl,
   Menu,
   IconButton
@@ -44,7 +41,7 @@ const PatternManager = ({
       sx={{
         position: "fixed",
         top: 25,
-        left: "60%",
+        left: "58.5%",
         transform: "translate(-50%, -50%)",
         backgroundColor: "gray",
         display: "flex",
@@ -56,7 +53,7 @@ const PatternManager = ({
       }}
     >
       {/* Sélecteur de pattern */}
-      <FormControl sx={{ minWidth: 110 }} size="small">
+      <FormControl sx={{ maxWidth: 100 }} size="small">
         <Select
           value={selectedPattern?.id?.toString() || ""}
           label="Pattern"
