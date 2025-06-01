@@ -1,24 +1,27 @@
-import { TextField, Box, IconButton } from "@mui/material";
 import { useEffect, useState } from "react";
-import EditIcon from "@mui/icons-material/Edit";
+import { FaEdit } from "react-icons/fa";
 
-export const PatternRenamer = ({ selectedPattern, renamePattern}) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [name, setName] = useState("");
+export const PatternRenamer = ({ selectedPattern, renamePattern }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState("");
 
-    const handleSubmit = () => {
-        renamePattern(name);
-        setIsEditing(false);
+  const handleSubmit = () => {
+    if (name.trim() !== "") {
+      renamePattern(name);
     }
+    setIsEditing(false);
+  };
 
-    useEffect(() => {
-        setName(selectedPattern?.name || "");
-    },[selectedPattern])
+  useEffect(() => {
+    setName(selectedPattern?.name || "");
+  }, [selectedPattern]);
+  
 
-    return (
+  return (
     <>
       {isEditing ? (
-        <TextField
+        <input
+          type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={handleSubmit}
@@ -27,16 +30,18 @@ export const PatternRenamer = ({ selectedPattern, renamePattern}) => {
             if (e.key === "Escape") setIsEditing(false);
           }}
           autoFocus
-          size="small"
-          sx={{ bgcolor: "gray", position: "absolute", top: 45, left: 10}}
+          className="absolute top-[45px] left-[10px] bg-gray-500 text-white px-2 py-1 text-sm rounded border border-gray-400 focus:outline-none"
         />
       ) : (
-        <Box>
-          <IconButton size="small" onClick={() => setIsEditing(true)}>
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </Box>
+        <div>
+          <button
+            className="p-1 text-gray-700 hover:text-black"
+            onClick={() => setIsEditing(true)}
+          >
+            <FaEdit className="text-sm" />
+          </button>
+        </div>
       )}
     </>
   );
-}
+};
