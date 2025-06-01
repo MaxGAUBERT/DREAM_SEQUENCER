@@ -1,161 +1,107 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { GrDuplicate } from "react-icons/gr";
 import { PatternRenamer } from "../FrontEnd/PatternRenamer";
-import {
-  Box,
-  MenuItem,
-  Select,
-  FormControl,
-  Menu,
-  IconButton
-} from "@mui/material";
 import { FaPlus, FaMinus } from "react-icons/fa6";
-import MoreVertIcon from "@mui/icons-material/MoreVert"; // Icône de menu
+import { MdMenu } from "react-icons/md";
 
 const PatternManager = ({
+  state,
+  dispatch,
   patterns,
   selectedPattern,
-  selectPattern,
-  addPattern,
-  duplicatePattern,
-  renamePattern,
-  deletePattern,
   onMouseEnter,
   onMouseLeave
 }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
+  const [anchorOpen, setAnchorOpen] = useState(false);
 
-  const handleOpenMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
 
-  const handleCloseMenu = () => {
-    setAnchorEl(null);
-  };
+  const renamePattern = (name) => {
+    if (!selectedPattern) return;
+    dispatch({
+      type: "RENAME_PATTERN",
+      payload: { id: selectedPattern.id, name: name },
+    });
+ };
 
-  return (
-    <Box
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      sx={{
-        position: "fixed",
-        top: 25,
-        left: "58.5%",
-        transform: "translate(-50%, -50%)",
-        backgroundColor: "gray",
-        display: "flex",
-        flexDirection: "row",
-        gap: 1,
-        height: "auto",
-        zIndex: 1,
-        flexWrap: "wrap",
-      }}
+ return (
+    <div
+      onMouseEnter={() => setAnchorOpen(true)}
+      onMouseLeave={() => setAnchorOpen(false)}
+      className="fixed top-[25px] left-[58.5%] -translate-x-1/2 -translate-y-1/2 bg-gray-500 flex flex-row flex-wrap gap-2 z-10 p-2 rounded shadow-md"
     >
       {/* Sélecteur de pattern */}
-      <FormControl sx={{ maxWidth: 100 }} size="small">
-        <Select
-          value={selectedPattern?.id?.toString() || ""}
-          label="Pattern"
-          displayEmpty
-          renderValue={(value) => {
-            if (!value) return "Select a pattern";
-            const selected = patterns.find((p) => p.id === parseInt(value));
-            return selected ? selected.name : "Select a pattern";
-          }}
-          onChange={(e) => {
-            const patternId = parseInt(e.target.value);
-            const selected = patterns.find((p) => p.id === patternId);
-            if (selected && typeof selectPattern === "function") {
-              selectPattern(selected);
-            }
-          }}
-          sx={{
-            color: "white",
-            ".MuiOutlinedInput-notchedOutline": {
-              borderColor: "#555",
-            },
-            "&:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: "#888",
-            },
-            ".MuiSvgIcon-root": {
-              fill: "white !important",
-            },
-          }}
+      <select
+        value={selectedPattern?.id?.toString() || ""}
+        onChange={(e) => {
+          const patternId = parseInt(e.target.value);
+          const selected = patterns.find((p) => p.id === patternId);
+          if (selected && typeof selectPattern === "function") {
+            selectPattern(selected);
+          }
+        }}
+        className="text-white bg-gray-700 border border-gray-600 rounded px-2 py-1 max-w-[100px] text-sm focus:outline-none"
+      >
+        <option value={selectedPattern}>Select a pattern</option>
+        {patterns.map((p) => (
+          <option key={p.id} value={p.id.toString()}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+
+      {/* Bouton menu déroulant */}
+      <div className="relative">
+        <button
+          onClick={() => setAnchorOpen((prev) => !prev)}
+          className="bg-gray-800 hover:bg-gray-900 text-white w-6 h-6 flex items-center justify-center rounded"
         >
-          {patterns.map((p) => (
-            <MenuItem key={p.id} value={p.id.toString()}>
-              {p.name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+          <MdMenu fontSize="small" />
+        </button>
 
-      {/* Menu déroulant pour les actions */}
-      <Box>
-        <IconButton
-          onClick={handleOpenMenu}
-          sx={{
-            backgroundColor: "gray.800",
-            color: "white",
-            width: 18,
-            height: 18,
-            position: "relative",
-            "&:hover": {
-              backgroundColor: "gray.900",
-            }
-          }}
-        >
-          <MoreVertIcon fontSize="medium"/>
-        </IconButton>
+        {anchorOpen && (
+          <div className="absolute left-0 top-full mt-1 bg-white border border-gray-300 rounded shadow-lg w-40 text-sm z-20">
+            <button
+              onClick={() => {
+                dispatch({ type: "ADD_PATTERN"});
+                setAnchorOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <FaPlus />
+              Add
+            </button>
+            <button
+              onClick={() => {
+                dispatch({ type: "DELETE_PATTERN" });
+                setAnchorOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <FaMinus />
+              Delete
+            </button>
+            <button
+              onClick={() => {
+                dispatch({ type: "DUPLICATE_PATTERN" });
+                setAnchorOpen(false);
+              }}
+              className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <GrDuplicate />
+              Duplicate
+            </button>
 
-        <Menu
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleCloseMenu}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        >
-          <MenuItem
-            onClick={() => {
-              addPattern();
-              handleCloseMenu();
-            }}
-          >
-            <FaPlus style={{ marginRight: 8 }} />
-            Add
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              deletePattern();
-              handleCloseMenu();
-            }}
-          >
-            <FaMinus style={{ marginRight: 8 }} />
-            Delete
-          </MenuItem>
-          <MenuItem
-            onClick={() => {
-              duplicatePattern();
-              handleCloseMenu();
-            }}
-          >
-            <GrDuplicate style={{ marginRight: 8 }} />
-            Duplicate
-          </MenuItem>
+            
 
-        </Menu>
-         
+      
+          </div>
+        )}
+      </div>
 
-        <PatternRenamer
-          selectedPattern={selectedPattern}
-          renamePattern={renamePattern}
-        />
-    
-        
+      {/* Renommage */}
+      <PatternRenamer selectedPattern={selectedPattern} renamePattern={renamePattern} />
 
-
-      </Box>
-    </Box>
+    </div>
   );
 };
 

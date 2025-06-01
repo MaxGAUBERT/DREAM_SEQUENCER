@@ -1,5 +1,4 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from "react";
-import { Box, Button, Typography } from "@mui/material";
 import * as ReactIcons from "react-icons/md";
 import * as Tone from "tone";
 import PianoMenu from "../FrontEnd/PianoMenu";
@@ -232,142 +231,111 @@ const PianoRoll = React.memo(({
     };
   }, [interactionState.mode, handleMouseUp]);
 
-  // Optimisation des propriétés calculées
-  const modeStyles = useMemo(() => ({
-    draw: { bgcolor: interactionState.mode === "draw" ? "#444" : "transparent" },
-    paint: { bgcolor: interactionState.mode === "paint" ? "#444" : "transparent" },
-    move: { bgcolor: interactionState.mode === "move" ? "#444" : "transparent" }
-  }), [interactionState.mode]);
 
   // Optimisation des en-têtes de colonnes
   const stepHeaders = useMemo(() => 
     Array.from({ length: cols }, (_, idx) => (
-      <Box
-        key={idx}
-        sx={{
-          width: 30,
-          height: 20,
-          color: "white",
-          fontSize: "0.5rem",
-          fontFamily: "initial",
-          fontWeight: "bold",
-          textAlign: "center",
-          borderBottom: "1px solid #555",
-          bgcolor: idx % 4 === 0 ? "#333" : "transparent"
-        }}
-      >
-        {idx + 1}
-      </Box>
+     <div
+      key={idx}
+      className={`
+        w-[30px] h-[20px]
+        text-white
+        text-xs
+        font-normal
+        text-center
+        font-sans
+        font-bold
+        border-b border-[#555]
+        ml-2
+        ${idx % 4 === 0 ? "bg-[#333]" : "bg-transparent"}
+      `}
+    >
+      {idx + 1}
+    </div>
+
     )), [cols]
   );
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        position: "fixed",
-        top: "56%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        bgcolor: "#111",
-        border: "6px inset #fff",
-        borderRadius: 2,
-        width: "60%",
-        height: "80%",
-        overflow: "auto",
-        p: 2,
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        MozUserSelect: "none",
-        msUserSelect: "none"
-      }}
-      onDragStart={(e) => e.preventDefault()}
+  <div
+  style={{ backgroundColor: "black"}}
+    className="
+      fixed flex
+      top-[56%] left-1/2
+      -translate-x-1/2 -translate-y-1/2
+      bg-[#111]
+      border-[6px] border-inset border-white
+      rounded-md
+      w-3/5
+      h-[80%]
+      overflow-auto
+      p-2
+      select-none
+      "
+    onDragStart={(e) => e.preventDefault()}
+  >
+    <h6
+      className="
+        fixed top-2.5 right-4
+        flex justify-end
+        w-full
+        text-white
+      "
     >
-      <Typography 
-        variant="h6" 
-        gutterBottom 
-        sx={{ 
-          position: "fixed", 
-          top: 10, 
-          right: 15, 
-          justifyContent: "right", 
-          display: "flex", 
-          width: "100%", 
-          color: "#fff" 
-        }}
+      Piano Roll - {selectedInstrument}
+    </h6>
+
+    {/* Controls optimisés */}
+    <div className="absolute top-2.5 left-5 flex gap-2">
+      <PianoMenu onCut={onClearGrid} onCopy={onCopy} onPaste={onPaste} />
+
+      <button
+        onClick={() => selectMode("draw")}
+        className={`text-xs font-mono min-w-[40px]`}
       >
-        Piano Roll - {selectedInstrument}
-      </Typography>
+        <ReactIcons.MdDraw size={20} />
+      </button>
 
-      {/* Controls optimisés */}
-      <Box sx={{ position: "absolute", top: 10, left: 20, display: "flex", gap: 2 }}>
-        <PianoMenu onCut={onClearGrid} onCopy={onCopy} onPaste={onPaste}/>
-        
-        <Button
-          onClick={() => selectMode("draw")}
-          sx={{ 
-            fontSize: 12, 
-            ...modeStyles.draw, 
-            color: "#fff", 
-            fontFamily: "monospace",
-            minWidth: 40
-          }}
-        >
-          <ReactIcons.MdDraw size={20} />
-        </Button>
+      <button
+        onClick={() => selectMode("paint")}
+        className={`text-xs font-mono min-w-[40px]`}
+      >
+        <PiPaintBrushHousehold size={20} />
+      </button>
 
-        <Button
-          onClick={() => selectMode("paint")}
-          sx={{ 
-            fontSize: 12, 
-            ...modeStyles.paint, 
-            color: "#fff", 
-            fontFamily: "monospace",
-            minWidth: 40
-          }}
-        >
-          <PiPaintBrushHousehold size={20} />
-        </Button>
+      <button
+        onClick={() => selectMode("move")}
+        className={`text-xs font-mono min-w-[40px] bg-color-gray-500`}
+    
+      >
+        <IoMove size={20} />
+      </button>
+    </div>
 
-        <Button
-          onClick={() => selectMode("move")}
-          sx={{ 
-            fontSize: 12, 
-            ...modeStyles.move, 
-            color: "#fff", 
-            fontFamily: "monospace",
-            minWidth: 40
-          }}
-        >
-          <IoMove size={20} />
-        </Button>
-      </Box>
+    {/* Grille complète avec piano intégré */}
+    <div className="flex flex-col w-full mt-16">
+      {/* Step headers optimisés */}
+      <div className="flex flex-row ml-[3.5rem]">{stepHeaders}</div>
 
-      {/* Grille complète avec piano intégré */}
-      <Box sx={{ display: "flex", flexDirection: "column", width: "100%", mt: 4 }}>
-        {/* Step headers optimisés */}
-        <Box sx={{ display: "flex", flexDirection: "row", ml: 8.8 }}>
-          {stepHeaders}
-        </Box>
+      {/* Grid rows avec piano intégré */}
+      {noteList.map((note, rowIdx) => (
+        <PianoRollRow
+          key={`${note}-${rowIdx}`} // Clé plus stable
+          note={note}
+          rowIdx={rowIdx}
+          rowData={grid[rowIdx]}
+          playNote={playNote}
+          handleMouseDown={handleMouseDown}
+          handleMouseEnter={handleMouseEnter}
+          handleMouseUp={handleMouseUp}
+          handleMouseLeave={handleMouseLeave}
+          currentStep={currentStep}
+        />
+      ))}
+    </div>
+  </div>
+);
 
-        {/* Grid rows avec piano intégré */}
-        {noteList.map((note, rowIdx) => (
-          <PianoRollRow
-            key={`${note}-${rowIdx}`} // Clé plus stable
-            note={note}
-            rowIdx={rowIdx}
-            rowData={grid[rowIdx]}
-            playNote={playNote}
-            handleMouseDown={handleMouseDown}
-            handleMouseEnter={handleMouseEnter}
-            handleMouseUp={handleMouseUp}
-            handleMouseLeave={handleMouseLeave}
-            currentStep={currentStep}
-          />
-        ))}
-      </Box>
-    </Box>
-  );
 });
 
 PianoRoll.displayName = 'PianoRoll';

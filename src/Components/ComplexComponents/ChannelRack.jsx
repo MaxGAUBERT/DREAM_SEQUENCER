@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext, useMemo, useCallback } from "react";
-import { Button, Box, Typography, Input } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import * as Tone from "tone";
 import { MdAdd, MdDelete, MdCancel, MdOutlineDriveFileRenameOutline } from "react-icons/md";
@@ -7,8 +6,8 @@ import { GiConfirmed } from "react-icons/gi";
 import { CgPiano } from "react-icons/cg";
 import { FaFileUpload } from "react-icons/fa";
 import PianoRoll from "./PianoRoll";
-import { ColorContext } from "../Contexts/ColorProvider";
-import { itemsToMapForDisplay } from "../Contexts/ItemsToMapForDisplay";
+import { useColors } from "../Contexts/ColorProvider";
+import { itemsToMapForDisplay } from "../Contexts/JS//ItemsToMapForDisplay";
 import { RiResetLeftFill } from "react-icons/ri";
 
 const VisuallyHiddenInput = styled('input')({
@@ -31,7 +30,7 @@ const ChannelRack = React.memo(({
   patterns, selectedPattern, resetFlag,
   onMouseEnter: infos, onMouseLeave, isPlaying
 }) => {
-  const { colors } = useContext(ColorContext);
+  const { colors } = useColors();
   const [channels, setChannels] = useState(defaultInstruments);
   const [channelSources, setChannelSources] = useState({});
   const [newChannelName, setNewChannelName] = useState("");
@@ -235,79 +234,177 @@ const ChannelRack = React.memo(({
   }, [selectedPattern]);
 
   return (
-    <Box key={items} sx={{
-      border: "8px inset white", borderRadius: 1, bgcolor: colors.channelRackColor,
-      position: "fixed", top: 60, right: 0, maxHeight: "850px", overflow: "auto", maxWidth: "370px"
-    }}>
-      <Typography onMouseLeave={onMouseLeave} nMouseEnter={() => infos("ChannelRack")} variant="h5" sx={{ fontFamily: "Silkscreen, cursive" }}>Channel Rack</Typography>
+  <div
+    key={items}
+    className="fixed top-[60px] right-0 max-h-[850px] max-w-[370px] overflow-auto border-8 border-white border-inset rounded bg-red p-2"
+  >
+    <h2
+      onMouseLeave={onMouseLeave}
+      onMouseEnter={() => infos("ChannelRack")}
+      className="font-silkscreen text-xl text-red-500 mb-4"
+    >
+      Channel Rack
+    </h2>
 
-      {/* Canaux */}
-      {Object.entries(channels).map(([name], i) => (
-        <Box key={i} sx={{ display: "flex", gap: 1, alignItems: "center", mb: 1 }}>
-          <Typography sx={{ width: "120px", fontFamily: "Silkscreen, cursive" }}>{i + 1} - {name}</Typography>
+    {/* Canaux */}
+    {Object.entries(channels).map(([name], i) => (
+      <div key={i} style={{color: "white"}} className="flex items-center gap-2 mb-2">
+        <p className="w-[120px] font-silkscreen text-sm">
+          {i + 1} - {name}
+        </p>
 
-          <Button onMouseLeave={onMouseLeave}onMouseEnter={() => infos("ChRackUpload")} component="label" variant="contained" color="gray" startIcon={<FaFileUpload size={15}/>} sx={{ fontSize: 10 }}>
-            {channels[name] ? "Replace" : "Load"}
-            <VisuallyHiddenInput type="file" accept="audio/*" onChange={e => handleLoadSample(name, e.target.files[0])} />
-          </Button>
+        <label
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={() => infos("ChRackUpload")}
+          className="text-xs bg-gray-400 text-white px-2 py-1 rounded cursor-pointer flex items-center gap-1"
+        >
+          <FaFileUpload size={15} />
+          {channels[name] ? "Replace" : "Load"}
+          <input
+            type="file"
+            accept="audio/*"
+            className="hidden"
+            onChange={e => handleLoadSample(name, e.target.files[0])}
+          />
+        </label>
 
-          <Button  onMouseLeave={onMouseLeave} onMouseEnter={() => infos("ChRackPiano")} onClick={() => { setSelectedChannel(name); setShowPianoRoll(!showPianoRoll); }}><CgPiano size={25} color="black"/></Button>
-          <Button  onMouseLeave={onMouseLeave} onMouseEnter={() => infos("ChRackRename")} onClick={() => { setSelectedChannel(name); setShowRename(true); }}><MdOutlineDriveFileRenameOutline size={25} color="black"/></Button>
-          <Button  onMouseLeave={onMouseLeave} onMouseEnter={() => infos("ChRackDelete")} disabled={showRename} onClick={() => handleRemoveChannel(name)}><MdDelete size={25} color="black"/></Button>
-        </Box>
-      ))}
+        <button
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={() => infos("ChRackPiano")}
+          onClick={() => {
+            setSelectedChannel(name);
+            setShowPianoRoll(!showPianoRoll);
+          }}
+        >
+          <CgPiano size={25} color="black" />
+        </button>
 
-      {/* Renommage */}
-      {showRename && (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Input placeholder={`Rename "${selectedChannel}"`} value={renamedChannel} onChange={e => setRenamedChannel(e.target.value)} />
-          <Button onClick={handleRenameChannel} disabled={!renamedChannel || renamedChannel === selectedChannel || Object.keys(channels).length === 0}><GiConfirmed size={20} /> Rename</Button>
-        </Box>
-      )}
+        <button
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={() => infos("ChRackRename")}
+          onClick={() => {
+            setSelectedChannel(name);
+            setShowRename(true);
+          }}
+        >
+          <MdOutlineDriveFileRenameOutline size={25} color="black" />
+        </button>
 
-      {/* Ajout */}
-      <Button onMouseEnter={() => infos("ChRackAdd")} onMouseLeave={onMouseLeave} onClick={() => !showRename && setShowInput(p => !p)}>
-        {showInput ? <MdCancel size={20} /> : <MdAdd size={25} />}
-      </Button>
-      
-      {Object.keys(channels).length === 0 && (
-      <Button onMouseEnter={() => infos("ChReset")} onMouseLeave={onMouseLeave} onClick={() => setChannels(defaultInstruments)}>
-        <RiResetLeftFill size={25} />
-      </Button>
-      )}
-      {showInput && (
-        <Box>
-          <Input value={newChannelName} onChange={e => setNewChannelName(e.target.value)} onFocus={() => setShowSuggestions(true)} />
-          <Button onMouseLeave={onMouseLeave} onMouseEnter={() => infos("ChRackCreate")} onClick={handleCreateChannel}><GiConfirmed size={20}/> Create </Button>
-        </Box>
-      )}
+        <button
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={() => infos("ChRackDelete")}
+          disabled={showRename}
+          onClick={() => handleRemoveChannel(name)}
+        >
+          <MdDelete size={25} color="black" />
+        </button>
+      </div>
+    ))}
 
-      {/* Suggestions */}
-      {showSuggestions && filteredSuggestions.length > 0 && (
-        <Box sx={{ display: "flex", overflow: "auto"}}>
-          {filteredSuggestions.map((s, i) => (
-            <Button key={i} sx={{ fontSize: 10, borderRadius: 1, border: "2px solid white" }} onMouseDown={() => { setNewChannelName(s); setShowSuggestions(false); }}>{s}</Button>
-          ))}
-        </Box>
-      )}
-
-      {/* Piano Roll */}
-      {showPianoRoll && selectedChannel && (
-        <PianoRoll
-          grid={ensureGridSize(grids[selectedChannel])}
-          onGridToggle={(r, c) => handleGridToggle(selectedChannel, r, c)}
-          rows={rows}
-          cols={cols}
-          onColsChange={setCols}
-          onClearGrid={() => updateGrids(prev => ({ ...prev, [selectedChannel]: createEmptyGrid() }))}
-          onCopy={handleCopy}
-          onPaste={handlePaste}
-          selectedInstrument={selectedChannel}
-          isPlaying={isPlaying}
+    {/* Renommage */}
+    {showRename && (
+      <div className="flex items-center gap-2 mb-2">
+        <input
+          type="text"
+          placeholder={`Rename "${selectedChannel}"`}
+          value={renamedChannel}
+          onChange={e => setRenamedChannel(e.target.value)}
+          className="border px-2 py-1 rounded"
         />
+        <button
+          className="bg-green-500 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
+          onClick={handleRenameChannel}
+          disabled={
+            !renamedChannel ||
+            renamedChannel === selectedChannel ||
+            Object.keys(channels).length === 0
+          }
+        >
+          <GiConfirmed size={20} /> Rename
+        </button>
+      </div>
+    )}
+
+    {/* Ajout */}
+    <div className="flex gap-2 mb-2">
+      <button
+        onMouseEnter={() => infos("ChRackAdd")}
+        onMouseLeave={onMouseLeave}
+        onClick={() => !showRename && setShowInput(p => !p)}
+      >
+        {showInput ? <MdCancel size={20} /> : <MdAdd size={25} />}
+      </button>
+
+      {Object.keys(channels).length === 0 && (
+        <button
+          onMouseEnter={() => infos("ChReset")}
+          onMouseLeave={onMouseLeave}
+          onClick={() => setChannels(defaultInstruments)}
+        >
+          <RiResetLeftFill size={25} />
+        </button>
       )}
-    </Box>
-  );
+    </div>
+
+    {showInput && (
+      <div style={{color: colors.regularTextColor}} className="mb-2 flex flex-row gap-2">
+        <input
+          type="text"
+          value={newChannelName}
+          onChange={e => setNewChannelName(e.target.value)}
+          onFocus={() => setShowSuggestions(true)}
+          className="border px-2 py-1 rounded"
+        />
+        <button
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={() => infos("ChRackCreate")}
+          onClick={handleCreateChannel}
+          className="bg-blue-500 w-15 h-15 text-white justify-center py-1 rounded flex items-center gap-1"
+          style={{color: colors.regularButtonColor}}
+        >
+          <GiConfirmed size={20} /> Create
+        </button>
+      </div>
+    )}
+
+    {/* Suggestions */}
+    {showSuggestions && filteredSuggestions.length > 0 && (
+      <div className="flex overflow-auto gap-2 mb-2">
+        {filteredSuggestions.map((s, i) => (
+          <button
+            key={i}
+            className="text-xs border-2 border-white rounded px-2 py-1"
+            onMouseDown={() => {
+              setNewChannelName(s);
+              setShowSuggestions(false);
+            }}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+    )}
+
+    {/* Piano Roll */}
+    {showPianoRoll && selectedChannel && (
+      <PianoRoll
+        grid={ensureGridSize(grids[selectedChannel])}
+        onGridToggle={(r, c) => handleGridToggle(selectedChannel, r, c)}
+        rows={rows}
+        cols={cols}
+        onColsChange={setCols}
+        onClearGrid={() =>
+          updateGrids(prev => ({ ...prev, [selectedChannel]: createEmptyGrid() }))
+        }
+        onCopy={handleCopy}
+        onPaste={handlePaste}
+        selectedInstrument={selectedChannel}
+        isPlaying={isPlaying}
+      />
+    )}
+  </div>
+);
+
 });
 
 export default ChannelRack;
