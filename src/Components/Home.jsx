@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback} from "react";
+import React, { useState, useEffect, useCallback, useReducer} from "react";
 import { useNavigate } from "react-router-dom";
 import ChannelRack from "./ComplexComponents/ChannelRack";
 import Transport from "./ComplexComponents/Transport";
@@ -13,12 +13,13 @@ import ProjectManager from "./SystemTools/ProjectManager";
 import {usePattern} from "./ComplexComponents/Functions/usePattern";
 import { useChannels } from "./ComplexComponents/Functions/useChannels";
 import { useStorage } from "./ComplexComponents/Functions/useStorage";
-import { useTransport } from "./ComplexComponents/Functions/useTransport";
-import { useMemoizedHandlers } from "./Contexts/memoizedHandlers";
-
+import { memoizedHandlers } from "./Contexts/JS/memoizedHandlers";
+import { InitialStates } from "./Contexts/JS/InitialStates";
+import { ProjectReducer } from "./Contexts/JS/ProjectReducer";
 
 const Home = () => {
   // États principaux
+  const [state, dispatch] = useReducer(ProjectReducer, InitialStates);
   const [players, setPlayers] = useState({});
   const [channelSources, setChannelSources] = useState({});
   const [grids, setGrids] = useState({});
@@ -208,7 +209,7 @@ const Home = () => {
     }
   }, [patterns]);
 
-  const { mouse, callbacks } = useMemoizedHandlers({
+  const { mouse, callbacks } = memoizedHandlers({
     handleMouseEnter,
     handleMouseLeave,
     handleSamplesUpdated,
@@ -269,15 +270,12 @@ const Home = () => {
         />
         
         <PatternManager
+          state={state}
+          dispatch={dispatch}
           patterns={patterns}
           selectedPattern={selectedPattern}
-          selectPattern={handleSelectPattern}
-          addPattern={addPattern}
-          duplicatePattern={duplicatePattern}
-          renamePattern={renamePattern}
-          deletePattern={deletePattern}
-          onMouseEnter={mouse.onPatternMouseEnter}
-          onMouseLeave={mouse.onMouseLeave}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         />
 
         <ComponentManager
