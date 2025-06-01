@@ -236,19 +236,19 @@ const ChannelRack = React.memo(({
   return (
   <div
     key={items}
-    className="fixed top-[60px] right-0 max-h-[850px] max-w-[370px] overflow-auto border-8 border-white border-inset rounded bg-red p-2"
+    className="fixed top-[60px] right-0 max-h-[850px] max-w-[470px] border-8 border-white border-inset rounded bg-red p-2"
   >
     <h2
       onMouseLeave={onMouseLeave}
       onMouseEnter={() => infos("ChannelRack")}
-      className="font-silkscreen text-xl text-red-500 mb-4"
+      className="font-silkscreen text-xl text-white mb-4"
     >
       Channel Rack
     </h2>
 
     {/* Canaux */}
     {Object.entries(channels).map(([name], i) => (
-      <div key={i} style={{color: "white"}} className="flex items-center gap-2 mb-2">
+      <div key={i} style={{color: "white"}} className="flex items-center gap-2 mb-2 w-90">
         <p className="w-[120px] font-silkscreen text-sm">
           {i + 1} - {name}
         </p>
@@ -326,7 +326,7 @@ const ChannelRack = React.memo(({
     )}
 
     {/* Ajout */}
-    <div className="flex gap-2 mb-2">
+    <div className="flex gap-2 mb-2 justify-center">
       <button
         onMouseEnter={() => infos("ChRackAdd")}
         onMouseLeave={onMouseLeave}
@@ -353,7 +353,7 @@ const ChannelRack = React.memo(({
           value={newChannelName}
           onChange={e => setNewChannelName(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
-          className="border px-2 py-1 rounded"
+          className="border px-2 py-1 rounded w-30 h-15"
         />
         <button
           onMouseLeave={onMouseLeave}
