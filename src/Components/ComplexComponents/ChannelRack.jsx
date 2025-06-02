@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { styled } from "@mui/material/styles";
 import * as Tone from "tone";
 import { MdAdd, MdDelete, MdCancel, MdOutlineDriveFileRenameOutline } from "react-icons/md";
@@ -7,7 +7,7 @@ import { CgPiano } from "react-icons/cg";
 import { FaFileUpload } from "react-icons/fa";
 import PianoRoll from "./PianoRoll";
 import { useColors } from "../Contexts/ColorProvider";
-import { itemsToMapForDisplay } from "../Contexts/JS//ItemsToMapForDisplay";
+import { itemsToMapForDisplay } from "../Contexts/JS/ItemsToMapForDisplay";
 import { RiResetLeftFill } from "react-icons/ri";
 
 const VisuallyHiddenInput = styled('input')({
@@ -236,7 +236,7 @@ const ChannelRack = React.memo(({
   return (
   <div
     key={items}
-    className="fixed top-[60px] right-0 max-h-[850px] max-w-[470px] border-8 border-white border-inset rounded bg-red p-2"
+    className="fixed top-[60px] right-0 max-h-[850px] max-w-[470px] border-8 border-white border-inset rounded p-2"
   >
     <h2
       onMouseLeave={onMouseLeave}
@@ -256,9 +256,9 @@ const ChannelRack = React.memo(({
         <label
           onMouseLeave={onMouseLeave}
           onMouseEnter={() => infos("ChRackUpload")}
-          className="text-xs bg-gray-400 text-white px-2 py-1 rounded cursor-pointer flex items-center gap-1"
+          className="text-xs bg-gray-600 text-white px-2 py-1 rounded cursor-pointer flex items-center gap-1"
         >
-          <FaFileUpload size={15} />
+          <FaFileUpload size={15} color={colors.regularButtonColor} />
           {channels[name] ? "Replace" : "Load"}
           <input
             type="file"
@@ -276,7 +276,7 @@ const ChannelRack = React.memo(({
             setShowPianoRoll(!showPianoRoll);
           }}
         >
-          <CgPiano size={25} color="black" />
+          <CgPiano size={25} color={colors.regularButtonColor} />
         </button>
 
         <button
@@ -287,7 +287,7 @@ const ChannelRack = React.memo(({
             setShowRename(true);
           }}
         >
-          <MdOutlineDriveFileRenameOutline size={25} color="black" />
+          <MdOutlineDriveFileRenameOutline size={25} color={colors.regularButtonColor} />
         </button>
 
         <button
@@ -296,14 +296,14 @@ const ChannelRack = React.memo(({
           disabled={showRename}
           onClick={() => handleRemoveChannel(name)}
         >
-          <MdDelete size={25} color="black" />
+          <MdDelete size={25} color={colors.regularButtonColor}/>
         </button>
       </div>
     ))}
 
     {/* Renommage */}
     {showRename && (
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center text-white gap-2 mb-2">
         <input
           type="text"
           placeholder={`Rename "${selectedChannel}"`}
@@ -320,7 +320,7 @@ const ChannelRack = React.memo(({
             Object.keys(channels).length === 0
           }
         >
-          <GiConfirmed size={20} /> Rename
+          <GiConfirmed size={20} color={colors.regularButtonColor}/> Rename
         </button>
       </div>
     )}
@@ -332,7 +332,7 @@ const ChannelRack = React.memo(({
         onMouseLeave={onMouseLeave}
         onClick={() => !showRename && setShowInput(p => !p)}
       >
-        {showInput ? <MdCancel size={20} /> : <MdAdd size={25} />}
+        {showInput ? <MdCancel size={20} /> : <MdAdd size={25} color={colors.regularButtonColor}/>}
       </button>
 
       {Object.keys(channels).length === 0 && (
@@ -341,7 +341,7 @@ const ChannelRack = React.memo(({
           onMouseLeave={onMouseLeave}
           onClick={() => setChannels(defaultInstruments)}
         >
-          <RiResetLeftFill size={25} />
+          <RiResetLeftFill size={25} color={colors.regularButtonColor}/>
         </button>
       )}
     </div>
@@ -353,23 +353,23 @@ const ChannelRack = React.memo(({
           value={newChannelName}
           onChange={e => setNewChannelName(e.target.value)}
           onFocus={() => setShowSuggestions(true)}
-          className="border px-2 py-1 rounded w-30 h-15"
+          className="border text-white px-2 py-1 rounded w-30 h-15"
         />
         <button
           onMouseLeave={onMouseLeave}
           onMouseEnter={() => infos("ChRackCreate")}
           onClick={handleCreateChannel}
           className="bg-blue-500 w-15 h-15 text-white justify-center py-1 rounded flex items-center gap-1"
-          style={{color: colors.regularButtonColor}}
+          disabled={!newChannelName}
         >
-          <GiConfirmed size={20} /> Create
+          <GiConfirmed size={20} color={colors.regularButtonColor} /> Create
         </button>
       </div>
     )}
 
     {/* Suggestions */}
     {showSuggestions && filteredSuggestions.length > 0 && (
-      <div className="flex overflow-auto gap-2 mb-2">
+      <div className="flex overflow-auto text-white gap-2 mb-2">
         {filteredSuggestions.map((s, i) => (
           <button
             key={i}
