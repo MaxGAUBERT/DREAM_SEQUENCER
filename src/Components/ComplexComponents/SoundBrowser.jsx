@@ -62,122 +62,104 @@ const SoundBrowser = (props) => {
   };
 
   const handleDragStart = (e, sample) => {
-    // Important: utiliser text/plain comme format principal pour assurer la compatibilité
-    e.dataTransfer.setData("text/plain", sample.url);
-    
-    // Pour le débogage
-    console.log("Drag started with sample URL:", sample.url);
+  // Créer un objet avec toutes les données nécessaires
+  const dragData = {
+    type: 'sample',
+    name: sample.name,
+    url: sample.url,
+    file: sample.file,
+    id: `sample_${Date.now()}_${Math.random()}` // ID unique pour éviter les conflits
   };
+  
+  // Stocker les données sous différents formats pour assurer la compatibilité
+  e.dataTransfer.setData("application/json", JSON.stringify(dragData));
+  e.dataTransfer.setData("text/plain", sample.url);
+  e.dataTransfer.setData("text/sample-data", JSON.stringify(dragData));
+  
+  // Définir l'effet de drag
+  e.dataTransfer.effectAllowed = "copy";
+  
+  // Optionnel: créer une image de drag personnalisée
+  e.dataTransfer.setDragImage(e.target, 0, 0);
+  
+  console.log("Drag started with sample:", dragData);
+};
 
   return (
-    <Box
-      width={300}
-      p={2}
-      sx={{
-        bgcolor: '#1e1e1e',
-        color: 'white',
-        position: 'fixed',
-        top: 45,
-        left: 0,
-        height: "100%",
-        width: 350,
-        overflowY: 'auto',
-      }}
+    <div
+      className="bg-1e1e1e color-white fixed top-15.5 bg-black left-0 max-h-160 overflow-y-auto"
       onMouseEnter={props.onMouseEnter}
       onMouseLeave={props.onMouseLeave}
     >
-      <Typography variant="h6" sx={{ mb: 2, fontFamily: 'Silkscreen, cursive' }} gutterBottom>
-        Sound Browser
-      </Typography>
 
 
 
-        <Button
+        <button
           variant="contained"
           width="10%"
-          sx={{mb: 2, bgcolor: '#555', color: 'white', '&:hover': { bgcolor: '#777' }}}
+          className="mb-2 bg-#555 text-white hover:bg-gray-600  hover:shadow-lg hover:shadow-gray-300/80 transition-all duration-300 ease-in-out"
           onClick={() => document.getElementById("folderInput").click()}
           onMouseEnter={props.onMouseEnterBtn1}
           onMouseLeave={props.onMouseLeaveBtn1}
         >
           Import Samples
-        </Button>
+        </button>
 
-        <Button
+        <button
           variant="contained"
           width="10%"
-          sx={{mb: 2, ml: 2, bgcolor: '#555', color: 'white', '&:hover': { bgcolor: '#777' }}}
+          className="mb-2 ml-2 bg-#555 text-white hover:bg-gray-600  hover:shadow-lg hover:shadow-gray-300/80 transition-all duration-300 ease-in-out"
           onClick={() => setViewPlugins(!viewPlugins)}
           onMouseEnter={props.onMouseEnterBtn2}
           onMouseLeave={props.onMouseLeaveBtn2}
         >
 
           View Plugins
-        </Button>
-      <Input
+        </button>
+      <input
         id="folderInput"
         type="file"
-        inputProps={{ webkitdirectory: "true", directory: "true", multiple: true }}
-        sx={{ display: 'none' }}
+        webkitdirectory=""
+        directory="true"
+        multiple="true"
+        className='hidden'
         onChange={handleFolderSelect}
       />
 
-      <Divider sx={{ borderColor: '#555', mb: 2 }} />
+      {/* Divider */}
+      <div className="border-b border-gray-600 mb-4"></div>
 
-      <List>
+      {/* List */}
+      <div>
         {samples.map((sample, index) => (
-          <Box
+          <div
             key={index}
             draggable="true"
             onDragStart={(e) => handleDragStart(e, sample)}
             onDragOver={(e) => handleDragOver(e, sample)}
-            sx={{ 
-              cursor: 'grab',
-              '&:hover': {
-                backgroundColor: '#333333',
-                borderRadius: 1
-              }
-            }}
+            className="cursor-grab hover:bg-gray-700 hover:rounded"
           >
-            <ListItem
-              sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                bgcolor: '#2a2a2a',
-                mb: 1,
-                borderRadius: 2,
-                px: 1,
-              }}
-            >
-              <ListItemText 
-                primary={sample.name} 
-                sx={{ 
-                  color: 'white',
-                  '.MuiListItemText-primary': {
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }
-                }} 
-              />
-              <Button
-                size="small"
+            <div className="flex justify-between items-center bg-gray-800 mb-2 rounded-lg px-2 py-3">
+              <div className="text-white overflow-hidden text-ellipsis whitespace-nowrap flex-1 mr-4">
+                {sample.name}
+              </div>
+              <button
                 onClick={() => handlePreview(sample.url)}
-                variant="outlined"
+                className="text-sm px-3 py-1 border border-gray-500 text-gray-300 hover:bg-gray-600 rounded"
               >
                 Preview
-              </Button>
-            </ListItem>
-          </Box>
+              </button>
+            </div>
+          </div>
         ))}
-      </List>
-      
-      {samples.length === 0 && (
-        <Typography variant="body2" sx={{ color: '#aaa', textAlign: 'center', mt: 4 }}>
-          No samples loaded
-        </Typography>
-      )}
+      </div>
+
+    {/* Empty state */}
+    {samples.length === 0 && (
+      <div className="text-gray-400 text-center mt-8 text-sm">
+        No samples loaded
+      </div>
+    )}
 
       {viewPlugins && (
        
@@ -185,7 +167,7 @@ const SoundBrowser = (props) => {
 
       )}
 
-    </Box>
+    </div>
   );
 };
 
