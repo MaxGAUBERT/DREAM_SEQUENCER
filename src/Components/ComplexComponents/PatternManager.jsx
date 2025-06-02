@@ -1,32 +1,39 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { GrDuplicate } from "react-icons/gr";
 import { PatternRenamer } from "../FrontEnd/PatternRenamer";
 import { FaPlus, FaMinus } from "react-icons/fa6";
 import { MdMenu } from "react-icons/md";
 
 const PatternManager = ({
-  state,
-  dispatch,
   patterns,
+  selectPattern,
   selectedPattern,
+  addPattern,
+  deletePattern,
+  duplicatePattern,
   onMouseEnter,
-  onMouseLeave
+  onMouseLeave,
 }) => {
   const [anchorOpen, setAnchorOpen] = useState(false);
-
-
-  const renamePattern = (name) => {
-    if (!selectedPattern) return;
-    dispatch({
-      type: "RENAME_PATTERN",
-      payload: { id: selectedPattern.id, name: name },
+  
+  const renamePattern = (newName) => {
+  if (selectedPattern && typeof selectedPattern.id === "number") {
+    
+    const updatedPatterns = patterns.map((pattern) => {
+      if (pattern.id === selectedPattern.id) {
+        return { ...pattern, name: newName };
+      }
+      return pattern;
     });
- };
+    setPatterns(updatedPatterns);
+  }
+};
+
 
  return (
     <div
-      onMouseEnter={() => setAnchorOpen(true)}
-      onMouseLeave={() => setAnchorOpen(false)}
+      onMouseEnter={() => onMouseEnter("Pattern Manager")}
+      onMouseLeave={onMouseLeave}
       className="fixed top-[25px] left-[58.5%] -translate-x-1/2 -translate-y-1/2 bg-gray-500 flex flex-row flex-wrap gap-2 z-10 p-2 rounded shadow-md"
     >
       {/* Sélecteur de pattern */}
@@ -41,7 +48,7 @@ const PatternManager = ({
         }}
         className="text-white bg-gray-700 border border-gray-600 rounded px-2 py-1 max-w-[100px] text-sm focus:outline-none"
       >
-        <option value={selectedPattern}>Select a pattern</option>
+        <option value="">Select a pattern</option>
         {patterns.map((p) => (
           <option key={p.id} value={p.id.toString()}>
             {p.name}
@@ -52,7 +59,7 @@ const PatternManager = ({
       {/* Bouton menu déroulant */}
       <div className="relative">
         <button
-          onClick={() => setAnchorOpen((prev) => !prev)}
+          onClick={() => setAnchorOpen(!anchorOpen)}
           className="bg-gray-800 hover:bg-gray-900 text-white w-6 h-6 flex items-center justify-center rounded"
         >
           <MdMenu fontSize="small" />
@@ -62,7 +69,7 @@ const PatternManager = ({
           <div className="absolute left-0 top-full mt-1 bg-white border border-gray-300 rounded shadow-lg w-40 text-sm z-20">
             <button
               onClick={() => {
-                dispatch({ type: "ADD_PATTERN"});
+                addPattern();
                 setAnchorOpen(false);
               }}
               className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
@@ -72,7 +79,7 @@ const PatternManager = ({
             </button>
             <button
               onClick={() => {
-                dispatch({ type: "DELETE_PATTERN" });
+                deletePattern();
                 setAnchorOpen(false);
               }}
               className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
@@ -82,7 +89,7 @@ const PatternManager = ({
             </button>
             <button
               onClick={() => {
-                dispatch({ type: "DUPLICATE_PATTERN" });
+                duplicatePattern();
                 setAnchorOpen(false);
               }}
               className="w-full text-left px-3 py-2 hover:bg-gray-100 flex items-center gap-2"
@@ -91,9 +98,7 @@ const PatternManager = ({
               Duplicate
             </button>
 
-            
-
-      
+        
           </div>
         )}
       </div>
