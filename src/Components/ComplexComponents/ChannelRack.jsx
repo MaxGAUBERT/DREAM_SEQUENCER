@@ -10,17 +10,7 @@ import { useColors } from "../Contexts/ColorProvider";
 import { itemsToMapForDisplay } from "../Contexts/JS/ItemsToMapForDisplay";
 import { RiResetLeftFill } from "react-icons/ri";
 
-const VisuallyHiddenInput = styled('input')({
-  clip: 'rect(0 0 0 0)',
-  clipPath: 'inset(50%)',
-  height: 1,
-  overflow: 'hidden',
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  whiteSpace: 'nowrap',
-  width: 1,
-});
+
 
 const defaultInstruments = { Kick: null, Snare: null, Hihat: null, Clap: null };
 const suggestions = ["FX", "Synth", "Vocal", "Cymbals", "Bass", "Kick", "Snare", "Hihat", "Clap", "Flute"];
@@ -60,17 +50,79 @@ const ChannelRack = React.memo(({
       return updated;
     });
   };
-  
 
+  // ==================== DRAG & DROP LOGIC ====================
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    e.currentTarget.classList.add('drag-over');
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.currentTarget.classList.remove('drag-over');
+  }, []);
+
+  const handleDrop = useCallback((e, channelName) => {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    
+    try {
+      let sampleData;
+      const jsonData = e.dataTransfer.getData("application/json");
+      const sampleJsonData = e.dataTransfer.getData("text/sample-data");
+      
+      if (jsonData) {
+        sampleData = JSON.parse(jsonData);
+      } else if (sampleJsonData) {
+        sampleData = JSON.parse(sampleJsonData);
+      } else {
+        const url = e.dataTransfer.getData("text/plain");
+        sampleData = { url, type: 'sample', name: 'Dropped Sample' };
+      }
+      
+      if (sampleData.type === 'sample' || sampleData.url) {
+        assignSampleToChannel(channelName, sampleData);
+        console.log(`Sample ${sampleData.name} assigné au canal ${channelName}`);
+      }
+    } catch (error) {
+      console.error("Erreur lors du drop:", error);
+    }
+  }, []);
+
+  const assignSampleToChannel = useCallback(async (channelName, sampleData) => {
+    try {
+      await Tone.start();
+      
+      // Créer un sampler Tone.js avec le sample
+      const sampler = new Tone.Sampler({ 
+        urls: { C4: sampleData.url }, 
+        release: 1 
+      }).toDestination();
+      
+      // Mettre à jour les états
+      setChannels(prev => ({ ...prev, [channelName]: sampler }));
+      setChannelSources(prev => ({ 
+        ...prev, 
+        [channelName]: sampleData.url 
+      }));
+      
+      // Notifier les composants parents
+      onUrlUpdated(prev => ({ ...prev, [channelName]: sampleData.url }));
+      
+      console.log(`Sample ${sampleData.name} chargé dans le canal ${channelName}`);
+    } catch (error) {
+      console.error("Erreur lors du chargement du sample:", error);
+    }
+  }, [onUrlUpdated]);
+
+  // ==================== EXISTING FUNCTIONS ====================
   const handleCopy = () => {
-    // copier les notes de la grille sélectionnée
     const selectedGrid = grids[selectedChannel];
     const copiedNotes = selectedGrid.map(row => row.map(cell => (cell ? 1 : 0)));
     navigator.clipboard.writeText(JSON.stringify(copiedNotes));
   };
 
   const handlePaste = () => {
-    // coller les notes copiées dans la grille sélectionnée
     navigator.clipboard.readText().then(text => {
       try {
         const pastedNotes = JSON.parse(text);
@@ -91,46 +143,42 @@ const ChannelRack = React.memo(({
   };
 
   const handleRenameChannel = useCallback(() => {
-  if (!selectedChannel || !renamedChannel) return;
-  
-  // Préserver l'ordre des canaux en créant un nouvel objet ordonné
-  setChannels(prev => {
-    const entries = Object.entries(prev);
-    const result = {};
+    if (!selectedChannel || !renamedChannel) return;
     
-    // Reconstruire l'objet avec le même ordre, mais en remplaçant le nom du canal
-    for (const [key, value] of entries) {
-      if (key === selectedChannel) {
-        result[renamedChannel] = value;
-      } else {
-        result[key] = value;
+    setChannels(prev => {
+      const entries = Object.entries(prev);
+      const result = {};
+      
+      for (const [key, value] of entries) {
+        if (key === selectedChannel) {
+          result[renamedChannel] = value;
+        } else {
+          result[key] = value;
+        }
       }
-    }
-    
-    return result;
-  });
+      
+      return result;
+    });
 
-  
-  // Faire de même pour les grids
-  updateGrids(prev => {
-    const entries = Object.entries(prev);
-    const result = {};
-    
-    for (const [key, value] of entries) {
-      if (key === selectedChannel) {
-        result[renamedChannel] = value;
-      } else {
-        result[key] = value;
+    updateGrids(prev => {
+      const entries = Object.entries(prev);
+      const result = {};
+      
+      for (const [key, value] of entries) {
+        if (key === selectedChannel) {
+          result[renamedChannel] = value;
+        } else {
+          result[key] = value;
+        }
       }
-    }
+      
+      return result;
+    });
     
-    return result;
-  });
-  
-  setSelectedChannel(renamedChannel);
-  setRenamedChannel("");
-  setShowRename(false);
-},[selectedChannel, renamedChannel]);
+    setSelectedChannel(renamedChannel);
+    setRenamedChannel("");
+    setShowRename(false);
+  }, [selectedChannel, renamedChannel]);
 
   const handleCreateChannel = useCallback(() => {
     if (!newChannelName) return;
@@ -139,7 +187,7 @@ const ChannelRack = React.memo(({
     setSelectedChannel(newChannelName);
     setNewChannelName("");
     setShowInput(false);
-  },[newChannelName]);
+  }, [newChannelName]);
 
   const handleLoadSample = useCallback((channel, audioFile) => {
     if (!audioFile) return;
@@ -150,10 +198,9 @@ const ChannelRack = React.memo(({
       setChannels(prev => ({ ...prev, [channel]: sampler }));
       setChannelSources(prev => ({ ...prev, [channel]: url }));
       onUrlUpdated({ ...channelSources, [channel]: url });
-      //onSamplesUpdated({ ...channels, [channel]: sampler });
     };
     reader.readAsDataURL(audioFile);
-  },[channels, channelSources]);
+  }, [channels, channelSources]);
   
   const handleGridToggle = useCallback((inst, rowIdx, colIdx) => {
     updateGrids(prev => ({
@@ -163,9 +210,8 @@ const ChannelRack = React.memo(({
       )
     }));
   }, []);
-  
 
-   const handleRemoveChannel = useCallback((channelId) => {
+  const handleRemoveChannel = useCallback((channelId) => {
     if (!channelId) return;
 
     setShowSuggestions(false);
@@ -175,8 +221,6 @@ const ChannelRack = React.memo(({
       const updated = { ...prev };
       delete updated[channelId];
       
-      // Si le canal supprimé était le canal sélectionné,
-      // sélectionner le premier canal disponible s'il y en a
       if (channelId === selectedChannel) {
         const remainingChannels = Object.keys(updated);
         if (remainingChannels.length > 0) {
@@ -188,27 +232,26 @@ const ChannelRack = React.memo(({
         const remainingChannels = Object.keys(updated);
         setSelectedChannel(prev => (remainingChannels.includes(prev) ? prev : remainingChannels[0]));
       }
-        
       
       return updated;
     });
-  },[channels, selectedChannel]);
+  }, [channels, selectedChannel]);
 
   const ensureGridSize = (grid) => {
-  if (!grid || !Array.isArray(grid)) {
-    return Array.from({ length: rows }, () => Array(cols).fill(false));
-  }
-  
-  return Array.from({ length: rows }, (_, rowIdx) =>
-    Array.from({ length: cols }, (_, colIdx) => 
-      grid[rowIdx] && grid[rowIdx][colIdx] !== undefined 
-        ? grid[rowIdx][colIdx] 
-        : false
-    )
-  );
-};
+    if (!grid || !Array.isArray(grid)) {
+      return Array.from({ length: rows }, () => Array(cols).fill(false));
+    }
+    
+    return Array.from({ length: rows }, (_, rowIdx) =>
+      Array.from({ length: cols }, (_, colIdx) => 
+        grid[rowIdx] && grid[rowIdx][colIdx] !== undefined 
+          ? grid[rowIdx][colIdx] 
+          : false
+      )
+    );
+  };
 
-
+  // ==================== EFFECTS ====================
   useEffect(() => {
     onSamplesUpdated(channels);
     onGridsUpdated(grids);
@@ -234,177 +277,214 @@ const ChannelRack = React.memo(({
   }, [selectedPattern]);
 
   return (
-  <div
-    key={items}
-    className="fixed top-[60px] right-0 max-h-[850px] max-w-[470px] border-8 border-white border-inset rounded p-2"
-  >
-    <h2
-      onMouseLeave={onMouseLeave}
-      onMouseEnter={() => infos("ChannelRack")}
-      className="font-silkscreen text-xl text-white mb-4"
-    >
-      Channel Rack
-    </h2>
-
-    {/* Canaux */}
-    {Object.entries(channels).map(([name], i) => (
-      <div key={i} style={{color: "white"}} className="flex items-center gap-2 mb-2 w-90">
-        <p className="w-[120px] font-silkscreen text-sm">
-          {i + 1} - {name}
-        </p>
-
-        <label
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={() => infos("ChRackUpload")}
-          className="text-xs bg-gray-600 text-white px-2 py-1 rounded cursor-pointer flex items-center gap-1"
-        >
-          <FaFileUpload size={15} color={colors.regularButtonColor} />
-          {channels[name] ? "Replace" : "Load"}
-          <input
-            type="file"
-            accept="audio/*"
-            className="hidden"
-            onChange={e => handleLoadSample(name, e.target.files[0])}
-          />
-        </label>
-
-        <button
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={() => infos("ChRackPiano")}
-          onClick={() => {
-            setSelectedChannel(name);
-            setShowPianoRoll(!showPianoRoll);
-          }}
-        >
-          <CgPiano size={25} color={colors.regularButtonColor} />
-        </button>
-
-        <button
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={() => infos("ChRackRename")}
-          onClick={() => {
-            setSelectedChannel(name);
-            setShowRename(true);
-          }}
-        >
-          <MdOutlineDriveFileRenameOutline size={25} color={colors.regularButtonColor} />
-        </button>
-
-        <button
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={() => infos("ChRackDelete")}
-          disabled={showRename}
-          onClick={() => handleRemoveChannel(name)}
-        >
-          <MdDelete size={25} color={colors.regularButtonColor}/>
-        </button>
-      </div>
-    ))}
-
-    {/* Renommage */}
-    {showRename && (
-      <div className="flex items-center text-white gap-2 mb-2">
-        <input
-          type="text"
-          placeholder={`Rename "${selectedChannel}"`}
-          value={renamedChannel}
-          onChange={e => setRenamedChannel(e.target.value)}
-          className="border px-2 py-1 rounded"
-        />
-        <button
-          className="bg-green-500 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
-          onClick={handleRenameChannel}
-          disabled={
-            !renamedChannel ||
-            renamedChannel === selectedChannel ||
-            Object.keys(channels).length === 0
-          }
-        >
-          <GiConfirmed size={20} color={colors.regularButtonColor}/> Rename
-        </button>
-      </div>
-    )}
-
-    {/* Ajout */}
-    <div className="flex gap-2 mb-2 justify-center">
-      <button
-        onMouseEnter={() => infos("ChRackAdd")}
-        onMouseLeave={onMouseLeave}
-        onClick={() => !showRename && setShowInput(p => !p)}
-      >
-        {showInput ? <MdCancel size={20} /> : <MdAdd size={25} color={colors.regularButtonColor}/>}
-      </button>
-
-      {Object.keys(channels).length === 0 && (
-        <button
-          onMouseEnter={() => infos("ChReset")}
-          onMouseLeave={onMouseLeave}
-          onClick={() => setChannels(defaultInstruments)}
-        >
-          <RiResetLeftFill size={25} color={colors.regularButtonColor}/>
-        </button>
-      )}
-    </div>
-
-    {showInput && (
-      <div style={{color: colors.regularTextColor}} className="mb-2 flex flex-row gap-2">
-        <input
-          type="text"
-          value={newChannelName}
-          onChange={e => setNewChannelName(e.target.value)}
-          onFocus={() => setShowSuggestions(true)}
-          className="border text-white px-2 py-1 rounded w-30 h-15"
-        />
-        <button
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={() => infos("ChRackCreate")}
-          onClick={handleCreateChannel}
-          className="bg-blue-500 w-15 h-15 text-white justify-center py-1 rounded flex items-center gap-1"
-          disabled={!newChannelName}
-        >
-          <GiConfirmed size={20} color={colors.regularButtonColor} /> Create
-        </button>
-      </div>
-    )}
-
-    {/* Suggestions */}
-    {showSuggestions && filteredSuggestions.length > 0 && (
-      <div className="flex overflow-auto text-white gap-2 mb-2">
-        {filteredSuggestions.map((s, i) => (
-          <button
-            key={i}
-            className="text-xs border-2 border-white rounded px-2 py-1"
-            onMouseDown={() => {
-              setNewChannelName(s);
-              setShowSuggestions(false);
-            }}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-    )}
-
-    {/* Piano Roll */}
-    {showPianoRoll && selectedChannel && (
-      <PianoRoll
-        grid={ensureGridSize(grids[selectedChannel])}
-        onGridToggle={(r, c) => handleGridToggle(selectedChannel, r, c)}
-        rows={rows}
-        cols={cols}
-        onColsChange={setCols}
-        onClearGrid={() =>
-          updateGrids(prev => ({ ...prev, [selectedChannel]: createEmptyGrid() }))
+    <>
+      {/* Styles CSS pour les effets de drag over */}
+      <style jsx>{`
+        .drag-over {
+          background-color: rgba(59, 130, 246, 0.3) !important;
+          border: 2px dashed #3b82f6 !important;
+          transform: scale(1.02);
+          transition: all 0.2s ease;
         }
-        onCopy={handleCopy}
-        onPaste={handlePaste}
-        selectedInstrument={selectedChannel}
-        isPlaying={isPlaying}
-      />
-    )}
-  </div>
-);
+        
+        .channel-slot {
+          transition: all 0.2s ease;
+          border: 2px solid transparent;
+        }
+        
+        .channel-slot:hover {
+          border-color: rgba(156, 163, 175, 0.5);
+        }
+      `}</style>
 
+      <div
+        key={items}
+        className="fixed top-[60px] right-0 max-h-[850px] max-w-[470px] border-8 border-white border-inset rounded p-2"
+      >
+        <h2
+          onMouseLeave={onMouseLeave}
+          onMouseEnter={() => infos("ChannelRack")}
+          className="font-silkscreen text-xl text-white mb-4"
+        >
+          Channel Rack
+        </h2>
+
+        {/* Canaux avec zones de drop */}
+        {Object.entries(channels).map(([name], i) => (
+          <div 
+            key={i} 
+            className="channel-slot flex items-center gap-2 mb-2 w-90 p-2 rounded"
+            style={{color: "white"}}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, name)}
+          >
+            <p className="w-[120px] font-silkscreen text-sm">
+              {i + 1} - {name}
+            </p>
+
+            <label
+              onMouseLeave={onMouseLeave}
+              onMouseEnter={() => infos("ChRackUpload")}
+              className="text-xs bg-gray-600 text-white px-2 py-1 rounded cursor-pointer flex items-center gap-1"
+            >
+              <FaFileUpload size={15} color={colors.regularButtonColor} />
+              {channels[name] ? "Replace" : "Load"}
+              <input
+                type="file"
+                accept="audio/*"
+                className="hidden"
+                onChange={e => handleLoadSample(name, e.target.files[0])}
+              />
+            </label>
+
+            <button
+              onMouseLeave={onMouseLeave}
+              onMouseEnter={() => infos("ChRackPiano")}
+              onClick={() => {
+                setSelectedChannel(name);
+                setShowPianoRoll(!showPianoRoll);
+              }}
+            >
+              <CgPiano size={25} color={colors.regularButtonColor} />
+            </button>
+
+            <button
+              onMouseLeave={onMouseLeave}
+              onMouseEnter={() => infos("ChRackRename")}
+              onClick={() => {
+                setSelectedChannel(name);
+                setShowRename(true);
+              }}
+            >
+              <MdOutlineDriveFileRenameOutline size={25} color={colors.regularButtonColor} />
+            </button>
+
+            <button
+              onMouseLeave={onMouseLeave}
+              onMouseEnter={() => infos("ChRackDelete")}
+              disabled={showRename}
+              onClick={() => handleRemoveChannel(name)}
+            >
+              <MdDelete size={25} color={colors.regularButtonColor}/>
+            </button>
+
+            {/* Indicateur visuel si sample chargé */}
+            {channels[name] && (
+              <div className="ml-2 w-2 h-2 bg-green-500 rounded-full"></div>
+            )}
+          </div>
+        ))}
+
+        {/* Renommage */}
+        {showRename && (
+          <div className="flex items-center text-white gap-2 mb-2">
+            <input
+              type="text"
+              placeholder={`Rename "${selectedChannel}"`}
+              value={renamedChannel}
+              onChange={e => setRenamedChannel(e.target.value)}
+              className="border px-2 py-1 rounded text-black"
+            />
+            <button
+              className="bg-green-500 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
+              onClick={handleRenameChannel}
+              disabled={
+                !renamedChannel ||
+                renamedChannel === selectedChannel ||
+                Object.keys(channels).length === 0
+              }
+            >
+              <GiConfirmed size={20} color={colors.regularButtonColor}/> Rename
+            </button>
+          </div>
+        )}
+
+        {/* Ajout */}
+        <div className="flex gap-2 mb-2 justify-center">
+          <button
+            onMouseEnter={() => infos("ChRackAdd")}
+            onMouseLeave={onMouseLeave}
+            onClick={() => !showRename && setShowInput(p => !p)}
+          >
+            {showInput ? <MdCancel size={20} /> : <MdAdd size={25} color={colors.regularButtonColor}/>}
+          </button>
+
+          {Object.keys(channels).length === 0 && (
+            <button
+              onMouseEnter={() => infos("ChReset")}
+              onMouseLeave={onMouseLeave}
+              onClick={() => setChannels(defaultInstruments)}
+            >
+              <RiResetLeftFill size={25} color={colors.regularButtonColor}/>
+            </button>
+          )}
+        </div>
+
+        {showInput && (
+          <div style={{color: colors.regularTextColor}} className="mb-2 flex flex-row gap-2">
+            <input
+              type="text"
+              value={newChannelName}
+              onChange={e => setNewChannelName(e.target.value)}
+              onFocus={() => setShowSuggestions(true)}
+              className="border text-black px-2 py-1 rounded w-30 h-15"
+            />
+            <button
+              onMouseLeave={onMouseLeave}
+              onMouseEnter={() => infos("ChRackCreate")}
+              onClick={handleCreateChannel}
+              className="bg-blue-500 w-15 h-15 text-white justify-center py-1 rounded flex items-center gap-1"
+              disabled={!newChannelName}
+            >
+              <GiConfirmed size={20} color={colors.regularButtonColor} /> Create
+            </button>
+          </div>
+        )}
+
+        {/* Suggestions */}
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <div className="flex overflow-auto text-white gap-2 mb-2">
+            {filteredSuggestions.map((s, i) => (
+              <button
+                key={i}
+                className="text-xs border-2 border-white rounded px-2 py-1"
+                onMouseDown={() => {
+                  setNewChannelName(s);
+                  setShowSuggestions(false);
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Instructions de drop */}
+        <div className="text-xs text-gray-400 text-center mb-2">
+          Drop samples onto channel slots to load them
+        </div>
+
+        {/* Piano Roll */}
+        {showPianoRoll && selectedChannel && (
+          <PianoRoll
+            grid={ensureGridSize(grids[selectedChannel])}
+            onGridToggle={(r, c) => handleGridToggle(selectedChannel, r, c)}
+            rows={rows}
+            cols={cols}
+            onColsChange={setCols}
+            onClearGrid={() =>
+              updateGrids(prev => ({ ...prev, [selectedChannel]: createEmptyGrid() }))
+            }
+            onCopy={handleCopy}
+            onPaste={handlePaste}
+            selectedInstrument={selectedChannel}
+            isPlaying={isPlaying}
+          />
+        )}
+      </div>
+    </>
+  );
 });
 
 export default ChannelRack;
