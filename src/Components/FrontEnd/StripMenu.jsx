@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { Menu, MenuItem, Button, Stack, Box } from "@mui/material";
-import { itemsToMapForDisplay } from "../Contexts/ItemsToMapForDisplay"; // Assurez-vous que ce chemin est correct
+import { itemsToMapForDisplay } from "../Contexts/JS/ItemsToMapForDisplay"; // Assurez-vous que ce chemin est correct
 
 const StripMenu = React.memo(({ componentsMap, handleClickOnItem, openComponents, setOpenComponents, onMouseEnter: infos, onMouseLeave }) => {
   const [fileAnchor, setFileAnchor] = useState(null);
@@ -10,7 +9,16 @@ const StripMenu = React.memo(({ componentsMap, handleClickOnItem, openComponents
 
   const items = itemsToMapForDisplay();
 
-  const handleOpenMenu = (setter) => (event) => setter(event.currentTarget);
+  const handleOpenMenu = (setter) => (event) => {
+    // Fermer tous les menus d'abord
+    setFileAnchor(null);
+    setEditAnchor(null);
+    setViewAnchor(null);
+    setToolsAnchor(null);
+    // Puis ouvrir le menu demandé
+    setter(event.currentTarget);
+  };
+  
   const handleCloseMenu = (setter) => () => setter(null);
 
   const handleOpenComponent = useCallback((component) => {
@@ -23,86 +31,178 @@ const StripMenu = React.memo(({ componentsMap, handleClickOnItem, openComponents
   },[]);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <Stack
-        direction="row"
-        spacing={0.5}
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 80,
-          backgroundColor: "#1e1e1e",
-          padding: "2px",
-          boxShadow: "0px 4px 10px rgba(255, 255, 255, 0.5)",
-          zIndex: 1000,
-        }}
-      >
+    <div className="flex flex-col items-center">
+      {/* Menu Strip */}
+      <div className="absolute top-0 left-20 flex space-x-2 bg-gray-800 p-0.5 shadow-lg shadow-white/50 z-[1000]">
         {/* FILE */}
-        <Button variant="contained" sx={buttonStyle} onClick={handleOpenMenu(setFileAnchor)}>
-          File
-        </Button>
-        <Menu key={items} anchorEl={fileAnchor} open={Boolean(fileAnchor)} onClose={handleCloseMenu(setFileAnchor)}>
-          <MenuItem onMouseEnter={() => infos("New")} onClick={() => handleClickOnItem("New")}>New</MenuItem>
-          <MenuItem onMouseEnter={() => infos("Save As")} onClick={() => handleClickOnItem("Save As")}>Save As</MenuItem>
-          <MenuItem onMouseEnter={() => infos("Save")} onClick={() => handleClickOnItem("Save")}>Save</MenuItem>
-          <MenuItem onMouseEnter={() => infos("Load")} onClick={() => handleClickOnItem("Load")}>Load</MenuItem>
-          <MenuItem onMouseEnter={() => infos("Settings")} onClick={() => handleClickOnItem("Settings")}>Settings</MenuItem>
-          <MenuItem onMouseEnter={() => infos("Quit")} onClick={() => handleClickOnItem("Quit")}>Quit</MenuItem>
-        </Menu>
+        <div className="relative">
+          <button 
+            className="px-4 py-2 text-white bg-gray-600 hover:bg-gray-600 hover:scale-110 hover:shadow-lg hover:shadow-gray-300/80 transition-all duration-300 ease-in-out"
+            onClick={handleOpenMenu(setFileAnchor)}
+          >
+            File
+          </button>
+          {fileAnchor && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 shadow-lg min-w-[120px] z-[1001]">
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("New")} 
+                onClick={() => handleClickOnItem("New")}
+              >
+                New
+              </div>
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("Save As")} 
+                onClick={() => handleClickOnItem("Save As")}
+              >
+                Save As
+              </div>
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("Save")} 
+                onClick={() => handleClickOnItem("Save")}
+              >
+                Save
+              </div>
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("Load")} 
+                onClick={() => handleClickOnItem("Load")}
+              >
+                Load
+              </div>
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("Settings")} 
+                onClick={() => handleClickOnItem("Settings")}
+              >
+                Settings
+              </div>
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("Quit")} 
+                onClick={() => handleClickOnItem("Quit")}
+              >
+                Quit
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* EDIT */}
-        <Button variant="contained" sx={buttonStyle} onClick={handleOpenMenu(setEditAnchor)}>
-          Edit
-        </Button>
-        <Menu anchorEl={editAnchor} open={Boolean(editAnchor)} onClose={handleCloseMenu(setEditAnchor)}>
-          <MenuItem onClick={handleCloseMenu(setEditAnchor)}>Undo</MenuItem>
-          <MenuItem onClick={handleCloseMenu(setEditAnchor)}>Redo</MenuItem>
-        </Menu>
+        <div className="relative">
+          <button 
+            className="px-4 py-2 text-white bg-gray-600 hover:bg-gray-600 hover:scale-110 hover:shadow-lg hover:shadow-gray-300/80 transition-all duration-300 ease-in-out"
+            onClick={handleOpenMenu(setEditAnchor)}
+          >
+            Edit
+          </button>
+          {editAnchor && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 shadow-lg min-w-[120px] z-[1001]">
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onClick={handleCloseMenu(setEditAnchor)}
+              >
+                Undo
+              </div>
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onClick={handleCloseMenu(setEditAnchor)}
+              >
+                Redo
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* VIEW */}
-        <Button variant="contained" sx={buttonStyle} onClick={handleOpenMenu(setViewAnchor)}>
-          View
-        </Button>
-        <Menu anchorEl={viewAnchor} open={Boolean(viewAnchor)} onClose={handleCloseMenu(setViewAnchor)}>
-          <MenuItem onMouseEnter={() => infos("Channel Rack")} onClick={() => handleOpenComponent("ChannelRack")}>ChannelRack</MenuItem>
-          <MenuItem onMouseEnter={() => infos("Browser")}onClick={() => handleOpenComponent("Browser")}>Browser</MenuItem>
-          <MenuItem onMouseEnter={() => infos("Playlist")}onClick={() => handleOpenComponent("Playlist")}>Playlist</MenuItem>
-        </Menu>
+        <div className="relative">
+          <button 
+            className="px-4 py-2 text-white bg-gray-600 hover:bg-gray-600 hover:scale-110 hover:shadow-lg hover:shadow-gray-300/80 transition-all duration-300 ease-in-out"
+            onClick={handleOpenMenu(setViewAnchor)}
+          >
+            View
+          </button>
+          {viewAnchor && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 shadow-lg min-w-[120px] z-[1001]">
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("Channel Rack")} 
+                onClick={() => handleOpenComponent("ChannelRack")}
+              >
+                ChannelRack
+              </div>
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("Browser")}
+                onClick={() => handleOpenComponent("Browser")}
+              >
+                Browser
+              </div>
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("Playlist")}
+                onClick={() => handleOpenComponent("Playlist")}
+              >
+                Playlist
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* TOOLS */}
-        <Button variant="contained" sx={buttonStyle} onClick={handleOpenMenu(setToolsAnchor)}>
-          Tools
-        </Button>
-        <Menu anchorEl={toolsAnchor} open={Boolean(toolsAnchor)} onClose={handleCloseMenu(setToolsAnchor)}>
-          <MenuItem onMouseEnter={() => infos("AnalogSynth")}onClick={() => handleOpenComponent("AnalogSynth")}>Analog Synth</MenuItem>
-          <MenuItem onMouseEnter={() => infos("Modulator")}onClick={() => handleOpenComponent("Modulator")}>Modulator</MenuItem>
-        </Menu>
-      </Stack>
+        <div className="relative">
+          <button 
+            className="px-4 py-2 text-white bg-gray-600 hover:bg-gray-600 hover:scale-110 hover:shadow-lg hover:shadow-gray-300/80 transition-all duration-300 ease-in-out"
+            onClick={handleOpenMenu(setToolsAnchor)}
+          >
+            Tools
+          </button>
+          {toolsAnchor && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 shadow-lg min-w-[120px] z-[1001]">
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("AnalogSynth")}
+                onClick={() => handleOpenComponent("AnalogSynth")}
+              >
+                Analog Synth
+              </div>
+              <div 
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-gray-800"
+                onMouseEnter={() => infos("Modulator")}
+                onClick={() => handleOpenComponent("Modulator")}
+              >
+                Modulator
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Overlay pour fermer les menus */}
+      {(fileAnchor || editAnchor || viewAnchor || toolsAnchor) && (
+        <div 
+          className="fixed inset-0 z-[999]"
+          onClick={() => {
+            setFileAnchor(null);
+            setEditAnchor(null);
+            setViewAnchor(null);
+            setToolsAnchor(null);
+          }}
+        />
+      )}
 
       {/* Composants actifs affichés */}
       {Object.entries(openComponents).map(([componentName, isOpen]) => (
         isOpen && componentsMap[componentName] ? (
-          <Box
-            key={componentName}
-           
-          >
+          <div key={componentName}>
             {componentsMap[componentName]}
-          </Box>
+          </div>
         ) : null
       ))}
-    </Box>
+    </div>
   );
 });
-
-const buttonStyle = {
-  color: "white",
-  backgroundColor: "gray",
-  transition: "ease 0.3s",
-  "&:hover": {
-    backgroundColor: "gray",
-    transform: "scale(1.2)",
-    boxShadow: "0 4px 8px rgba(219, 219, 219, 0.8)",
-  },
-};
 
 export default StripMenu;

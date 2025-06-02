@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaEdit } from "react-icons/fa";
 
-export const PatternRenamer = ({ selectedPattern, renamePattern }) => {
+export const PatternRenamer = ({ selectedPattern }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState("");
 
