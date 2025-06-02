@@ -4,7 +4,6 @@ import ChannelRack from "./ComplexComponents/ChannelRack";
 import Transport from "./ComplexComponents/Transport";
 import StripMenu from "./FrontEnd/StripMenu";
 import GraphicEqIcon from '@mui/icons-material/GraphicEq';
-import { Typography, Box, Container} from "@mui/material";
 import PatternManager from "./ComplexComponents/PatternManager";
 import ComponentManager from "./Contexts/ComponentManager";
 import MainPanel from "./FrontEnd/MainPanel";
@@ -277,24 +276,15 @@ const Home = () => {
   });
 
   return (
-    <Box key={appKey}>
-      <Typography
+    <div key={appKey}>
+      <label
         variant="h3"
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          fontFamily: "Silkscreen, cursive",
-          fontSize: "1.2rem",
-          color: "white",
-          position: "fixed",
-          bottom: 0,
-          right: 0
-        }}
+        className="text-white flex flex-col font-[Silkscreen] text-2xl absolute bottom-0 right-0"
       >
         DREAM SEQUENCER - {projectName || "Untitled"}
-      </Typography>
+      </label>
 
-      <Box sx={{ display: "flex", flexDirection: "column", top: 0, right: 0, mt: 2 }}>
+      <div className="absolute top-0 right-0 flex flex-col">
         <Transport 
           stepValue={cols}
           players={players}
@@ -305,9 +295,9 @@ const Home = () => {
           onMouseLeave={handleMouseLeave}
           setIsPlaying={setIsPlaying}  
         />
-      </Box>
+      </div>
 
-      <Container sx={{ mt: 4 }}>
+      <div>
         <GraphicEqIcon sx={{ 
           position: "fixed", 
           top: 0, 
@@ -342,7 +332,7 @@ const Home = () => {
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          <Box style={{display: openComponents.ChannelRack ? "block" : "none"}}>
+          <div style={{display: openComponents.ChannelRack ? "block" : "none"}}>
             <ChannelRack
               onSamplesUpdated={callbacks.handleSamplesUpdated}
               onUrlUpdated={() => callbacks.handleUrlUpdated(channelSources)}
@@ -358,7 +348,7 @@ const Home = () => {
               onColsChange={callbacks.handleColsChange}
               isPlaying={isPlaying}
             />
-          </Box>
+          </div>
         </ComponentManager>
         
         <MainPanel infoToDisplay={infoOnMouseHover} />
@@ -399,8 +389,8 @@ const Home = () => {
           setLoadView={setLoadView}
         />
       )}
-      </Container>
-    </Box>
+      </div>
+    </div>
   );
 };
 
