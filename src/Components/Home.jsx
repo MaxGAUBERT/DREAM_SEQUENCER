@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useReducer} from "react";
+import React, { useState, useEffect, useReducer, useCallback} from "react";
 import { useNavigate } from "react-router-dom";
 import ChannelRack from "./ComplexComponents/ChannelRack";
 import Transport from "./ComplexComponents/Transport";
@@ -10,21 +10,18 @@ import ComponentManager from "./Contexts/ComponentManager";
 import MainPanel from "./FrontEnd/MainPanel";
 import ProjectManager from "./SystemTools/ProjectManager";
 // imports de fonctions 
-import {usePattern} from "./ComplexComponents/Functions/usePattern";
 import { useChannels } from "./ComplexComponents/Functions/useChannels";
 import { useStorage } from "./ComplexComponents/Functions/useStorage";
 import { memoizedHandlers } from "./Contexts/JS/memoizedHandlers";
-import { InitialStates } from "./Contexts/JS/InitialStates";
-import { ProjectReducer } from "./Contexts/JS/ProjectReducer";
+
 
 const Home = () => {
   // États principaux
-  const [state, dispatch] = useReducer(ProjectReducer, InitialStates);
   const [players, setPlayers] = useState({});
   const [channelSources, setChannelSources] = useState({});
   const [grids, setGrids] = useState({});
   const [patterns, setPatterns] = useState([{ players: {}, grids: {}, id: 1, name: "Pattern 1" }]);
-  const [selectedPattern, setSelectedPattern] = useState("");
+  const [selectedPattern, setSelectedPattern] = useState(0);
   const [projectName, setProjectName] = useState("");
   // pour le transport
   const [bpm, setBPM] = useState(120);
@@ -39,6 +36,71 @@ const Home = () => {
   const [loadView, setLoadView] = useState(false);
   const [showPlugins, setShowPlugins] = useState(false);
   const [infoOnMouseHover, setInfoOnMouseHover] = useState("");
+
+  const duplicatePattern = useCallback(() => {
+      if (!selectedPattern || Object.keys(players).length === 0) return;
+  
+      const newId = patterns.length + 1;
+      const deepCopyGrids = {};
+  
+      Object.keys(grids).forEach(instrumentId => {
+        deepCopyGrids[instrumentId] = grids[instrumentId].map(row => [...row]);
+      });
+  
+      const newPattern = {
+        ...selectedPattern,
+        id: newId,
+        name: `Pattern ${newId}`,
+        grids: deepCopyGrids,
+      };
+  
+      setPatterns(prev => [...prev, newPattern]);
+      setSelectedPattern(newPattern);
+      setGrids(deepCopyGrids);
+    }, [selectedPattern, patterns, players, grids, setPatterns, setSelectedPattern, setGrids]);
+  
+    const addPattern = useCallback(() => {
+      if (!Object.keys(players).length) return;
+  
+      const newId = patterns.length + 1;
+      const instrumentGrids = {};
+  
+      Object.keys(channelSources).forEach(instrumentName => {
+        instrumentGrids[instrumentName] = Array.from({ length: rows }, () => Array(cols).fill(false));
+      });
+  
+      const newPattern = {
+        players: { ...channelSources },
+        grids: instrumentGrids,
+        id: newId,
+        name: `Pattern ${newId}`,
+      };
+  
+      setPatterns([...patterns, newPattern]);
+      setSelectedPattern(newPattern);
+      setGrids(instrumentGrids);
+    }, [patterns, setPatterns, setSelectedPattern, players, channelSources, rows, cols, setGrids]);
+  
+    const deletePattern = useCallback(() => {
+      if (!selectedPattern || Object.keys(players).length === 0) return;
+  
+      setPatterns(prevPatterns => {
+        if (prevPatterns.length === 1) return prevPatterns;
+  
+        const updatedPatterns = prevPatterns.filter(p => p.id !== selectedPattern.id);
+        const reindexedPatterns = updatedPatterns.map((pattern, index) => ({
+          ...pattern,
+          id: index + 1,
+          name: pattern.name
+        }));
+  
+        const deletedIndex = prevPatterns.findIndex(p => p.id === selectedPattern.id);
+        const newSelected = reindexedPatterns[Math.min(deletedIndex, reindexedPatterns.length - 1)];
+        setSelectedPattern(newSelected);
+  
+        return reindexedPatterns;
+      });
+    }, [selectedPattern, players, setPatterns, setSelectedPattern]);
 
   
   // États de lecture
@@ -88,11 +150,6 @@ const Home = () => {
     "PatternMode": "Toggle Pattern Mode",
     "ChReset": "Set default channels"
   };
-
-  // Hooks personnalisés
-  const { addPattern, duplicatePattern, renamePattern, deletePattern } = usePattern({ patterns, setPatterns,
-    selectedPattern, setSelectedPattern, players, channelSources, grids, setGrids, rows, cols,
-  });
 
   const {handleSamplesUpdated, handleChannelsUpdated, handleUrlUpdated, handlePatternsUpdated, handleGridsUpdated,
   } = useChannels({ setPlayers, setChannelSources, setGrids, setPatterns, selectedPattern,
@@ -209,7 +266,7 @@ const Home = () => {
     }
   }, [patterns]);
 
-  const { mouse, callbacks } = memoizedHandlers({
+  const { callbacks } = memoizedHandlers({
     handleMouseEnter,
     handleMouseLeave,
     handleSamplesUpdated,
@@ -270,11 +327,13 @@ const Home = () => {
         />
         
         <PatternManager
-          state={state}
-          dispatch={dispatch}
           patterns={patterns}
           selectedPattern={selectedPattern}
-          onMouseEnter={handleMouseEnter}
+          selectPattern={handleSelectPattern}
+          addPattern={addPattern}
+          duplicatePattern={duplicatePattern}
+          deletePattern={deletePattern}
+          onMouseEnter={() => handleMouseEnter("Add / Delete / Duplicate patterns")}
           onMouseLeave={handleMouseLeave}
         />
 
