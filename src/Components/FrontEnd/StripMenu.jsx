@@ -31,9 +31,9 @@ const StripMenu = React.memo(({ componentsMap, handleClickOnItem, openComponents
   },[]);
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-0">
       {/* Menu Strip */}
-      <div className="absolute top-0 left-20 flex space-x-2 bg-gray-800 p-0.5 shadow-lg shadow-white/50 z-[1000]">
+      <div className="absolute top-0 left-20 flex space-x-2 bg-gray-800 p-0.5 font-bold shadow-lg shadow-white/50 z-[1000]">
         {/* FILE */}
         <div className="relative">
           <button 
