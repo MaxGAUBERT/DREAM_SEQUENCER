@@ -18,7 +18,7 @@ function App() {
     return (
         <ColorProvider>
             <BrowserRouter>
-                <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+                <div className="flex flex-col h-100vh">
                     <Routes>
                         <Route path="/" element={<NewProject />} />
                         <Route path="/LaunchAnimation" element={<LaunchAnimation />} />
@@ -32,7 +32,7 @@ function App() {
                         <Route path="/ProjectManager" element={<ProjectManager />} />
                         <Route path="/MainPanel" element={<MainPanel />} />
                     </Routes>
-                </Box>
+                </div>
             </BrowserRouter>
         </ColorProvider>
     );
