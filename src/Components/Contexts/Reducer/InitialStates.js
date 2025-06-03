@@ -1,0 +1,22 @@
+export const InitialStates = {
+  patterns: [{ players: {}, grids: {}, id: 1, name: "Pattern 1" }],
+  selectedPattern: 0,
+  grids: {},
+  players: {},
+  channelSources: {},
+  projectName: "",
+  bpm: 120,
+  isRecording: false,
+  recordedSequence: [],
+  isPlaying: false,
+  rows: 8,
+  cols: 50,
+  stepRow: 0,
+  openComponents: {
+    ChannelRack: true,
+    Browser: true,
+    Playlist: false,
+    AnalogSynth: false,
+    Modulator: false,
+  },
+};
