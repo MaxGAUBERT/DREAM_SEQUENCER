@@ -7,8 +7,9 @@ import { CgPiano } from "react-icons/cg";
 import { FaFileUpload } from "react-icons/fa";
 import PianoRoll from "./PianoRoll";
 import { useColors } from "../Contexts/ColorProvider";
-import { itemsToMapForDisplay } from "../Contexts/JS/ItemsToMapForDisplay";
+import { itemsToMapForDisplay } from "../Contexts/ItemsToMapForDisplay";
 import { RiResetLeftFill } from "react-icons/ri";
+
 
 
 
@@ -299,7 +300,7 @@ const ChannelRack = React.memo(({
 
       <div
         key={items}
-        className="fixed top-[60px] right-0 max-h-[850px] max-w-[470px] border-8 border-white border-inset rounded p-2"
+        className="fixed top-[60px] right-0 max-h-[550px] overflow-y-auto max-w-[470px] border-8 border-white border-inset rounded p-2"
       >
         <h2
           onMouseLeave={onMouseLeave}
@@ -397,6 +398,12 @@ const ChannelRack = React.memo(({
             >
               <GiConfirmed size={20} color={colors.regularButtonColor}/> Rename
             </button>
+            <button
+              className="bg-red-500 text-white px-2 py-1 rounded flex items-center disabled:opacity-50"
+              onClick={() => setShowRename(false)}
+            >
+              <MdCancel size={20} color={colors.regularButtonColor}/> Cancel
+            </button>
           </div>
         )}
 
@@ -448,7 +455,7 @@ const ChannelRack = React.memo(({
             {filteredSuggestions.map((s, i) => (
               <button
                 key={i}
-                className="text-xs border-2 border-white rounded px-2 py-1"
+                className="text-xs border-2 text-white border-white rounded px-2 py-1"
                 onMouseDown={() => {
                   setNewChannelName(s);
                   setShowSuggestions(false);
