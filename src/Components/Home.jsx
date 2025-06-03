@@ -8,11 +8,12 @@ import PatternManager from "./ComplexComponents/PatternManager";
 import ComponentManager from "./Contexts/ComponentManager";
 import MainPanel from "./FrontEnd/MainPanel";
 import ProjectManager from "./SystemTools/ProjectManager";
-// imports de fonctions 
+// imports de fonctions / hooks personnalisés
 import { useChannels } from "./ComplexComponents/Functions/useChannels";
 import { useStorage } from "./ComplexComponents/Functions/useStorage";
 import { memoizedHandlers } from "./Contexts/JS/memoizedHandlers";
-
+import { usePatternManager } from "./ComplexComponents/Functions/usePatternManager";
+import { componentInfoMap } from "./Contexts/JS/ComponentsInfoMap";
 
 const Home = () => {
   // États principaux
@@ -36,72 +37,18 @@ const Home = () => {
   const [showPlugins, setShowPlugins] = useState(false);
   const [infoOnMouseHover, setInfoOnMouseHover] = useState("");
 
-  const duplicatePattern = useCallback(() => {
-      if (!selectedPattern || Object.keys(players).length === 0) return;
-  
-      const newId = patterns.length + 1;
-      const deepCopyGrids = {};
-  
-      Object.keys(grids).forEach(instrumentId => {
-        deepCopyGrids[instrumentId] = grids[instrumentId].map(row => [...row]);
-      });
-  
-      const newPattern = {
-        ...selectedPattern,
-        id: newId,
-        name: `Pattern ${newId}`,
-        grids: deepCopyGrids,
-      };
-  
-      setPatterns(prev => [...prev, newPattern]);
-      setSelectedPattern(newPattern);
-      setGrids(deepCopyGrids);
-    }, [selectedPattern, patterns, players, grids, setPatterns, setSelectedPattern, setGrids]);
-  
-    const addPattern = useCallback(() => {
-      if (!Object.keys(players).length) return;
-  
-      const newId = patterns.length + 1;
-      const instrumentGrids = {};
-  
-      Object.keys(channelSources).forEach(instrumentName => {
-        instrumentGrids[instrumentName] = Array.from({ length: rows }, () => Array(cols).fill(false));
-      });
-  
-      const newPattern = {
-        players: { ...channelSources },
-        grids: instrumentGrids,
-        id: newId,
-        name: `Pattern ${newId}`,
-      };
-  
-      setPatterns([...patterns, newPattern]);
-      setSelectedPattern(newPattern);
-      setGrids(instrumentGrids);
-    }, [patterns, setPatterns, setSelectedPattern, players, channelSources, rows, cols, setGrids]);
-  
-    const deletePattern = useCallback(() => {
-      if (!selectedPattern || Object.keys(players).length === 0) return;
-  
-      setPatterns(prevPatterns => {
-        if (prevPatterns.length === 1) return prevPatterns;
-  
-        const updatedPatterns = prevPatterns.filter(p => p.id !== selectedPattern.id);
-        const reindexedPatterns = updatedPatterns.map((pattern, index) => ({
-          ...pattern,
-          id: index + 1,
-          name: pattern.name
-        }));
-  
-        const deletedIndex = prevPatterns.findIndex(p => p.id === selectedPattern.id);
-        const newSelected = reindexedPatterns[Math.min(deletedIndex, reindexedPatterns.length - 1)];
-        setSelectedPattern(newSelected);
-  
-        return reindexedPatterns;
-      });
-    }, [selectedPattern, players, setPatterns, setSelectedPattern]);
+  const { addPattern, duplicatePattern,deletePattern, handleSelectPattern
+    } = usePatternManager({ patterns, setPatterns, selectedPattern, setSelectedPattern, players, channelSources, rows, cols, grids, setGrids,
+  });
 
-  
+  const {handleSamplesUpdated, handleChannelsUpdated, handleUrlUpdated, handlePatternsUpdated, handleGridsUpdated,
+    } = useChannels({ setPlayers, setChannelSources, setGrids, setPatterns, selectedPattern,
+  });
+
+  const {projectsList, handleSaveCurrentProject, handleSaveAs, handleLoadProject, clearProjects, datasToSave,
+  } = useStorage({ patterns, channelSources, grids, setPatterns, setGrids, setProjectName, projectName, setRows, setCols, setChannelSources, setPlayers, defaultRows: 8, defaultCols: 50,
+  });
+
   // États de lecture
   const [isPlaying, setIsPlaying] = useState(false);
   
@@ -116,55 +63,6 @@ const Home = () => {
     setInfoOnMouseHover("");
   };
 
-  const componentInfoMap = {
-    "Browser": "Sound Browser",
-    "Playlist": "Playlist",
-    "Transport": "Transport",
-    "StripMenu": "Strip Menu",
-    "AnalogSynth": "View Analog Synth",
-    "Modulator": "View Modulator",
-    "New": "Create a new project",
-    "Save As": "Save project As",
-    "Save": "Save current project",
-    "Load": "Load an existing project",
-    "Settings": "Change settings",
-    "Quit": "Quit the application",
-    "ChannelRack": "Add / Delete channels",
-    "ChRackUpload": "Load a sample",
-    "ChRackPiano": "Add pianoRoll",
-    "ChRackDelete": "Delete a channel",
-    "ChRackRename": "Rename a channel",
-    "ChRackCreate": "Confirm channel to add",
-    "ChRackAdd": "Add a new channel",
-    "Play Song": "Play in song mode", 
-    "Play Pattern": "Play current pattern",
-    "Stop Song": "Stop the song",
-    "Stop Pattern": "Stop current pattern", 
-    "Record": "Record sequence", 
-    "Replay": "Replay recorded sequence", 
-    "Clear": "Clear recorded sequence", 
-    "BPM": "Adjust BPM",
-    "LoopMode": "Toggle Loop Mode",
-    "SongMode": "Toggle Song Mode",
-    "PatternMode": "Toggle Pattern Mode",
-    "ChReset": "Set default channels"
-  };
-
-  const {handleSamplesUpdated, handleChannelsUpdated, handleUrlUpdated, handlePatternsUpdated, handleGridsUpdated,
-  } = useChannels({ setPlayers, setChannelSources, setGrids, setPatterns, selectedPattern,
-  });
-
-
-  const {
-    projectsList,
-    handleSaveCurrentProject,
-    handleSaveAs,
-    handleLoadProject,
-    clearProjects,
-    datasToSave,
-  } = useStorage({ patterns, channelSources, grids, setPatterns, setGrids, setProjectName, projectName, setRows, setCols, setChannelSources, setPlayers, defaultRows: 8, defaultCols: 50,
-  });
-
   // États des composants ouverts
   const [openComponents, setOpenComponents] = useState({
     ChannelRack: true,
@@ -174,33 +72,7 @@ const Home = () => {
     Modulator: false,
   });
 
-  const handleSelectPattern = (newSelectedPattern) => {
-    console.log('🔄 Changement de pattern:', selectedPattern?.name, '→', newSelectedPattern?.name);
-    
-    // Sauvegarder les grilles du pattern actuel avant de changer
-    if (selectedPattern?.id) {
-      console.log('💾 Sauvegarde des grids du pattern actuel:', selectedPattern.id);
-      setPatterns((prevPatterns) => {
-        const updated = prevPatterns.map((pattern) =>
-          pattern.id === selectedPattern.id
-            ? { ...pattern, grids: { ...grids } } // Cloner les grids
-            : pattern
-        );
-        console.log('📝 Patterns mis à jour:', updated);
-        return updated;
-      });
-    }
-
-    // Charger les grilles du nouveau pattern sélectionné
-    setSelectedPattern(newSelectedPattern);
-    if (newSelectedPattern?.grids) {
-      console.log('📂 Chargement des grids du nouveau pattern:', newSelectedPattern.grids);
-      setGrids({ ...newSelectedPattern.grids }); // Cloner les grids
-    } else {
-      console.log('⚠️ Aucune grid trouvée pour le pattern:', newSelectedPattern?.name);
-      setGrids({});
-    }
-  };
+  
 
   // Fonction pour créer un nouveau projet
   const createNewProject = (projectName) => {
@@ -249,7 +121,7 @@ const Home = () => {
         console.log(`Action "${item}" non implémentée`);
     }
   };
-
+  /*
   // Effet pour s'assurer qu'un pattern est sélectionné et que les grilles sont synchronisées
   useEffect(() => {
     if (patterns.length > 0) {
@@ -264,6 +136,7 @@ const Home = () => {
       setGrids({});
     }
   }, [patterns]);
+  */
 
   const { callbacks } = memoizedHandlers({
     handleMouseEnter,
