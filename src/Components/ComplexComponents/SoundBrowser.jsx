@@ -87,7 +87,7 @@ const SoundBrowser = (props) => {
 
   return (
     <div
-      className="bg-1e1e1e color-white fixed top-12 bg-gray-800 left-0 max-h-160 h-full w-80 z-1000 overflow-y-auto"
+      className="bg-1e1e1e color-white fixed top-12 bg-gray-800 left-0 max-h-180 h-full w-88.5 z-1000 overflow-y-auto"
       onMouseEnter={props.onMouseEnter}
       onMouseLeave={props.onMouseLeave}
     >

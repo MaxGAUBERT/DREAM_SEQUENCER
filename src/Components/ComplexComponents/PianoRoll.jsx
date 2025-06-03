@@ -259,13 +259,13 @@ const PianoRoll = React.memo(({
   style={{ backgroundColor: "black"}}
     className="
       fixed flex
-      top-[56%] left-1/2
+      top-[55%] left-1/2
       -translate-x-1/2 -translate-y-1/2
       bg-[#111]
-      border-[6px] border-inset border-white
+      border-[4px] border-inset border-white
       rounded-md
-      w-3/5
-      h-[80%]
+      w-2/4
+      h-[90%]
       overflow-auto
       p-2
       select-none

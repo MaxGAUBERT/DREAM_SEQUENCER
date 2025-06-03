@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { Box, Button, Typography, TextField, Radio } from "@mui/material";
 import * as Tone from "tone";
 import { FaRegPlayCircle, FaRegStopCircle } from "react-icons/fa";
 import { BsFillSignStopFill, BsFillTrashFill, BsFillRecordCircleFill } from "react-icons/bs";
@@ -290,96 +289,97 @@ useEffect(() => {
   }, []);
 
   return (
-  <Box
-    sx={{
-      p: 2,
-      bgcolor: 'grey.900',
-      color: 'white',
-      borderRadius: 2,
-      boxShadow: 3,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 2,
-    }}
-  >
-    <Box key={items} sx={{ display: 'flex', flexDirection: "rows", position: 'absolute', top: 2, left: 400, alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-      <Button
+  <div className=" text-white rounded-lg z-[2500] flex flex-col absolute top-0 left-0">
+    
+    {/* Groupe de boutons principaux */}
+    <div className="absolute top-0.5 left-100 gap-1.5 flex flex-row">
+      <button
         onClick={handlePlayClick}
-        sx={{bgcolor: isPlaying ? 'green' : 'gray', color: isPlaying ? 'gray' : 'black'}}
-        onMouseEnter={songMode ? () => infos('Play Song'): () => infos('Play Pattern')}
+        onMouseEnter={songMode ? () => infos('Play Song') : () => infos('Play Pattern')}
         onMouseLeave={onMouseLeave}
+        className={`px-3 py-2 rounded ${isPlaying ? 'bg-green-500 text-gray-700' : 'bg-gray-500 text-black'}`}
       >
-        {isPlaying ? <FaRegPlayCircle size={20}/> : <FaPauseCircle size={20}/>}
-      </Button>
-      <Button
+        {isPlaying ? <FaRegPlayCircle size={20} color="green" /> : <FaPauseCircle color="red" size={20} />}
+      </button>
+
+      <button
         onClick={handleStopClick}
-        sx={{bgcolor: "gray", color: 'black'}} 
-        onMouseEnter={songMode ? () => infos('Stop Song'): () => infos('Stop Pattern')}
+        onMouseEnter={songMode ? () => infos('Stop Song') : () => infos('Stop Pattern')}
         onMouseLeave={onMouseLeave}
+        className="px-3 py-2 rounded bg-gray-500 text-red-500"
       >
-      <FaRegStopCircle size={20}/>
-      </Button>
-      <Button
+        <FaRegStopCircle size={20} />
+      </button>
+
+      <button
         onClick={handleRecordClick}
-        sx={{bgcolor: isRecording ? 'red' : 'gray', color: isRecording ? 'white' : 'black'}}
-        color="error"
         onMouseEnter={() => infos('Record')}
         onMouseLeave={onMouseLeave}
+        className={`px-3 py-2 rounded ${isRecording ? 'bg-red-600 text-white' : 'bg-gray-500 text-black'}`}
       >
-        {isRecording ? <PiRecordBold size={20}/> : <BsFillRecordCircleFill size={20}/>}
-      </Button>
-      <Button
+        {isRecording ? <PiRecordBold size={20} /> : <BsFillRecordCircleFill size={20} />}
+      </button>
+
+      <button
         onClick={handleReplayClick}
-        sx={{color: 'red', bgcolor: 'gray'}}
         onMouseEnter={() => infos('Replay')}
         onMouseLeave={onMouseLeave}
         disabled={recordedSequence.length === 0}
+        className="px-3 py-2 rounded bg-gray-500 text-red-500 disabled:opacity-50"
       >
-        <MdReplay size={20}/>
-      </Button>
-      <Button
+        <MdReplay size={20} />
+      </button>
+
+      <button
         onClick={handleClearClick}
-        sx={{color: 'red', bgcolor: 'gray'}}
         onMouseEnter={() => infos('Clear')}
         onMouseLeave={onMouseLeave}
+        className="px-3 py-2 rounded bg-gray-500 text-red-500"
       >
-        <BsFillTrashFill size={20}/>
-      </Button>
-    </Box>
+        <BsFillTrashFill size={20} />
+      </button>
+    </div>
 
-    <Box sx={{ position: 'absolute', top: 0, right: 870, alignItems: 'center', gap: 2 }}>
-
-      <Button
+    {/* Mode & BPM */}
+    <div className="absolute top-0 right-[15px] flex items-center gap-4">
+      <button
         onClick={handleSongModeToggle}
-        sx={{bgcolor: songMode ? 'blue' : 'gray', color: songMode ? 'white' : 'black'}}
-        onMouseEnter={songMode ? () => infos('SongMode'): () => infos('PatternMode')}
+        onMouseEnter={songMode ? () => infos('SongMode') : () => infos('PatternMode')}
         onMouseLeave={onMouseLeave}
+        className={`px-3 py-2 rounded ${songMode ? 'bg-blue-600 text-white' : 'bg-gray-500 text-black'}`}
       >
-        {songMode ? <PiPlaylistFill size={20}/> : <PiPianoKeysFill size={20}/>}
-      </Button>
-      <Button
+        {songMode ? <PiPlaylistFill size={20} /> : <PiPianoKeysFill size={20} />}
+      </button>
+
+      <button
         onClick={handleLoopModeToggle}
-        variant="outlined"
-        color={loopMode === 'all' ? 'success' : 'inherit'}
         onMouseEnter={() => infos('LoopMode')}
         onMouseLeave={onMouseLeave}
+        className={`px-3 py-2 rounded border ${
+          loopMode === 'all' ? 'border-green-500 text-green-500' : 'border-gray-400 text-white'
+        }`}
       >
         {loopMode === 'none' ? 'No Loop' : 'Loop All'}
-      </Button>
-      <TextField
-        label="BPM"
-        type="number"
-        value={bpm}
-        sx={{ width: 100, bgcolor: 'gray', color: 'black', ml: 2 }}
-        onChange={(e) => setBPM(parseInt(e.target.value) || 0)}
-        inputProps={{ min: 30, max: 300 }}
-        onMouseEnter={() => infos('BPM')}
-        onMouseLeave={onMouseLeave}
-        size="small"
-      />
-    </Box>
-  </Box>
+      </button>
+
+      <div className="ml-4">
+        <label htmlFor="bpm" className="block text-sm font-medium text-white mb-1">BPM</label>
+        <input
+          id="bpm"
+          type="number"
+          value={bpm}
+          min={30}
+          max={300}
+          onChange={(e) => setBPM(parseInt(e.target.value) || 0)}
+          onMouseEnter={() => infos('BPM')}
+          onMouseLeave={onMouseLeave}
+          className="w-24 px-2 py-1 rounded bg-gray-500 text-black"
+        />
+      </div>
+    </div>
+  </div>
 );
+
 };
 
 export default Transport;
