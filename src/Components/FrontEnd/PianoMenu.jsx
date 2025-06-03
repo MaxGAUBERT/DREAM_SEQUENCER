@@ -1,9 +1,4 @@
-import * as React from 'react';
 import {useState} from 'react';
-import Button from '@mui/material/Button';
-import ListSubheader from '@mui/material/ListSubheader';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import { TfiMenu } from "react-icons/tfi";
 
 export default function PianoMenu({onCut, onCopy, onPaste}) {
@@ -17,33 +12,73 @@ export default function PianoMenu({onCut, onCopy, onPaste}) {
   };
 
   return (
-    <div>
-      <Button
+    <div className="relative inline-block text-left">
+      <button
         id="basic-button"
-        aria-controls={open ? 'grouped-menu' : undefined}
         aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
+        aria-expanded={open ? "true" : "false"}
         onClick={handleClick}
+        className="p-2 text-white hover:bg-gray-700 rounded"
       >
         <TfiMenu size={20} />
-      </Button>
-      <Menu
-        id="grouped-menu"
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        MenuListProps={{
-          'aria-labelledby': 'basic-button',
-        }}
-      >
-        <ListSubheader>File</ListSubheader>
-        <MenuItem onClick={handleClose}>Export as MIDI</MenuItem>
-        <MenuItem onClick={handleClose}>Import MIDI</MenuItem>
-        <ListSubheader>Edit</ListSubheader>
-        <MenuItem onClick={() => {onCut(); handleClose()}}>Cut</MenuItem>
-        <MenuItem onClick={() => {onCopy(); handleClose()}}>Copy</MenuItem>
-        <MenuItem onClick={()=> {onPaste(); handleClose()}}>Paste</MenuItem>
-      </Menu>
+      </button>
+
+      {open && (
+        <div
+          id="grouped-menu"
+          className="absolute z-10 mt-2 w-40 bg-gray-800 text-white shadow-lg ring-1 ring-black ring-opacity-5"
+          role="menu"
+          aria-labelledby="basic-button"
+        >
+          <div className="px-3 py-1 text-xs font-semibold uppercase text-gray-400">File</div>
+          <button
+            onClick={() => handleClose()}
+            className="w-full text-left px-4 py-2 hover:bg-gray-700"
+            role="menuitem"
+          >
+            Export as MIDI
+          </button>
+          <button
+            onClick={() => handleClose()}
+            className="w-full text-left px-4 py-2 hover:bg-gray-700"
+            role="menuitem"
+          >
+            Import MIDI
+          </button>
+
+          <div className="px-3 py-1 text-xs font-semibold uppercase text-gray-400">Edit</div>
+          <button
+            onClick={() => {
+              onCut();
+              handleClose();
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-gray-700"
+            role="menuitem"
+          >
+            Cut
+          </button>
+          <button
+            onClick={() => {
+              onCopy();
+              handleClose();
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-gray-700"
+            role="menuitem"
+          >
+            Copy
+          </button>
+          <button
+            onClick={() => {
+              onPaste();
+              handleClose();
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-gray-700"
+            role="menuitem"
+          >
+            Paste
+          </button>
+        </div>
+      )}
     </div>
   );
 }
