@@ -241,10 +241,8 @@ const PianoRoll = React.memo(({
         w-[30px] h-[20px]
         text-white
         text-xs
-        font-normal
         text-center
         font-sans
-        font-bold
         border-b border-[#555]
         ml-2
         ${idx % 4 === 0 ? "bg-[#333]" : "bg-transparent"}
@@ -293,14 +291,14 @@ const PianoRoll = React.memo(({
         onClick={() => selectMode("draw")}
         className={`text-xs font-mono min-w-[40px]`}
       >
-        <ReactIcons.MdDraw size={20} />
+        <ReactIcons.MdDraw color="white" size={20} />
       </button>
 
       <button
         onClick={() => selectMode("paint")}
         className={`text-xs font-mono min-w-[40px]`}
       >
-        <PiPaintBrushHousehold size={20} />
+        <PiPaintBrushHousehold color="white" size={20} />
       </button>
 
       <button
@@ -308,7 +306,7 @@ const PianoRoll = React.memo(({
         className={`text-xs font-mono min-w-[40px] bg-color-gray-500`}
     
       >
-        <IoMove size={20} />
+        <IoMove color="white" size={20} />
       </button>
     </div>
 
