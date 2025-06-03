@@ -300,7 +300,7 @@ const ChannelRack = React.memo(({
 
       <div
         key={items}
-        className="fixed top-[60px] right-0 max-h-[550px] overflow-y-auto max-w-[470px] border-8 border-white border-inset rounded p-2"
+        className="fixed top-[60px] right-0 max-h-[550px] font-[silkscreen] overflow-y-auto max-w-[470px] border-8 border-white border-inset rounded p-2"
       >
         <h2
           onMouseLeave={onMouseLeave}
@@ -421,7 +421,7 @@ const ChannelRack = React.memo(({
             <button
               onMouseEnter={() => infos("ChReset")}
               onMouseLeave={onMouseLeave}
-              onClick={() => setChannels(defaultInstruments)}
+              onClick={() => { setChannels(defaultInstruments); setGrids({})}}
             >
               <RiResetLeftFill size={25} color={colors.regularButtonColor}/>
             </button>
