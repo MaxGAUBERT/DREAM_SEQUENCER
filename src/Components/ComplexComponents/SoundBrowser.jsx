@@ -87,7 +87,7 @@ const SoundBrowser = (props) => {
 
   return (
     <div
-      className="bg-1e1e1e color-white fixed top-15.5 bg-black left-0 max-h-160 overflow-y-auto"
+      className="bg-1e1e1e color-white fixed top-12 bg-gray-800 left-0 max-h-160 h-full w-80 z-1000 overflow-y-auto"
       onMouseEnter={props.onMouseEnter}
       onMouseLeave={props.onMouseLeave}
     >
@@ -97,7 +97,7 @@ const SoundBrowser = (props) => {
         <button
           variant="contained"
           width="10%"
-          className="mb-2 bg-#555 text-white hover:bg-gray-600  hover:shadow-lg hover:shadow-gray-300/80 transition-all duration-300 ease-in-out"
+          className="mt-5 bg-#555 text-white hover:bg-gray-600  hover:shadow-lg hover:shadow-gray-300/80 transition-all duration-300 ease-in-out"
           onClick={() => document.getElementById("folderInput").click()}
           onMouseEnter={props.onMouseEnterBtn1}
           onMouseLeave={props.onMouseLeaveBtn1}
