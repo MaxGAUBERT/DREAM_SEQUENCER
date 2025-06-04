@@ -8,19 +8,17 @@ export const usePatternManager = ({
   setSelectedPattern,
   players,
   channelSources,
-  rows,
-  cols,
   grids,
   setGrids,
 }) => {
   const addPattern = useCallback(() => {
-    if (!Object.keys(players).length) return;
+    //if (!Object.keys(players).length) return;
 
     const newId = patterns.length + 1;
     const instrumentGrids = {};
 
     Object.keys(channelSources).forEach(instrumentName => {
-      instrumentGrids[instrumentName] = Array.from({ length: rows }, () => Array(cols).fill(false));
+      instrumentGrids[instrumentName] = Array.from({ length: grids.rows }, () => Array(grids.cols).fill(false));
     });
 
     const newPattern = {
@@ -33,7 +31,7 @@ export const usePatternManager = ({
     setPatterns([...patterns, newPattern]);
     setSelectedPattern(newPattern);
     setGrids(instrumentGrids);
-  }, [patterns, players, channelSources, rows, cols, setPatterns, setSelectedPattern, setGrids]);
+  }, [patterns, players, channelSources, setPatterns, setSelectedPattern, setGrids]);
 
   const duplicatePattern = useCallback(() => {
     if (!selectedPattern || Object.keys(players).length === 0) return;
