@@ -7,70 +7,44 @@ const isBlackKey = (note) => note.includes("#");
 const PianoRollRow = React.memo(
   ({ note, rowIdx, rowData, playNote, handleMouseDown, handleMouseEnter, handleMouseUp, handleMouseLeave }) => {
     return (
-      <Box sx={{ display: "flex", flexDirection: "row" }}>
-        {/* Touche piano */}
-        <Box
-          onClick={() => playNote(note)}
-          sx={{
-            width: 90,
-            minWidth: 60,
-            height: 22,
-            backgroundColor: isBlackKey(note) ? "#333" : "#fff",
-            color: isBlackKey(note) ? "#eee" : "#000",
-            borderRight: "1px solid #666",
-            borderBottom: "1px solid #444",
-            display: "flex",
-            alignItems: "center",
-            paddingLeft: 1,
-            cursor: "pointer",
-            fontSize: "0.8rem",
-            fontFamily: "monospace",
-            position: "sticky",
-            left: 0,
-            zIndex: 2,
-            boxShadow: "2px 0px 5px rgba(0,0,0,0.3)",
-          }}
-        >
-          {note}
-        </Box>
+     <div className="flex flex-row">
+  {/* Touche piano */}
+  <div
+    onClick={() => playNote(note)}
+    className={`w-[90px] min-w-[60px] h-[22px] ${
+      isBlackKey(note)
+        ? "bg-[#333] text-[#eee]"
+        : "bg-white text-black"
+    } border-r border-[#666] border-b flex items-center pl-2 cursor-pointer text-xs font-mono sticky left-0 z-20 shadow-[2px_0px_5px_rgba(0,0,0,0.3)]`}
+  >
+    {note}
+  </div>
 
-        {/* Grille de notes */}
-        {rowData.map((step, colIdx) => (
-          <Box
-            key={colIdx}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              handleMouseDown(rowIdx, colIdx);
-            }}
-            onMouseEnter={() => {
-             
-              handleMouseEnter(rowIdx, colIdx);
-            }}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseLeave}
-            sx={{
-              width: 30,
-              height: 22,
-              bgcolor: step
-                ? "#4caf50"
-                : isBlackKey(note)
-                ? "#1a1a1a"
-                : "#222",
-              borderBottom: `1px solid ${isBlackKey(note) ? "#2a2a2a" : "#333"}`,
-              borderRight: "1px dotted #444",
-              "&:hover": {
-                bgcolor: step ? "#f44336" : "#555",
-                cursor: "pointer",
-              },
-              ...(colIdx % 4 === 0 && {
-                borderLeft: "1px solid #666",
-              }),
-              userSelect: "none",
-            }}
-          />
-        ))}
-      </Box>
-    );
+  {/* Grille de notes */}
+  {rowData.map((step, colIdx) => (
+    <div
+      key={colIdx}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        handleMouseDown(rowIdx, colIdx);
+      }}
+      onMouseEnter={() => handleMouseEnter(rowIdx, colIdx)}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      className={`
+        w-[30px] h-[22px] 
+        ${step ? "bg-green-600" : isBlackKey(note) ? "bg-[#1a1a1a]" : "bg-[#222]"} 
+        ${isBlackKey(note) ? "border-b border-[#2a2a2a]" : "border-b border-[#333]"} 
+        border-r border-dotted border-[#444] 
+        ${colIdx % 4 === 0 ? "border-l border-[#666]" : ""} 
+        hover:${step ? "bg-red-600" : "bg-[#555]"} 
+        cursor-pointer select-none
+      `}
+    />
+  ))}
+</div>
+ 
+    )
   }
 );
 

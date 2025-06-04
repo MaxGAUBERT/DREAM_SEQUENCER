@@ -311,9 +311,9 @@ const PianoRoll = React.memo(({
     </div>
 
     {/* Grille complète avec piano intégré */}
-    <div className="flex flex-col w-full mt-16">
+    <div className="flex flex-col w-screen mt-15">
       {/* Step headers optimisés */}
-      <div className="flex flex-row ml-[3.5rem]">{stepHeaders}</div>
+      <div className="flex flex-row items-center justify-center ml-[80px]">{stepHeaders}</div>
 
       {/* Grid rows avec piano intégré */}
       {noteList.map((note, rowIdx) => (
