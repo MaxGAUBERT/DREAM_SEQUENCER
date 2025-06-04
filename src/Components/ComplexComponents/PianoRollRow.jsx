@@ -15,7 +15,7 @@ const PianoRollRow = React.memo(
       isBlackKey(note)
         ? "bg-[#333] text-[#eee]"
         : "bg-white text-black"
-    } border-r border-[#666] border-b flex items-center pl-2 cursor-pointer text-xs font-mono sticky left-0 z-20 shadow-[2px_0px_5px_rgba(0,0,0,0.3)]`}
+    } border-r border-[#666] border-b flex items-center pl-2 cursor-pointer text-xs font-mono left-0 z-20 shadow-[2px_0px_5px_rgba(0,0,0,0.3)]`}
   >
     {note}
   </div>
