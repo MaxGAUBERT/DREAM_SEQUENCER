@@ -38,7 +38,7 @@ const Home = () => {
   const [showPlugins, setShowPlugins] = useState(false);
   const [infoOnMouseHover, setInfoOnMouseHover] = useState("");
 
-  const { addPattern, duplicatePattern,deletePattern, handleSelectPattern
+  const { addPattern, duplicatePattern, deletePattern, handleSelectPattern
     } = usePatternManager({ patterns, setPatterns, selectedPattern, setSelectedPattern, players, channelSources, grids, setGrids,
   });
 
