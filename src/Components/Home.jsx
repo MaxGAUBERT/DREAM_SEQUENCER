@@ -9,11 +9,12 @@ import ComponentManager from "./Contexts/ComponentManager";
 import MainPanel from "./FrontEnd/MainPanel";
 import ProjectManager from "./SystemTools/ProjectManager";
 // imports de fonctions / hooks personnalisés
-import { useChannels } from "./ComplexComponents/Functions/useChannels";
-import { useStorage } from "./ComplexComponents/Functions/useStorage";
-import { memoizedHandlers } from "./Contexts/JS/memoizedHandlers";
-import { usePatternManager } from "./ComplexComponents/Functions/usePatternManager";
-import { componentInfoMap } from "./Contexts/JS/ComponentsInfoMap";
+import { useChannels } from "./ComplexComponents/Hooks/useChannels";
+import { useStorage } from "./ComplexComponents/Hooks/useStorage";
+import { memoizedHandlers } from "./Contexts/memoizedHandlers";
+import { usePatternManager } from "./ComplexComponents/Hooks/usePatternManager";
+import { componentInfoMap } from "./Contexts/ComponentsInfoMap";
+import { useTransport } from "./ComplexComponents/Hooks/useTransport";
 
 const Home = () => {
   // États principaux
@@ -22,7 +23,7 @@ const Home = () => {
   const [grids, setGrids] = useState({});
   const [patterns, setPatterns] = useState([{ players: {}, grids: {}, id: 1, name: "Pattern 1" }]);
   const [selectedPattern, setSelectedPattern] = useState(0);
-  const [projectName, setProjectName] = useState("");
+  const [projectName, setProjectName] = useState(localStorage.getItem("projectName") || "");
   // pour le transport
   const [bpm, setBPM] = useState(120);
   const [isRecording, setIsRecording] = useState(false);
@@ -38,7 +39,7 @@ const Home = () => {
   const [infoOnMouseHover, setInfoOnMouseHover] = useState("");
 
   const { addPattern, duplicatePattern,deletePattern, handleSelectPattern
-    } = usePatternManager({ patterns, setPatterns, selectedPattern, setSelectedPattern, players, channelSources, rows, cols, grids, setGrids,
+    } = usePatternManager({ patterns, setPatterns, selectedPattern, setSelectedPattern, players, channelSources, grids, setGrids,
   });
 
   const {handleSamplesUpdated, handleChannelsUpdated, handleUrlUpdated, handlePatternsUpdated, handleGridsUpdated,
@@ -67,7 +68,6 @@ const Home = () => {
   const [openComponents, setOpenComponents] = useState({
     ChannelRack: true,
     Browser: true,
-    Playlist: false,
     AnalogSynth: false,
     Modulator: false,
   });
@@ -121,22 +121,7 @@ const Home = () => {
         console.log(`Action "${item}" non implémentée`);
     }
   };
-  /*
-  // Effet pour s'assurer qu'un pattern est sélectionné et que les grilles sont synchronisées
-  useEffect(() => {
-    if (patterns.length > 0) {
-      const patternExists = patterns.some(p => p.id === (selectedPattern?.id || -1));
-      if (!patternExists) {
-        const firstPattern = patterns[0];
-        setSelectedPattern(firstPattern);
-        setGrids(firstPattern.grids || {});
-      }
-    } else {
-      setSelectedPattern(null);
-      setGrids({});
-    }
-  }, [patterns]);
-  */
+
 
   const { callbacks } = memoizedHandlers({
     handleMouseEnter,
@@ -154,22 +139,8 @@ const Home = () => {
         variant="h3"
         className="text-white flex flex-col font-[Silkscreen] text-2xl absolute bottom-0 right-0"
       >
-        DREAM SEQUENCER - {projectName || "Untitled"}
+        DREAM SEQUENCER - {projectName}
       </label>
-
-      <div className="absolute top-0 right-0 flex flex-col">
-        <Transport 
-          stepValue={cols}
-          players={players}
-          grids={grids}
-          patterns={patterns}
-          setStepRow={setStepRow}
-          onMouseEnter={handleMouseEnter} 
-          onMouseLeave={handleMouseLeave}
-          setIsPlaying={setIsPlaying}  
-        />
-      </div>
-
       <div>
         <GraphicEqIcon sx={{ 
           position: "fixed", 
@@ -179,6 +150,8 @@ const Home = () => {
           fontSize: "45px", 
           zIndex: 2 
         }} />
+
+        <Transport />
         
         <StripMenu
           componentsMap={openComponents}
