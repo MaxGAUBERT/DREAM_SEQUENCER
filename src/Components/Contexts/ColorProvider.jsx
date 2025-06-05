@@ -7,7 +7,7 @@ export const ColorProvider = ({ children }) => {
   const [colors, setColors] = useState({
     backgroundColor: "#ffffff",
     panelColor: "gray",
-    regularTextColor: "#000000",
+    regularTextColor: "white",
     regularButtonColor: "#007bff",
     channelRackColor: "red",
     playlistColor: "#dddddd",
