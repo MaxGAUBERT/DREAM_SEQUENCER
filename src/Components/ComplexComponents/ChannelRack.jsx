@@ -180,7 +180,7 @@ const ChannelRack = React.memo(({
   }, [selectedChannel, renamedChannel]);
 
   const handleCreateChannel = useCallback(() => {
-    if (!newChannelName) return;
+    if (!newChannelName || showRename) return;
     setChannels(prev => ({ ...prev, [newChannelName]: null }));
     setGrids(prev => ({ ...prev, [newChannelName]: createEmptyGrid() }));
     setSelectedChannel(newChannelName);
@@ -301,8 +301,8 @@ const ChannelRack = React.memo(({
         className="fixed top-[60px] right-0 max-h-[550px] font-[silkscreen] overflow-y-auto max-w-[470px] border-8 border-white border-inset rounded p-2"
       >
         <h2
-          
-          className="font-silkscreen text-xl text-white mb-4"
+          style={{color: colors.regularTextColor}}
+          className="font-silkscreen text-xl mb-4"
         >
           Channel Rack
         </h2>
@@ -312,8 +312,8 @@ const ChannelRack = React.memo(({
           <div 
            {...createHoverProps(name)}
             key={i} 
-            className="channel-slot flex items-center gap-2 mb-2 w-90 p-2 rounded"
-            style={{color: "white"}}
+            style={{color: colors.regularTextColor}}
+            className="channel-slot flex items-center gap-2 mb-2 w-90 p-2 rounded hover:bg-[colors.regularButtonHoverColor] cursor-pointer"
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, name)}
@@ -323,8 +323,8 @@ const ChannelRack = React.memo(({
             </p>
 
             <label
-              
-              className="text-xs bg-gray-600 text-white px-2 py-1 rounded cursor-pointer flex items-center gap-1"
+              style={{color: colors.regularTextColor}}
+              className="text-xs bg-gray-600 px-2 py-1 rounded cursor-pointer flex items-center gap-1"
             >
               <FaFileUpload size={15} color={colors.regularButtonColor} />
               {channels[name] ? "Replace" : "Load"}
@@ -374,16 +374,17 @@ const ChannelRack = React.memo(({
 
         {/* Renommage */}
         {showRename && (
-          <div className="flex items-center text-white gap-2 mb-2">
+          <div style={{color: colors.regularTextColor}} className="flex flex-col items-center gap-2 mb-2">
             <input
               type="text"
               placeholder={`Rename "${selectedChannel}"`}
               value={renamedChannel}
               onChange={e => setRenamedChannel(e.target.value)}
-              className="border px-2 py-1 rounded text-black"
+              className="border px-2 py-1 rounded text-[colors.regularTextColor]"
             />
             <button
-              className="bg-green-500 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
+            style={{color: colors.regularTextColor}}
+              className="bg-green-500 px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50"
               onClick={handleRenameChannel}
               disabled={
                 !renamedChannel ||
@@ -394,7 +395,8 @@ const ChannelRack = React.memo(({
               <GiConfirmed size={20} color={colors.regularButtonColor}/> Rename
             </button>
             <button
-              className="bg-red-500 text-white px-2 py-1 rounded flex items-center disabled:opacity-50"
+            style={{color: colors.regularTextColor}}
+              className="bg-red-500 px-2 py-1 rounded flex items-center disabled:opacity-50"
               onClick={() => setShowRename(false)}
             >
               <MdCancel size={20} color={colors.regularButtonColor}/> Cancel
@@ -431,9 +433,9 @@ const ChannelRack = React.memo(({
               className="border text-black px-2 py-1 rounded w-30 h-15"
             />
             <button
-              
+              style={{color: colors.regularTextColor}}
               onClick={handleCreateChannel}
-              className="bg-blue-500 w-15 h-15 text-white justify-center py-1 rounded flex items-center gap-1"
+              className="bg-blue-500 w-15 h-15 justify-center py-1 rounded flex items-center gap-1"
               disabled={!newChannelName}
             >
               <GiConfirmed size={20} color={colors.regularButtonColor} /> Create
@@ -443,11 +445,12 @@ const ChannelRack = React.memo(({
 
         {/* Suggestions */}
         {showSuggestions && filteredSuggestions.length > 0 && (
-          <div className="flex overflow-auto text-white gap-2 mb-2">
+          <div className="flex overflow-auto text-[colors.regularTextColor] gap-2 mb-2">
             {filteredSuggestions.map((s, i) => (
               <button
                 key={i}
-                className="text-xs border-2 text-white border-white rounded px-2 py-1"
+                style={{color: colors.regularTextColor}}
+                className="text-xs border-2 border-white rounded px-2 py-1"
                 onMouseDown={() => {
                   setNewChannelName(s);
                   setShowSuggestions(false);
