@@ -13,10 +13,13 @@ import { useChannels } from "./ComplexComponents/Hooks/useChannels";
 import { useStorage } from "./ComplexComponents/Hooks/useStorage";
 import { memoizedHandlers } from "./Contexts/memoizedHandlers";
 import { usePatternManager } from "./ComplexComponents/Hooks/usePatternManager";
-import { componentInfoMap } from "./Contexts/ComponentsInfoMap";
-import { useTransport } from "./ComplexComponents/Hooks/useTransport";
+import { HoverInfoProvider, useHoverInfo } from "./Contexts/HoverInfoContext";
 
-const Home = () => {
+// Composant interne qui utilise le contexte
+const HomeContent = () => {
+  // Utilisation du contexte pour les infos de survol
+  const { infoOnMouseHover, handleMouseEnter, handleMouseLeave } = useHoverInfo();
+  
   // États principaux
   const [players, setPlayers] = useState({});
   const [channelSources, setChannelSources] = useState({});
@@ -24,19 +27,12 @@ const Home = () => {
   const [patterns, setPatterns] = useState([{ players: {}, grids: {}, id: 1, name: "Pattern 1" }]);
   const [selectedPattern, setSelectedPattern] = useState(0);
   const [projectName, setProjectName] = useState(localStorage.getItem("projectName") || "");
-  // pour le transport
-  const [bpm, setBPM] = useState(120);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordedSequence, setRecordedSequence] = useState([]);
-  
   // États de l'interface
   const [stepRow, setStepRow] = useState(0);
   const [appKey, setAppKey] = useState(0);
   const [rows, setRows] = useState(8);
   const [cols, setCols] = useState(50);
   const [loadView, setLoadView] = useState(false);
-  const [showPlugins, setShowPlugins] = useState(false);
-  const [infoOnMouseHover, setInfoOnMouseHover] = useState("");
 
   const { addPattern, duplicatePattern, deletePattern, handleSelectPattern
     } = usePatternManager({ patterns, setPatterns, selectedPattern, setSelectedPattern, players, channelSources, grids, setGrids,
@@ -55,15 +51,6 @@ const Home = () => {
   
   const navigate = useNavigate();
 
-    // Gestionnaires d'événements pour le survol
-  const handleMouseEnter = (componentName) => {
-    setInfoOnMouseHover(componentInfoMap[componentName] || componentName);
-  };
-  
-  const handleMouseLeave = () => {
-    setInfoOnMouseHover("");
-  };
-
   // États des composants ouverts
   const [openComponents, setOpenComponents] = useState({
     ChannelRack: true,
@@ -71,8 +58,6 @@ const Home = () => {
     AnalogSynth: false,
     Modulator: false,
   });
-
-  
 
   // Fonction pour créer un nouveau projet
   const createNewProject = (projectName) => {
@@ -122,7 +107,6 @@ const Home = () => {
     }
   };
 
-
   const { callbacks } = memoizedHandlers({
     handleMouseEnter,
     handleMouseLeave,
@@ -158,8 +142,6 @@ const Home = () => {
           handleClickOnItem={handleMenuClick}
           openComponents={openComponents}
           setOpenComponents={setOpenComponents}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
         />
         
         <PatternManager
@@ -169,14 +151,10 @@ const Home = () => {
           addPattern={addPattern}
           duplicatePattern={duplicatePattern}
           deletePattern={deletePattern}
-          onMouseEnter={() => handleMouseEnter("Add / Delete / Duplicate patterns")}
-          onMouseLeave={handleMouseLeave}
         />
 
         <ComponentManager
           openComponents={openComponents}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
         >
           <div style={{display: openComponents.ChannelRack ? "block" : "none"}}>
             <ChannelRack
@@ -189,8 +167,6 @@ const Home = () => {
               selectedPattern={selectedPattern}
               stepRow={stepRow}
               resetFlag={appKey}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
               onColsChange={callbacks.handleColsChange}
               isPlaying={isPlaying}
             />
@@ -237,6 +213,15 @@ const Home = () => {
       )}
       </div>
     </div>
+  );
+};
+
+// Composant principal avec le Provider
+const Home = () => {
+  return (
+    <HoverInfoProvider>
+      <HomeContent />
+    </HoverInfoProvider>
   );
 };
 
