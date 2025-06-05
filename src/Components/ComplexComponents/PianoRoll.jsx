@@ -5,6 +5,7 @@ import PianoMenu from "../FrontEnd/PianoMenu";
 import { IoMove } from "react-icons/io5";
 import { PiPaintBrushHousehold } from "react-icons/pi";
 import PianoRollRow from "./PianoRollRow";
+import { useHoverInfo } from '../Contexts/HoverInfoContext';
 
 // Génère une liste de notes ascendantes (C3 → B5) en fonction du nombre de lignes
 const generateNoteList = (num) => {
@@ -36,6 +37,7 @@ const PianoRoll = React.memo(({
   isPlaying,
   currentStep
 }) => {
+  const { createHoverProps } = useHoverInfo();
   const noteList = useMemo(() => generateNoteList(rows).reverse(), [rows]);
   
   // État optimisé pour les interactions
@@ -244,7 +246,8 @@ const PianoRoll = React.memo(({
         text-center
         font-sans
         border-b border-[#555]
-        ml-2
+        self-center
+        ml-3.5
         ${idx % 4 === 0 ? "bg-[#333]" : "bg-transparent"}
       `}
     >
@@ -274,9 +277,7 @@ const PianoRoll = React.memo(({
   >
     <h6
       className="
-        fixed top-2.5 right-4
-        flex justify-end
-        w-full
+        fixed top-2.5 right-5
         text-white
       "
     >
@@ -288,6 +289,7 @@ const PianoRoll = React.memo(({
       <PianoMenu onCut={onClearGrid} onCopy={onCopy} onPaste={onPaste} />
 
       <button
+      {...createHoverProps("draw")}
         onClick={() => selectMode("draw")}
         className={`text-xs font-mono min-w-[40px]`}
       >
@@ -295,6 +297,7 @@ const PianoRoll = React.memo(({
       </button>
 
       <button
+      {...createHoverProps("paint")}
         onClick={() => selectMode("paint")}
         className={`text-xs font-mono min-w-[40px]`}
       >
@@ -302,6 +305,7 @@ const PianoRoll = React.memo(({
       </button>
 
       <button
+      {...createHoverProps("move")}
         onClick={() => selectMode("move")}
         className={`text-xs font-mono min-w-[40px] bg-color-gray-500`}
     
@@ -324,9 +328,7 @@ const PianoRoll = React.memo(({
           rowData={grid[rowIdx]}
           playNote={playNote}
           handleMouseDown={handleMouseDown}
-          handleMouseEnter={handleMouseEnter}
           handleMouseUp={handleMouseUp}
-          handleMouseLeave={handleMouseLeave}
           currentStep={currentStep}
         />
       ))}

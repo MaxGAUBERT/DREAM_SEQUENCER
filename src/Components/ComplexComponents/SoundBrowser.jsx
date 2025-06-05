@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Box, Typography, Button, List, ListItem, ListItemText, Divider, Input } from '@mui/material';
 import * as Tone from 'tone';
 import PluginViewer from './pluginViewer'; // Assurez-vous que ce chemin est correct
-
+import { useHoverInfo } from '../Contexts/HoverInfoContext';
 const SoundBrowser = (props) => {
+  const { createHoverProps } = useHoverInfo();
   const [samples, setSamples] = useState([]);
   const [viewPlugins, setViewPlugins] = useState(false);
   const [pluginData, setPluginData] = useState([
@@ -88,8 +89,7 @@ const SoundBrowser = (props) => {
   return (
     <div
       className="bg-1e1e1e color-white fixed top-12 bg-gray-800 left-0 max-h-180 h-full w-88.5 z-1000 overflow-y-auto"
-      onMouseEnter={props.onMouseEnter}
-      onMouseLeave={props.onMouseLeave}
+      
     >
 
 
@@ -99,8 +99,7 @@ const SoundBrowser = (props) => {
           width="10%"
           className="mt-5 bg-#555 text-white hover:bg-gray-600  hover:shadow-lg hover:shadow-gray-300/80 transition-all duration-300 ease-in-out"
           onClick={() => document.getElementById("folderInput").click()}
-          onMouseEnter={props.onMouseEnterBtn1}
-          onMouseLeave={props.onMouseLeaveBtn1}
+          {...createHoverProps("Import Samples")}
         >
           Import Samples
         </button>
@@ -110,8 +109,7 @@ const SoundBrowser = (props) => {
           width="10%"
           className="mb-2 ml-2 bg-#555 text-white hover:bg-gray-600  hover:shadow-lg hover:shadow-gray-300/80 transition-all duration-300 ease-in-out"
           onClick={() => setViewPlugins(!viewPlugins)}
-          onMouseEnter={props.onMouseEnterBtn2}
-          onMouseLeave={props.onMouseLeaveBtn2}
+          {...createHoverProps("View Plugins")}
         >
 
           View Plugins
@@ -144,6 +142,7 @@ const SoundBrowser = (props) => {
                 {sample.name}
               </div>
               <button
+                {...createHoverProps("Preview sample")}
                 onClick={() => handlePreview(sample.url)}
                 className="text-sm px-3 py-1 border border-gray-500 text-gray-300 hover:bg-gray-600 rounded"
               >

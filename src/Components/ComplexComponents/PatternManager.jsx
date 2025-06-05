@@ -3,18 +3,17 @@ import { GrDuplicate } from "react-icons/gr";
 import { PatternRenamer } from "../FrontEnd/PatternRenamer";
 import { FaPlus, FaMinus } from "react-icons/fa6";
 import { MdMenu } from "react-icons/md";
-
+import { useHoverInfo } from '../Contexts/HoverInfoContext';
 const PatternManager = ({
   patterns,
   selectPattern,
   selectedPattern,
   addPattern,
   deletePattern,
-  duplicatePattern,
-  onMouseEnter,
-  onMouseLeave,
+  duplicatePattern
 }) => {
   const [anchorOpen, setAnchorOpen] = useState(false);
+  const {createHoverProps} = useHoverInfo();
   
   const renamePattern = (newName) => {
   if (selectedPattern && typeof selectedPattern.id === "number") {
@@ -25,19 +24,20 @@ const PatternManager = ({
       }
       return pattern;
     });
-    setPatterns(updatedPatterns);
+    selectPattern(updatedPatterns);
   }
 };
 
 
  return (
     <div
-      onMouseEnter={() => onMouseEnter("Pattern Manager")}
-      onMouseLeave={onMouseLeave}
-      className="fixed top-[25px] left-[58.5%] -translate-x-1/2 -translate-y-1/2 bg-gray-500 flex flex-row flex-wrap gap-2 z-10 p-2 rounded shadow-md"
+
+      className="fixed top-[25px] left-[58.5%] -translate-x-1/2 -translate-y-1/2 bg-gray-500 flex flex-row flex-wrap gap-2 z-[2000] p-2 rounded shadow-md"
     >
       {/* Sélecteur de pattern */}
-      <select
+      <select 
+      {...createHoverProps("Pattern selector")}
+        
         value={selectedPattern?.id?.toString() || ""}
         onChange={(e) => {
           const patternId = parseInt(e.target.value);
@@ -68,6 +68,7 @@ const PatternManager = ({
         {anchorOpen && (
           <div className="absolute left-0 top-full mt-1 bg-white border border-gray-300 rounded shadow-lg w-40 text-sm z-20">
             <button
+            {...createHoverProps("Add pattern")}
               onClick={() => {
                 addPattern();
                 setAnchorOpen(false);
@@ -78,6 +79,7 @@ const PatternManager = ({
               Add
             </button>
             <button
+            {...createHoverProps("Delete pattern")}
               onClick={() => {
                 deletePattern();
                 setAnchorOpen(false);
@@ -88,6 +90,7 @@ const PatternManager = ({
               Delete
             </button>
             <button
+            {...createHoverProps("Duplicate pattern")}
               onClick={() => {
                 duplicatePattern();
                 setAnchorOpen(false);

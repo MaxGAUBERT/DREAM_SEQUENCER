@@ -1,11 +1,10 @@
 // PianoRollRow.jsx
 import React from "react";
-import { Box } from "@mui/material";
 
 const isBlackKey = (note) => note.includes("#");
 
 const PianoRollRow = React.memo(
-  ({ note, rowIdx, rowData, playNote, handleMouseDown, handleMouseEnter, handleMouseUp, handleMouseLeave }) => {
+  ({ note, rowIdx, rowData, playNote, handleMouseDown, handleMouseUp }) => {
     return (
      <div className="flex flex-row">
   {/* Touche piano */}
@@ -28,9 +27,7 @@ const PianoRollRow = React.memo(
         e.preventDefault();
         handleMouseDown(rowIdx, colIdx);
       }}
-      onMouseEnter={() => handleMouseEnter(rowIdx, colIdx)}
       onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseLeave}
       className={`
         w-[30px] h-[22px] 
         ${step ? "bg-green-600" : isBlackKey(note) ? "bg-[#1a1a1a]" : "bg-[#222]"} 

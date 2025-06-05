@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { styled } from "@mui/material/styles";
 import * as Tone from "tone";
 import { MdAdd, MdDelete, MdCancel, MdOutlineDriveFileRenameOutline } from "react-icons/md";
 import { GiConfirmed } from "react-icons/gi";
@@ -9,8 +8,7 @@ import PianoRoll from "./PianoRoll";
 import { useColors } from "../Contexts/ColorProvider";
 import { itemsToMapForDisplay } from "../Contexts/ItemsToMapForDisplay";
 import { RiResetLeftFill } from "react-icons/ri";
-
-
+import { useHoverInfo } from "../Contexts/HoverInfoContext";
 
 
 const defaultInstruments = { Kick: null, Snare: null, Hihat: null, Clap: null };
@@ -18,9 +16,9 @@ const suggestions = ["FX", "Synth", "Vocal", "Cymbals", "Bass", "Kick", "Snare",
 
 const ChannelRack = React.memo(({
   onSamplesUpdated, onUrlUpdated, onGridsUpdated, onPatternsUpdated,
-  patterns, selectedPattern, resetFlag,
-  onMouseEnter: infos, onMouseLeave, isPlaying
+  patterns, selectedPattern, resetFlag, isPlaying
 }) => {
+  const {createHoverProps} = useHoverInfo();
   const { colors } = useColors();
   const [channels, setChannels] = useState(defaultInstruments);
   const [channelSources, setChannelSources] = useState({});
@@ -303,8 +301,7 @@ const ChannelRack = React.memo(({
         className="fixed top-[60px] right-0 max-h-[550px] font-[silkscreen] overflow-y-auto max-w-[470px] border-8 border-white border-inset rounded p-2"
       >
         <h2
-          onMouseLeave={onMouseLeave}
-          onMouseEnter={() => infos("ChannelRack")}
+          
           className="font-silkscreen text-xl text-white mb-4"
         >
           Channel Rack
@@ -313,6 +310,7 @@ const ChannelRack = React.memo(({
         {/* Canaux avec zones de drop */}
         {Object.entries(channels).map(([name], i) => (
           <div 
+           {...createHoverProps(name)}
             key={i} 
             className="channel-slot flex items-center gap-2 mb-2 w-90 p-2 rounded"
             style={{color: "white"}}
@@ -325,13 +323,13 @@ const ChannelRack = React.memo(({
             </p>
 
             <label
-              onMouseLeave={onMouseLeave}
-              onMouseEnter={() => infos("ChRackUpload")}
+              
               className="text-xs bg-gray-600 text-white px-2 py-1 rounded cursor-pointer flex items-center gap-1"
             >
               <FaFileUpload size={15} color={colors.regularButtonColor} />
               {channels[name] ? "Replace" : "Load"}
               <input
+               {...createHoverProps("load sample")}
                 type="file"
                 accept="audio/*"
                 className="hidden"
@@ -340,8 +338,7 @@ const ChannelRack = React.memo(({
             </label>
 
             <button
-              onMouseLeave={onMouseLeave}
-              onMouseEnter={() => infos("ChRackPiano")}
+              {...createHoverProps("Open/close piano roll")}
               onClick={() => {
                 setSelectedChannel(name);
                 setShowPianoRoll(!showPianoRoll);
@@ -351,8 +348,7 @@ const ChannelRack = React.memo(({
             </button>
 
             <button
-              onMouseLeave={onMouseLeave}
-              onMouseEnter={() => infos("ChRackRename")}
+              {...createHoverProps("Rename channel")}
               onClick={() => {
                 setSelectedChannel(name);
                 setShowRename(true);
@@ -362,8 +358,7 @@ const ChannelRack = React.memo(({
             </button>
 
             <button
-              onMouseLeave={onMouseLeave}
-              onMouseEnter={() => infos("ChRackDelete")}
+              {...createHoverProps("Remove channel")}
               disabled={showRename}
               onClick={() => handleRemoveChannel(name)}
             >
@@ -410,8 +405,7 @@ const ChannelRack = React.memo(({
         {/* Ajout */}
         <div className="flex gap-2 mb-2 justify-center">
           <button
-            onMouseEnter={() => infos("ChRackAdd")}
-            onMouseLeave={onMouseLeave}
+            {...createHoverProps("Add channel")}
             onClick={() => !showRename && setShowInput(p => !p)}
           >
             {showInput ? <MdCancel size={20} /> : <MdAdd size={25} color={colors.regularButtonColor}/>}
@@ -419,8 +413,7 @@ const ChannelRack = React.memo(({
 
           {Object.keys(channels).length === 0 && (
             <button
-              onMouseEnter={() => infos("ChReset")}
-              onMouseLeave={onMouseLeave}
+              
               onClick={() => { setChannels(defaultInstruments); setGrids({})}}
             >
               <RiResetLeftFill size={25} color={colors.regularButtonColor}/>
@@ -438,8 +431,7 @@ const ChannelRack = React.memo(({
               className="border text-black px-2 py-1 rounded w-30 h-15"
             />
             <button
-              onMouseLeave={onMouseLeave}
-              onMouseEnter={() => infos("ChRackCreate")}
+              
               onClick={handleCreateChannel}
               className="bg-blue-500 w-15 h-15 text-white justify-center py-1 rounded flex items-center gap-1"
               disabled={!newChannelName}
