@@ -7,7 +7,8 @@ import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 import PatternManager from "./ComplexComponents/PatternManager";
 import ComponentManager from "./Contexts/ComponentManager";
 import MainPanel from "./FrontEnd/MainPanel";
-import ProjectManager from "./SystemTools/ProjectManager";
+import ProjectLoader from "./StorageManager/ProjectLoader";
+import NewProjectCreator from "./StorageManager/NewProjectCreator";
 // imports de fonctions / hooks personnalisés
 import { useChannels } from "./ComplexComponents/Hooks/useChannels";
 import { useStorage } from "./ComplexComponents/Hooks/useStorage";
@@ -19,7 +20,10 @@ import { HoverInfoProvider, useHoverInfo } from "./Contexts/HoverInfoContext";
 const HomeContent = () => {
   // Utilisation du contexte pour les infos de survol
   const { infoOnMouseHover, handleMouseEnter, handleMouseLeave } = useHoverInfo();
-  
+  const [menuToDisplay, setMenuToDisplay] = useState({
+    NewProject: false,
+    LoadProject: false
+  })
   // États principaux
   const [players, setPlayers] = useState({});
   const [channelSources, setChannelSources] = useState({});
@@ -32,7 +36,6 @@ const HomeContent = () => {
   const [appKey, setAppKey] = useState(0);
   const [rows, setRows] = useState(8);
   const [cols, setCols] = useState(50);
-  const [loadView, setLoadView] = useState(false);
 
   const { addPattern, duplicatePattern, deletePattern, handleSelectPattern
     } = usePatternManager({ patterns, setPatterns, selectedPattern, setSelectedPattern, players, channelSources, grids, setGrids,
@@ -42,7 +45,7 @@ const HomeContent = () => {
     } = useChannels({ setPlayers, setChannelSources, setGrids, setPatterns, selectedPattern,
   });
 
-  const {projectsList, handleSaveCurrentProject, handleSaveAs, handleLoadProject, clearProjects, datasToSave,
+  const {projectsList, handleNewProject, handleSaveCurrentProject, handleSaveAs, handleLoadProject, clearProjects, datasToSave,
   } = useStorage({ patterns, channelSources, grids, setPatterns, setGrids, setProjectName, projectName, setRows, setCols, setChannelSources, setPlayers, defaultRows: 8, defaultCols: 50,
   });
 
@@ -79,12 +82,16 @@ const HomeContent = () => {
   // Gestion du menu
   const handleMenuClick = (item) => {
     switch (item) {
-      case "New":  
+      case "New": 
+        setMenuToDisplay({NewProject: true});
+        break;
+        /* 
         const newProjectName = prompt("Project name:");
         if (newProjectName?.trim()) {
           createNewProject(newProjectName.trim());
         }
         break;
+        */
         
       case "Save As":
         handleSaveAs();
@@ -95,7 +102,7 @@ const HomeContent = () => {
         break;
         
       case "Load":
-        setLoadView(!loadView);
+        setMenuToDisplay({LoadProject: true});
         break;
         
       case "Quit":
@@ -175,8 +182,8 @@ const HomeContent = () => {
         
         <MainPanel infoToDisplay={infoOnMouseHover} />
 
-        {loadView && (
-        <ProjectManager
+        {menuToDisplay.LoadProject && (
+        <ProjectLoader
           projects={projectsList}
           onLoadProject={(name) => {
             const saved = projectsList[name];
@@ -201,15 +208,18 @@ const HomeContent = () => {
                 }, 100);
                 
               }, 50);
-              
-              setLoadView(false);
+              setMenuToDisplay({LoadProject: false});
+            
             }
           }}
           onDeleteProject={clearProjects}
           datasToSave={datasToSave}
-          loadView={loadView}
-          setLoadView={setLoadView}
+          onClose={() => setMenuToDisplay({LoadProject: false})}
         />
+      )}
+
+      {menuToDisplay.NewProject && (
+        <NewProjectCreator createProject={createNewProject} onClose={() => setMenuToDisplay({NewProject: false})} />
       )}
       </div>
     </div>
