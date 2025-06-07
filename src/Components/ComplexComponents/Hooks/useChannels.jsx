@@ -1,12 +1,24 @@
+import { useCallback } from "react";
+import { useGridData } from "../../Contexts/GridData";
 // useChannels.js
 export const useChannels = ({
     setPlayers,
     setChannelSources,
-    setGrids,
     setPatterns,
     selectedPattern,
 }) => {
-  const handleSamplesUpdated = (updatedPlayers) => setPlayers(updatedPlayers);
+  const {setGrids} = useGridData();
+  const handleSamplesUpdated = useCallback((samples) => {
+  console.log('🎵 Samples mis à jour dans Home:', samples);
+  setPlayers(samples);
+  
+  // Mettre à jour le pattern actuel avec les nouveaux samples
+  setPatterns(prev => prev.map(pattern => 
+    pattern.id === selectedPattern 
+      ? { ...pattern, players: samples }
+      : pattern
+  ));
+}, [selectedPattern]);
 
   const handleChannelsUpdated = (updatedChannels) => setPlayers(updatedChannels);
 
@@ -14,17 +26,27 @@ export const useChannels = ({
 
   const handlePatternsUpdated = (updatedPatterns) => setPatterns(updatedPatterns);
 
-  const handleGridsUpdated = (updatedGrids) => {
-    setGrids(updatedGrids);
+  const handleGridsUpdated = (newGrids) => {
+    
+    setGrids(prev => {
+      const updated = structuredClone(prev);
+      updated[selectedPattern] = newGrids;
+      return updated;
+    });
+    
+    if (selectedPattern === null) {
+      console.log('🎵 Grids mis à jour dans Home:', newGrids);
+      return;
+    }
+    // Mettre à jour le pattern actuel avec les nouvelles grids
+    setPatterns(prev => prev.map(pattern => 
+      pattern.id === selectedPattern 
+        ? { ...pattern, grids: newGrids }
+        : pattern
+    ));
 
-    setPatterns((prevPatterns) =>
-      prevPatterns.map((pattern) =>
-        pattern.id === selectedPattern?.id
-          ? { ...pattern, grids: updatedGrids }
-          : pattern
-      )
-    );
-  };
+    console.log('🎵 Grids mis à jour dans Home:', newGrids);
+  }
 
   return {
     handleSamplesUpdated,
