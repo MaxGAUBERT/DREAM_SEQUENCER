@@ -28,6 +28,9 @@ const PatternManager = ({
   }
 };
 
+console.log("patterns", patterns); // Doit afficher un tableau
+
+
 
  return (
     <div
@@ -49,6 +52,7 @@ const PatternManager = ({
         className="text-white bg-gray-700 border border-gray-600 rounded px-2 py-1 max-w-[100px] text-sm focus:outline-none"
       >
         <option value="">Select a pattern</option>
+        
         {patterns.map((p) => (
           <option key={p.id} value={p.id.toString()}>
             {p.name}
@@ -60,9 +64,9 @@ const PatternManager = ({
       <div className="relative">
         <button
           onClick={() => setAnchorOpen(!anchorOpen)}
-          className="bg-gray-800 hover:bg-gray-900 text-white w-6 h-6 flex items-center justify-center rounded"
+          className=" hover:bg-gray-900 text-white w-6 h-6 flex items-center justify-center rounded"
         >
-          <MdMenu fontSize="small" />
+          <MdMenu fontSize="medium" color="white" />
         </button>
 
         {anchorOpen && (

@@ -6,28 +6,14 @@ import { IoMove } from "react-icons/io5";
 import { PiPaintBrushHousehold } from "react-icons/pi";
 import PianoRollRow from "./PianoRollRow";
 import { useHoverInfo } from '../Contexts/HoverInfoContext';
-
-// Génère une liste de notes ascendantes (C3 → B5) en fonction du nombre de lignes
-const generateNoteList = (num) => {
-  const notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-  const result = [];
-  let octave = 3;
-  let noteIndex = 0;
-  for (let i = 0; i < num; i++) {
-    result.push(notes[noteIndex] + octave);
-    noteIndex++;
-    if (noteIndex >= notes.length) {
-      noteIndex = 0;
-      octave++;
-    }
-  }
-  return result;
-};
-
+import { useGridData } from "../Contexts/GridData";
 
 const PianoRoll = React.memo(({
   grid,
+  sampleUrl,
   onGridToggle,
+  ensureGridSize,
+  updateGrids,
   rows,
   cols,
   onClearGrid,
@@ -38,7 +24,7 @@ const PianoRoll = React.memo(({
   currentStep
 }) => {
   const { createHoverProps } = useHoverInfo();
-  const noteList = useMemo(() => generateNoteList(rows).reverse(), [rows]);
+  const { noteList } = useGridData();
   
   // État optimisé pour les interactions
   const [interactionState, setInteractionState] = useState({
@@ -60,24 +46,45 @@ const PianoRoll = React.memo(({
     gridRef.current = grid;
   });
 
-  // Initialiser le synth une seule fois
   useEffect(() => {
-    if (!synthRef.current) {
-      synthRef.current = new Tone.Synth().toDestination();
+    // Nettoyer l'ancien sampler
+    if (synthRef.current) {
+      synthRef.current.dispose();
+      synthRef.current = null;
     }
+
+    // Créer un nouveau sampler si une URL est fournie
+    if (sampleUrl) {
+      try {
+        synthRef.current = new Tone.Sampler({ 
+          urls: { C4: sampleUrl }, 
+          release: 1 
+        }).toDestination();
+      } catch (error) {
+        console.error("Erreur lors de la création du sampler:", error);
+      }
+    }
+
+    // Cleanup
     return () => {
       if (synthRef.current) {
         synthRef.current.dispose();
       }
     };
-  }, []);
+  }, [sampleUrl, selectedInstrument]);
 
   // Optimisation du lecture de note
   const playNote = useCallback((note) => {
-    if (synthRef.current) {
-      synthRef.current.triggerAttackRelease(note, "8n");
+    if (synthRef.current && sampleUrl) {
+      try {
+        synthRef.current.triggerAttackRelease(note, "8n");
+      } catch (error) {
+        console.error("Erreur lors de la lecture de la note:", error);
+      }
+    } else {
+      console.warn(`Aucun sample chargé pour ${selectedInstrument}`);
     }
-  }, []);
+  }, [sampleUrl, selectedInstrument]);
 
   // Fonction utilitaire pour mettre à jour l'état d'interaction
   const updateInteractionState = useCallback((updates) => {
@@ -151,52 +158,49 @@ const PianoRoll = React.memo(({
         }
         break;
 
-      case "move":
-        const move = currentState.movingNote;
-        if (move) {
-          const { fromRow, fromCol, toRow, toCol } = move;
+        case "move": {
+          const moving = interactionState.movingNote;
+          if (!moving) return;
 
-          if ((row === toRow && col === toCol) || currentGrid[row][col]) return;
+          const { fromRow, fromCol } = moving;
 
-          requestAnimationFrame(() => {
-            // Supprime l'ancienne destination (si différente de source)
-            if (!(toRow === fromRow && toCol === fromCol)) {
-              if (currentGrid[toRow][toCol]) {
-                onGridToggle(toRow, toCol);
-              }
-            }
-
-            // Supprime la source si encore existante
-            if (currentGrid[fromRow][fromCol]) {
-              onGridToggle(fromRow, fromCol);
-            }
-
-            // Ajoute à la nouvelle destination
-            onGridToggle(row, col);
-
-            updateInteractionState({
-              movingNote: {
-                fromRow,
-                fromCol,
-                toRow: row,
-                toCol: col
-              }
-            });
+          updateGrids(prev => {
+            const newGrid = ensureGridSize(prev[selectedInstrument]);
+            const updatedGrid = newGrid.map((r, rIdx) =>
+              r.map((cell, cIdx) => {
+                if (rIdx === fromRow && cIdx === fromCol) return false;
+                if (rIdx === row && cIdx === col) return true;
+                return cell;
+              })
+            );
+            return { ...prev, [selectedInstrument]: updatedGrid };
           });
+
+          updateInteractionState(prev => ({
+            ...prev,
+            movingNote: { ...prev.movingNote, toRow: row, toCol: col }
+          }));
+          break;
         }
-        break;
+
+        default: 
+          break;
+
     }
-  }, [onGridToggle, updateInteractionState]);
+  }, [onGridToggle, updateInteractionState, gridRef, interactionState]);
 
   const handleMouseUp = useCallback(() => {
     const currentState = stateRef.current;
 
     if (currentState.isMouseDown) {
-      updateInteractionState({
-        isMouseDown: false,
-        isPainting: false,
-        movingNote: null,
-      });
+      setInteractionState(prev => ({
+      ...prev,
+      isMouseDown: false,
+      isPainting: false,
+      movingNote: null,
+      paintedCells: new Set()
+    }));
+
     }
 }, [updateInteractionState]);
 
@@ -260,6 +264,7 @@ const PianoRoll = React.memo(({
   return (
   <div
   style={{ backgroundColor: "black"}}
+
     className="
       fixed flex
       top-[55%] left-1/2
@@ -273,7 +278,9 @@ const PianoRoll = React.memo(({
       p-2
       select-none
       "
-    onDragStart={(e) => e.preventDefault()}
+    onDragStart={(e) => e.preventDefault()
+    }
+  
   >
     <h6
       className="
@@ -297,10 +304,12 @@ const PianoRoll = React.memo(({
       </button>
 
       <button
+      
       {...createHoverProps("paint")}
         onClick={() => selectMode("paint")}
         className={`text-xs font-mono min-w-[40px]`}
       >
+        
         <PiPaintBrushHousehold color="white" size={20} />
       </button>
 
@@ -329,6 +338,8 @@ const PianoRoll = React.memo(({
           playNote={playNote}
           handleMouseDown={handleMouseDown}
           handleMouseUp={handleMouseUp}
+          handleMouseEnter={handleMouseEnter}
+          handleMouseLeave={handleMouseLeave}
           currentStep={currentStep}
         />
       ))}

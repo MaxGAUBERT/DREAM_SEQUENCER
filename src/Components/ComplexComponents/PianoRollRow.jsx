@@ -4,7 +4,7 @@ import React from "react";
 const isBlackKey = (note) => note.includes("#");
 
 const PianoRollRow = React.memo(
-  ({ note, rowIdx, rowData, playNote, handleMouseDown, handleMouseUp }) => {
+  ({ note, rowIdx, rowData, playNote, handleMouseEnter, handleMouseLeave, handleMouseDown, handleMouseUp }) => {
     return (
      <div className="flex flex-row">
   {/* Touche piano */}
@@ -24,9 +24,11 @@ const PianoRollRow = React.memo(
     <div
       key={colIdx}
       onMouseDown={(e) => {
-        e.preventDefault();
+       // e.preventDefault();
         handleMouseDown(rowIdx, colIdx);
       }}
+      onMouseEnter={() => handleMouseEnter(rowIdx, colIdx)}
+      onMouseLeave={() => handleMouseLeave(rowIdx, colIdx)}
       onMouseUp={handleMouseUp}
       className={`
         w-[30px] h-[22px] 
