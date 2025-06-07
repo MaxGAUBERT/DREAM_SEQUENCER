@@ -47,7 +47,7 @@ const HomePage = ({ onNewProject = () => {} }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex flex-col items-center justify-center p-6">
+        <div className="min-h-screen bg-gradient-to-br from-purple-900 via-gray-900 to-indigo-900 flex flex-col items-center justify-center p-6">
             {/* Header avec logo et titre */}
             <div className="flex flex-col items-center mb-12 text-center">
                 <div className="relative mb-6">
