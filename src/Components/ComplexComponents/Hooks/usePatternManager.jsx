@@ -12,7 +12,7 @@ export const usePatternManager = ({
   setGrids,
 }) => {
   const addPattern = useCallback(() => {
-    //if (!Object.keys(players).length) return;
+    if (!Object.keys(players).length) return;
 
     const newId = patterns.length + 1;
     const instrumentGrids = {};
@@ -30,7 +30,9 @@ export const usePatternManager = ({
 
     setPatterns([...patterns, newPattern]);
     setSelectedPattern(newPattern);
-    setGrids(instrumentGrids);
+    setGrids(structuredClone(newPattern.grids));
+
+
   }, [patterns, players, channelSources, setPatterns, setSelectedPattern, setGrids]);
 
   const duplicatePattern = useCallback(() => {
@@ -82,7 +84,7 @@ export const usePatternManager = ({
         setPatterns(prevPatterns =>
           prevPatterns.map(pattern =>
             pattern.id === selectedPattern.id
-              ? { ...pattern, grids: { ...grids } }
+              ? { ...pattern, grids: JSON.parse(JSON.stringify(grids)) }
               : pattern
           )
         );
@@ -90,7 +92,7 @@ export const usePatternManager = ({
 
       setSelectedPattern(newSelectedPattern);
       if (newSelectedPattern?.grids) {
-        setGrids({ ...newSelectedPattern.grids });
+        setGrids(JSON.parse(JSON.stringify(newSelectedPattern.grids))); 
       } else {
         setGrids({});
       }
