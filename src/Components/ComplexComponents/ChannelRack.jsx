@@ -49,8 +49,6 @@ const ChannelRack = React.memo(({
       return updated;
     });
   };
-
-  // ==================== DRAG & DROP LOGIC ====================
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "copy";
@@ -114,7 +112,6 @@ const ChannelRack = React.memo(({
     }
   }, [onUrlUpdated]);
 
-  // ==================== EXISTING FUNCTIONS ====================
   const handleCopy = () => {
     const selectedGrid = grids[selectedChannel];
     const copiedNotes = selectedGrid.map(row => row.map(cell => (cell ? 1 : 0)));
@@ -199,6 +196,7 @@ const ChannelRack = React.memo(({
       onUrlUpdated({ ...channelSources, [channel]: url });
     };
     reader.readAsDataURL(audioFile);
+    console.log('🎯 URL transmise au PianoRoll:', channelSources);
   }, [channels, channelSources]);
   
   const handleGridToggle = useCallback((inst, rowIdx, colIdx) => {
@@ -234,6 +232,7 @@ const ChannelRack = React.memo(({
       
       return updated;
     });
+     console.log(`✅ Canal ${channelId} supprimé`);
   }, [channels, selectedChannel]);
 
   const ensureGridSize = (grid) => {
@@ -275,7 +274,11 @@ const ChannelRack = React.memo(({
     }
   }, [selectedPattern]);
 
+  
+  
+
   return (
+
     <>
       {/* Styles CSS pour les effets de drag over */}
       <style jsx>{`
@@ -471,7 +474,10 @@ const ChannelRack = React.memo(({
         {showPianoRoll && selectedChannel && (
           <PianoRoll
             grid={ensureGridSize(grids[selectedChannel])}
+            sampleUrl={channelSources[selectedChannel]}
             onGridToggle={(r, c) => handleGridToggle(selectedChannel, r, c)}
+            ensureGridSize={ensureGridSize}
+            updateGrids={setGrids}
             rows={rows}
             cols={cols}
             onColsChange={setCols}
