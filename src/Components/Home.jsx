@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer, useCallback} from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ChannelRack from "./ComplexComponents/ChannelRack";
 import Transport from "./ComplexComponents/Transport";
@@ -15,19 +15,21 @@ import { useStorage } from "./ComplexComponents/Hooks/useStorage";
 import { memoizedHandlers } from "./Contexts/memoizedHandlers";
 import { usePatternManager } from "./ComplexComponents/Hooks/usePatternManager";
 import { HoverInfoProvider, useHoverInfo } from "./Contexts/HoverInfoContext";
+import {GridData, useGridData} from "./Contexts/GridData";
 
 // Composant interne qui utilise le contexte
 const HomeContent = () => {
   // Utilisation du contexte pour les infos de survol
   const { infoOnMouseHover, handleMouseEnter, handleMouseLeave } = useHoverInfo();
+  const { grids, setGrids } = useGridData();
   const [menuToDisplay, setMenuToDisplay] = useState({
     NewProject: false,
     LoadProject: false
   })
   // États principaux
+
   const [players, setPlayers] = useState({});
   const [channelSources, setChannelSources] = useState({});
-  const [grids, setGrids] = useState({});
   const [patterns, setPatterns] = useState([{ players: {}, grids: {}, id: 1, name: "Pattern 1" }]);
   const [selectedPattern, setSelectedPattern] = useState(0);
   const [projectName, setProjectName] = useState(localStorage.getItem("projectName") || "");
@@ -36,21 +38,21 @@ const HomeContent = () => {
   const [appKey, setAppKey] = useState(0);
   const [rows, setRows] = useState(8);
   const [cols, setCols] = useState(50);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const { addPattern, duplicatePattern, deletePattern, handleSelectPattern
     } = usePatternManager({ patterns, setPatterns, selectedPattern, setSelectedPattern, players, channelSources, grids, setGrids,
   });
 
-  const {handleSamplesUpdated, handleChannelsUpdated, handleUrlUpdated, handlePatternsUpdated, handleGridsUpdated,
-    } = useChannels({ setPlayers, setChannelSources, setGrids, setPatterns, selectedPattern,
+  const {handleSamplesUpdated, handleChannelsUpdated, handleUrlUpdated, handlePatternsUpdated, handleGridsUpdated
+    } = useChannels({ setPlayers, setChannelSources, setPatterns, selectedPattern,
   });
-
+  
   const {projectsList, handleNewProject, handleSaveCurrentProject, handleSaveAs, handleLoadProject, clearProjects, datasToSave,
   } = useStorage({ patterns, channelSources, grids, setPatterns, setGrids, setProjectName, projectName, setRows, setCols, setChannelSources, setPlayers, defaultRows: 8, defaultCols: 50,
   });
-
-  // États de lecture
-  const [isPlaying, setIsPlaying] = useState(false);
+  
+  
   
   const navigate = useNavigate();
 
@@ -68,16 +70,17 @@ const HomeContent = () => {
     setAppKey(prev => prev + 1);
     
     // Réinitialiser tous les états dans le bon ordre
-    setPatterns([{ players: {}, grids: {}, id: 1, name: "Pattern 1" }]);
+    const initialPattern = { players: {}, grids: {}, id: 1, name: "Pattern 1" };
+    setPatterns([initialPattern]);
     setGrids({});
     setPlayers({});
     setChannelSources({});
-    setSelectedPattern(null);
+    setSelectedPattern(initialPattern.id); // ✅ Passer l'objet pattern
     // Définir le nom du projet
     setProjectName(projectName);
     
     console.log(`✅ Nouveau projet "${projectName}" créé`);
-  };
+};
 
   // Gestion du menu
   const handleMenuClick = (item) => {
@@ -120,8 +123,8 @@ const HomeContent = () => {
     handleSamplesUpdated,
     handleUrlUpdated,
     handleChannelsUpdated,
-    handleGridsUpdated,
     handlePatternsUpdated,
+    handleGridsUpdated
   });
 
   return (
@@ -142,7 +145,14 @@ const HomeContent = () => {
           zIndex: 2 
         }} />
 
-        <Transport />
+        <Transport 
+          isPlaying={isPlaying}
+          setIsPlaying={setIsPlaying}
+          channelSources={channelSources}
+          bpm={120}
+          cols={50}
+        />
+
         
         <StripMenu
           componentsMap={openComponents}
@@ -186,31 +196,30 @@ const HomeContent = () => {
         <ProjectLoader
           projects={projectsList}
           onLoadProject={(name) => {
-            const saved = projectsList[name];
-            if (saved) {
-              console.log('🔄 Chargement du projet depuis Home:', name);
-              console.log('📊 Données du projet:', saved);
-              // Forcer un re-render complet AVANT de charger
-              setAppKey(prev => prev + 1);
-              // Attendre le prochain cycle de rendu avant de charger les données
+          const saved = projectsList[name];
+          if (saved) {
+            console.log('🔄 Chargement du projet depuis Home:', name);
+            console.log('📊 Données du projet:', saved);
+            // Forcer un re-render complet AVANT de charger
+            setAppKey(prev => prev + 1);
+            // Attendre le prochain cycle de rendu avant de charger les données
+            setTimeout(() => {
+              handleLoadProject(name, saved);
+              // S'assurer que le premier pattern est sélectionné après le chargement
               setTimeout(() => {
-                handleLoadProject(name, saved);
-                // S'assurer que le premier pattern est sélectionné après le chargement
-                setTimeout(() => {
-                  if (saved.patterns && saved.patterns.length > 0) {
-                    const firstPattern = saved.patterns[0];
-                    console.log('🎯 Sélection du premier pattern:', firstPattern);
-                    setSelectedPattern(firstPattern);
-                    if (firstPattern.grids) {
-                      setGrids(firstPattern.grids);
-                    }
+                if (saved.patterns && saved.patterns.length > 0) {
+                  const firstPattern = saved.patterns[0];
+                  console.log('🎯 Sélection du premier pattern:', firstPattern);
+                  setSelectedPattern(firstPattern.id); // ✅ Passer l'objet pattern
+                  if (firstPattern.grids) {
+                    setGrids(firstPattern.grids);
                   }
-                }, 100);
-                
-              }, 50);
-              setMenuToDisplay({LoadProject: false});
-            
-            }
+                }
+              }, 100);
+              
+            }, 50);
+            setMenuToDisplay({LoadProject: false});
+          }
           }}
           onDeleteProject={clearProjects}
           datasToSave={datasToSave}
@@ -230,7 +239,9 @@ const HomeContent = () => {
 const Home = () => {
   return (
     <HoverInfoProvider>
-      <HomeContent />
+      <GridData rows={24}>
+        <HomeContent />
+      </GridData>
     </HoverInfoProvider>
   );
 };
