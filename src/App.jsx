@@ -12,6 +12,7 @@ import * as Tone from "tone";
 import PlayContext from "./Contexts/PlayContext";
 import { MdGraphicEq } from "react-icons/md";
 import GlobalColorContextProvider from "./Contexts/GlobalColorContext";
+import {soundBank, useSoundBank} from "./Hooks/useSoundBank";
 
 function getColorByIndex(i) {
   const colors = [
@@ -41,6 +42,8 @@ export default function App() {
     saveAsProject,
     loadProject
   } = useProjectManager();
+
+  const {audioObjects, loading} = useSoundBank();
 
   const [openComponents, setOpenComponents] = useState({
     "Drum Rack": true,
@@ -235,7 +238,7 @@ export default function App() {
         )}
       </PlayContext>
       
-      {openComponents["Sound Browser"] && <SoundBrowser />}
+      {openComponents["Sound Browser"] && <SoundBrowser kits={soundBank.drumKits}/>}
 
       </GlobalColorContextProvider>
     </div>
