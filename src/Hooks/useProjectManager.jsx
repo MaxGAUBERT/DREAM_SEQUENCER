@@ -13,7 +13,7 @@ export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
   const [numSteps, setNumSteps] = useState(16);
   const [projects, setProjects] = useState([]);
-  const [currentProjectId, setCurrentProjectId] = useState(null);
+  const [currentProjectId, setCurrentProjectId] = useState(0);
   const [patterns, setPatterns] = useState([{
     id: 1,
     name: "Pattern 1",
@@ -91,6 +91,8 @@ export function useProjectManager() {
     setProjects(updated);
     saveToLocalStorage(updated);
     loadProject(newId, updated);
+    setCurrentProjectId(newId);
+    saveAsProject(newProject.name);
   };
 
   const saveCurrentProject = () => {
