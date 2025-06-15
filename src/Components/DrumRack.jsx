@@ -5,13 +5,12 @@ import { IoAddOutline } from "react-icons/io5";
 import { MdDeleteOutline } from "react-icons/md";
 import { GrClearOption } from "react-icons/gr";
 import { useGlobalColorContext } from "../Contexts/GlobalColorContext"; // adapte le chemin
-
+import ChannelModal from "../UI/Modals/ChannelModal";
 
 const icon_size = 20;
 
-const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrumentList, selectedPatternID}) => {
+const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrumentList, selectedPatternID, channelModalOpen, setChannelModalOpen, instrumentName, setInstrumentName}) => {
   const [input, setInput] = useState(false);
-  const [instrumentName, setInstrumentName] = useState("");
   const { samplerRef, sequencesRef, isPlaying, setIsPlaying, bpm, setBpm } = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
 
@@ -129,9 +128,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       if (oldData?.sampleUrl) {
         URL.revokeObjectURL(oldData.sampleUrl);
       }
-      if (oldData?.sampler) {
-        oldData.sampler.dispose();
-      }
+      
 
       const newUrl = URL.createObjectURL(file);
       
@@ -267,17 +264,10 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       };
     });
   }, [selectedPatternID, numSteps, setInstrumentList]);
-
-  const handleStop = useCallback(() => {
-    console.log("Stopped !");
-    Tone.Transport.stop();
-    Tone.Transport.cancel();
-    sequencesRef.current.forEach(seq => seq.dispose());
-    sequencesRef.current = [];
-  }, []);
+  
     
   return (
-    <div className="flex flex-col gap-1 flex-wrap absolute top-12.5 border-4 border-gray-700 right-0 h-[550px] max-w-[650px] max-h-[700px] overflow-y-auto p-2 space-y-2 text-white" style={{backgroundColor: colorsComponent.Background}}>
+    <div className="flex flex-col gap-1 flex-wrap absolute top-12.5 border-4 border-gray-700 right-0 h-[560px] max-w-[650px] max-h-[700px] overflow-y-auto p-2 space-y-2 text-white" style={{backgroundColor: colorsComponent.Background}}>
       <div className="text-xs border-b border-gray-600 pb-2" style={{color: colorsComponent.Text}}>
         Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
         <div className="flex absolute top-0 right-0">
@@ -298,6 +288,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
                   ? <span className="text-green-400">
                       {instrumentData.fileName || "loaded"}
                     </span>
+
                   : <span style={{color: colorsComponent.Text}}>no sample</span>
                 }
               </div>
@@ -318,9 +309,17 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
               className="w-4 h-4 flex-shrink-0"
             />
 
-            <div className="font-semibold text-white">{instrumentName}</div>
+            <div className="font-semibold text-white">
+              <button 
+                onClick={() => {setChannelModalOpen(!channelModalOpen); setInstrumentName(instrumentName)}}
+                className="hover:text-white transition-colors"
+                style={{color: colorsComponent.Text}}
+              >
+                {instrumentName}
+              </button>
+            </div>
 
-            <div className="flex gap-1 relative">
+            <div className="flex flex-row gap-1 ml-2 relative">
               {currentGrid.map((active, i) => (
                 <button
                   key={i}
@@ -399,7 +398,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
             <button 
               onClick={() => {
                 setInput(false);
-                setInstrumentName("");
+                setInstrumentName('');
               }}
               className="px-3 py-1 `bg-[${colorProvider.Background}]` `text-[${colorComponent.Text}]` hover:bg-gray-700 rounded transition-colors"
             >
@@ -408,7 +407,20 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
           </div>
         </div>
       )}
+
+      {channelModalOpen && (
+            <div className="inset-0 z-50 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-opacity-50">
+            <ChannelModal 
+                onClose={() => setChannelModalOpen(!channelModalOpen)} 
+                channelName={instrumentName}
+                instrumentName={instrumentName}
+                onRename={(newName) => setInstrumentList(newName)} 
+              />
+            </div>
+      )}
     </div>
+
+    
   );
 });
 
