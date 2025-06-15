@@ -288,11 +288,11 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
 }, [instrumentName, instrumentList, setInstrumentName]);
     
   return (
-    <div className="flex flex-col gap-1 flex-wrap absolute top-12.5 border-4 border-gray-700 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-y-auto p-2 space-y-2 text-white" style={{backgroundColor: colorsComponent.Background}}>
-      <div className="text-xs border-b border-gray-600 pb-2" style={{color: colorsComponent.Text}}>
+    <div className="flex flex-col gap-1 flex-wrap absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-y-auto p-2 space-y-2 text-white" style={{backgroundColor: colorsComponent.Background}}>
+      <div className="text-xs border-b pb-2" style={{color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
         Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
         <div className="flex absolute top-0 right-0">
-           <button onClick={() => setIsPlaying(!isPlaying)} className="text-sm  border border-gray-600 p-1 ml-2" style={{color: colorsComponent.Text}}>
+           <button onClick={() => setIsPlaying(!isPlaying)} className="text-sm  border p-1 ml-2" style={{color: colorsComponent.Text}}>
              {isPlaying ? 'Pause' : 'Play'} Pattern
            </button>     
         </div>
@@ -359,7 +359,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
         <button 
           onClick={() => setInput(!input)}
           className=" hover:text-white transition-colors"
-          style={{color: colorsComponent.Text}}
+          style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text}}
           title="Add instrument"
         >
           <IoAddOutline size={icon_size}/>
@@ -368,7 +368,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
         <button 
           onClick={handleDeleteInstrument}
           className=" hover:text-red-300 transition-colors"
-          style={{color: colorsComponent.Text}}
+          style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text}}
           title="Delete selected instruments"
         >
           <MdDeleteOutline size={icon_size}/>
@@ -377,7 +377,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
         <button
           onClick={handleReset}
           className=" hover:text-white transition-colors"
-          style={{color: colorsComponent.Text}}
+          style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text}}
           title="Clear steps for current pattern"
         >
           <GrClearOption size={icon_size}/>
@@ -389,7 +389,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
         value={numSteps} 
         min={4} 
         max={128} 
-        className="w-20 px-2 py-1 `bg-[${colorProvider.Background}]` `text-[${colorComponent.Text}]` rounded border border-gray-600 focus:border-blue-500 outline-none" 
+        className="w-20 px-2 py-1 `bg-[${colorComponent.Background}]` `text-[${colorComponent.Text}]` rounded border focus:border-blue-500 outline-none" 
         onChange={(e) => setNumSteps(Number(e.target.value))} 
       />
     
@@ -407,7 +407,8 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
                   handleAddInstrument(e);
                 }
               }}
-              className="px-2 py-1 `bg-[${colorProvider.Background}]` `text-[${colorComponent.Text}]` rounded border border-gray-600 focus:border-blue-500 outline-none"
+              className="px-2 py-1 rounded border focus:border-blue-500 outline-none"
+              style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text}}
               autoFocus
             />
             <button 
@@ -421,7 +422,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
                 setInput(false);
                 setInstrumentName('');
               }}
-              className="px-3 py-1 `bg-[${colorProvider.Background}]` `text-[${colorComponent.Text}]` hover:bg-gray-700 rounded transition-colors"
+              className="px-3 py-1 `bg-[${colorsComponent.Background}]` `text-[${colorsComponent.Text}]` hover:bg-gray-700 rounded transition-colors"
             >
               Cancel
             </button>
@@ -430,7 +431,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       )}
 
       {channelModalOpen && (
-            <div className="inset-0 z-50 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-opacity-50">
+            <div className="inset-0 z-50 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full flex items-center justify-center bg-opacity-50">
             <ChannelModal 
               onClose={() => setChannelModalOpen(!channelModalOpen)} 
               instrumentName={instrumentName}

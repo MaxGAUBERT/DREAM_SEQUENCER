@@ -1,6 +1,9 @@
 import React, { useEffect } from "react";
+import { useGlobalColorContext } from "../Contexts/GlobalColorContext";
 
 const PatternSelector = React.memo(({ patterns, setPatterns, colorByIndex, initLength, onSelect, selectedPatternID, setInstrumentList }) => {
+  const {colorsComponent} = useGlobalColorContext();
+  
   useEffect(() => {
     if (patterns.length < initLength) {
       handleResetPatterns();
@@ -148,14 +151,16 @@ const PatternSelector = React.memo(({ patterns, setPatterns, colorByIndex, initL
 
       <button 
         onClick={handleAddPattern}
-        className="w-15 h-15 rounded-full border-4 bg-white border-white transition-all duration-150 ease-in-out"
+        className="w-15 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
+        style={{ backgroundColor: colorsComponent.Button }}      
       >
         +
       </button>
 
       <button 
         onClick={() => handleDeletePattern(selectedPatternID)}
-        className="w-15 h-15 rounded-full border-4 bg-white border-white transition-all duration-150 ease-in-out"
+        className="w-15 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
+        style={{ backgroundColor: colorsComponent.Button }}
         disabled={patterns.length <= 1}
       >
         -
@@ -164,7 +169,8 @@ const PatternSelector = React.memo(({ patterns, setPatterns, colorByIndex, initL
       {patterns.length > 1 && (
         <button 
           onClick={handleDeleteAllPatterns}
-          className="w-20 h-15 rounded-full border-4 bg-white border-white transition-all duration-150 ease-in-out"
+          className="w-20 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
+          style={{ backgroundColor: colorsComponent.Button }}        
         >
           Delete All
         </button>
@@ -173,7 +179,8 @@ const PatternSelector = React.memo(({ patterns, setPatterns, colorByIndex, initL
       {patterns.length === 0 && (
         <button
           onClick={handleResetPatterns}
-          className="w-20 h-15 text-center rounded-full border-4 bg-white border-white transition-all duration-150 ease-in-out"
+          className="w-20 h-15 text-center rounded-full border-4 border-white transition-all duration-150 ease-in-out"
+          style={{ backgroundColor: colorsComponent.Button }}
         >
           Reset
         </button>
