@@ -265,9 +265,30 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
     });
   }, [selectedPatternID, numSteps, setInstrumentList]);
   
+  const handleRenameInstrument = useCallback((newName) => {
+  const trimmedName = newName.trim();
+  
+  if (!trimmedName) return;
+  if (trimmedName === instrumentName) return;
+  if (instrumentList[trimmedName]) {
+    alert('Un instrument avec ce nom existe déjà');
+    return;
+  }
+  
+  setInstrumentList(prev => {
+    // Convertir en array, modifier, puis reconvertir en objet
+    const entries = Object.entries(prev).map(([key, value]) => {
+      return key === instrumentName ? [trimmedName, value] : [key, value];
+    });
+    
+    return Object.fromEntries(entries);
+  });
+  
+  setInstrumentName(trimmedName);
+}, [instrumentName, instrumentList, setInstrumentName]);
     
   return (
-    <div className="flex flex-col gap-1 flex-wrap absolute top-12.5 border-4 border-gray-700 right-0 h-[560px] max-w-[650px] max-h-[700px] overflow-y-auto p-2 space-y-2 text-white" style={{backgroundColor: colorsComponent.Background}}>
+    <div className="flex flex-col gap-1 flex-wrap absolute top-12.5 border-4 border-gray-700 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-y-auto p-2 space-y-2 text-white" style={{backgroundColor: colorsComponent.Background}}>
       <div className="text-xs border-b border-gray-600 pb-2" style={{color: colorsComponent.Text}}>
         Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
         <div className="flex absolute top-0 right-0">
@@ -411,11 +432,11 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       {channelModalOpen && (
             <div className="inset-0 z-50 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex items-center justify-center bg-opacity-50">
             <ChannelModal 
-                onClose={() => setChannelModalOpen(!channelModalOpen)} 
-                channelName={instrumentName}
-                instrumentName={instrumentName}
-                onRename={(newName) => setInstrumentList(newName)} 
-              />
+              onClose={() => setChannelModalOpen(!channelModalOpen)} 
+              instrumentName={instrumentName}
+              setInstrumentName={setInstrumentName}
+              onRename={handleRenameInstrument} 
+            />
             </div>
       )}
     </div>
