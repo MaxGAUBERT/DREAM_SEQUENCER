@@ -1,25 +1,38 @@
 # DREAM-SEQUENCER
 
-# _Description_
-## **Dream Sequencer** is an audio sequencer programmed in React JS, using the Material UI and Tone JS libraries.
-## Features include:
-### 1. A **Channel rack** for loading .wav files
-### 2. Sound browser** to load a folder of .wav files
-### 3. A **Main menu** that manages sub-menus (such as project import/export or display toggles).
-### 4. A **PianoRoll** that manages melody creation using a rhythmic grid system with customizable dimensions.
-### 5. A **Playlist** that lets you place patterns in a grid (which can also be modified), and thus create entire sounds.
-### 6. A **Pattern Manager** that lets you add, delete or duplicate patterns.
+## 🎧 Description
 
-# _Installation_
-## 1. git clone https://github.com/MaxGAUBERT/DREAM_SEQUENCER.git
-## 2. cd Dream_Sequencer
-## 3. npm install
-## 4. npm run dev
+**Dream Sequencer** is an audio sequencer built with **React JS**, using **Tailwind CSS** and **Tone.js**.
 
-# _Use_
-## After opening the application, click on **New Project**, then choose a project name.
-## Next, an animation appears.
-## Here you are on the interface!
+### ✨ Features
+
+1. **Drum Rack** – Load and manage `.wav` files per channel.  
+2. **Sound Browser** – Load a folder of `.wav` files easily.  
+3. **Menu Strip** – Controls sub-menus such as project import/export and UI toggles.  
+4. **Piano Roll** – Create melodies on a rhythmic grid system with customizable dimensions.  
+5. **Playlist** – Place patterns in a grid to build complete songs.  
+6. **Pattern Selector** – Add, delete, or duplicate patterns for flexible song building.
+7. **FX Chain** - Assign an audio channel to a track in the effects chain, to add effects such as reverb, delay, echo and more.
+
+---
+
+## 🛠️ Installation
+
+```bash
+git clone https://github.com/MaxGAUBERT/DREAM_SEQUENCER.git
+cd DREAM_SEQUENCER
+npm install
+npm run dev
+
+```librairies
+
+npm install vite (on Vscode terminal)
+npm isntall tone
+for tailwind: follow that: https://tailwindcss.com/docs/installation/using-vite
+npm install flatted
+
+
+
 
 
 
