@@ -40,7 +40,7 @@ export default function LoadProjectModal({ savedProjects, onClose, onLoad }) {
                 >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h3 className="font-bold text-lg">{project.name}</h3>
+                      <h3 className="font-bold text-lg">{project?.name}</h3>
                       <div className="text-sm text-gray-600 mt-1 space-y-1">
                         {project.createdAt && (
                           <p>Created: {new Date(project.createdAt).toLocaleString()}</p>
