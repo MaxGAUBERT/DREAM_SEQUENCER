@@ -11,9 +11,10 @@ const PlayContext = ({ children }) => {
     const sequencesRef = useRef([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [bpm, setBpm] = useState(140);
+    const [volume, setVolume] = useState(0);
 
     return (
-        <CreatePlayContext.Provider value={{samplerRef, sequencesRef, isPlaying, setIsPlaying, bpm, setBpm}}>
+        <CreatePlayContext.Provider value={{samplerRef, sequencesRef, isPlaying, setIsPlaying, bpm, setBpm, volume, setVolume}}>
             {children}
         </CreatePlayContext.Provider>
     );

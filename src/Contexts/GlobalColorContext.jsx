@@ -8,8 +8,8 @@ export const useGlobalColorContext = () => useContext(GlobalColorContext);
 
 const GlobalColorContextProvider = ({ children }) => {
     const [colorsComponent, setColorsComponent] = useState({
-        "Text": "white",
-        "Button": "#ffffff",
+        "Text": "gray.700",
+        "Button": "white",
         "Background": "gray.900",
         "Border": "#ffffff"
     });
