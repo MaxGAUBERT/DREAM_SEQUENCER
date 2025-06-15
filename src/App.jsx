@@ -7,7 +7,7 @@ import PatternSelector from "./Components/PatternSelector";
 import NewProjectModal from "./UI/Modals/NewProjectModal";
 import LoadProjectModal from "./UI/Modals/LoadProjectModal";
 import SaveAsProjectModal from "./UI/Modals/SaveAsProjectModal";
-import { useProjectManager } from "./Hooks/useProjectManager";
+import {useProjectManager} from "./Hooks/useProjectManager";
 import * as Tone from "tone";
 import PlayContext from "./Contexts/PlayContext";
 import { MdGraphicEq } from "react-icons/md";
@@ -47,6 +47,9 @@ export default function App() {
     "Pattern Selector": true,
     "Sound Browser": false
   });
+  const [instrumentName, setInstrumentName] = useState("");
+
+  const [channelModalOpen, setChannelModalOpen] = useState(false);
 
   const [modals, setModals] = useState({
     new: false,
@@ -162,15 +165,23 @@ export default function App() {
     }
   }, [openComponents, modals, saveCurrentProject]);
 
+  const handleSaveChannelDatas = (channelName, channelData) => {
+    setInstrumentList(prev => ({
+      ...prev,
+      [channelName]: channelData
+    }));
+  };
+
   const currentProjectName = currentProject ? currentProject.name : "Untitled";
 
   return (
-    <div className="w-full h-screen bg-gray-900 font-sans text-sm font-bold relative">
+    <div className="w-full h-screen bg-gray-900 font-['Orbitron'] text-sm font-bold relative">
       <MdGraphicEq size={300} className="absolute top-2/4 left-2/4 transform -translate-x-1/2 -translate-y-1/2 text-white"/>
-      <h5 className="text-white text-right absolute top-4 right-0 transform -translate-x-1/2 text-3xl">
-        DREAM SEQUENCER - {currentProjectName}
-      </h5>
-
+      <span className="absolute top-2 right-2 text-white">
+        <h3>
+           Dream Sequencer {currentProjectName}
+        </h3>  
+      </span>
       <GlobalColorContextProvider>
       
       <StripMenu onAction={handleRunAction} />
@@ -196,7 +207,6 @@ export default function App() {
           onSaveAs={saveAsProject} 
         />
       )}
-
       <PlayContext>
         {openComponents["Drum Rack"] && (
           <DrumRack 
@@ -205,9 +215,13 @@ export default function App() {
             instrumentList={instrumentList} 
             setInstrumentList={setInstrumentList}
             selectedPatternID={selectedPatternID}
+            channelModalOpen={channelModalOpen}
+            setChannelModalOpen={setChannelModalOpen}
+            instrumentName={instrumentName}
+            setInstrumentName={setInstrumentName}
           />
         )}
-        
+
         {openComponents["Pattern Selector"] && (
           <PatternSelector 
             patterns={patterns} 
