@@ -431,14 +431,14 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       )}
 
       {channelModalOpen && (
-            <div className="inset-0 z-50 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full flex items-center justify-center bg-opacity-50">
-            <ChannelModal 
-              onClose={() => setChannelModalOpen(!channelModalOpen)} 
-              instrumentName={instrumentName}
-              setInstrumentName={setInstrumentName}
-              onRename={handleRenameInstrument} 
-            />
-            </div>
+        <div className="inset-0 z-50 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full flex items-center justify-center bg-opacity-50">
+          <ChannelModal 
+            onClose={() => setChannelModalOpen(!channelModalOpen)} 
+            instrumentName={instrumentName}
+            setInstrumentName={setInstrumentName}
+            onRename={handleRenameInstrument} 
+          />
+        </div>
       )}
     </div>
 

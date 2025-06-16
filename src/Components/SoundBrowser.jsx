@@ -1,14 +1,36 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useGlobalColorContext } from "../Contexts/GlobalColorContext";
+import * as Tone from "tone";
+import {useSoundBank} from "../Hooks/useSoundBank";
 
-export default function SoundBrowser({ kits }) {
+export default function SoundBrowser() {
   const { colorsComponent } = useGlobalColorContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTag, setActiveTag] = useState(null);
+  const playersRef = useRef(new Map());
 
-  // Récupère tous les sons sous forme de tableau
+  const {
+    soundBank: currentSoundBank, 
+    loading, 
+    playSound, 
+    //stopAllSounds,
+    audioObjects
+  } = useSoundBank();
+
+  // Nettoie les players au démontage du composant
+  useEffect(() => {
+    return () => {
+      playersRef.current.forEach(player => {
+        if (player) {
+          player.dispose();
+        }
+      });
+      playersRef.current.clear();
+    };
+  }, []);
+
   const allSounds = useMemo(() => {
-    return Object.entries(kits).flatMap(([kitKey, kit]) =>
+    return Object.entries(currentSoundBank.drumKits).flatMap(([kitKey, kit]) =>
       Object.entries(kit.sounds).map(([soundKey, sound]) => ({
         ...sound,
         kitName: kit.name,
@@ -16,7 +38,7 @@ export default function SoundBrowser({ kits }) {
         soundKey
       }))
     );
-  }, [kits]);
+  }, [currentSoundBank]);
 
   // Extrait tous les tags uniques
   const allTags = useMemo(() => {
@@ -38,11 +60,33 @@ export default function SoundBrowser({ kits }) {
     });
   }, [allSounds, searchTerm, activeTag]);
 
-  const handlePlay = (url) => {
-    const audio = new Audio(url);
-    audio.play().catch((e) => console.warn("Playback failed:", e));
-  };
+  // Fonction pour gérer le clic avec démarrage du contexte Tone.js
+  const handleSoundClick = async (sound) => {
+    try {
+      // Démarre le contexte audio si nécessaire
+      if (Tone.context.state !== 'running') {
+        await Tone.start();
+        console.log('Contexte audio démarré');
+      }
 
+      const soundId = `${sound.kitKey}_${sound.soundKey}`;
+      const audio = audioObjects[soundId];
+      
+      console.log('Tentative de lecture:', soundId, audio);
+      
+      if (audio && audio.loaded) {
+        await playSound(sound.kitKey, sound.soundKey);
+        console.log('Son joué:', sound.name);
+      } else if (audio && !audio.loaded) {
+        console.warn('Son pas encore chargé:', sound.name);
+      } else {
+        console.error('Audio object non trouvé pour:', soundId);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la lecture du son:', error);
+    }
+  };
+  
   return (
     <div
       className="w-[400px] max-h-[560px] overflow-y-auto rounded-md border shadow"
@@ -60,7 +104,11 @@ export default function SoundBrowser({ kits }) {
           type="text"
           placeholder="Rechercher un son ou un tag..."
           className="w-full p-2 mb-3 rounded border"
-          style={{ borderColor: colorsComponent.Border, backgroundColor: colorsComponent.Background, color: colorsComponent.Text }}
+          style={{ 
+            borderColor: colorsComponent.Border, 
+            backgroundColor: colorsComponent.Background, 
+            color: colorsComponent.Text 
+          }}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
@@ -78,34 +126,67 @@ export default function SoundBrowser({ kits }) {
             </button>
           ))}
         </div>
+
+        {/* Bouton de debug */}
+        <button 
+          onClick={() => {
+            console.log('AudioObjects:', audioObjects);
+            console.log('Filtered sounds:', filteredSounds);
+          }}
+          className="mb-2 px-2 py-1 text-xs bg-gray-500 text-white rounded"
+        >
+          Debug
+        </button>
       </div>
 
       <div className="px-4 py-2">
-        {filteredSounds.length === 0 ? (
+        {loading && <p className="text-sm text-gray-400">Chargement des sons...</p>}
+        
+        {!loading && filteredSounds.length === 0 ? (
           <p className="text-sm text-gray-400">Aucun son trouvé...</p>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            {filteredSounds.map((sound) => (
-              <div
-                key={sound.soundKey + sound.kitKey}
-                className="p-2 rounded hover:bg-opacity-30 cursor-pointer border text-sm"
-                draggable
-                onClick={() => handlePlay(sound.url)}
-                onDragStart={(e) => {
-                  e.dataTransfer.setData("text/plain", JSON.stringify(sound));
-                }}
-                style={{
-                  backgroundColor: colorsComponent.Background,
-                  borderColor: colorsComponent.Border,
-                  borderWidth: "1px"
-                }}
-              >
-                <p className="font-medium">{sound.name}</p>
-                <p className="text-xs text-gray-400">Kit: {sound.kitName}</p>
-                <p className="text-xs text-gray-400">Key: {sound.key}</p>
-                <p className="text-xs text-gray-400">Tags: {sound.tags.join(", ")}</p>
-              </div>
-            ))}
+            {filteredSounds.map((sound) => {
+              const soundId = `${sound.kitKey}_${sound.soundKey}`;
+              const audio = audioObjects[soundId];
+              const isLoaded = audio?.loaded;
+              const hasError = audio?.error;
+
+              return (
+                <div
+                  key={`${sound.kitKey}_${sound.soundKey}`}
+                  className="p-2 rounded hover:bg-opacity-30 cursor-pointer border text-sm transition-all"
+                  draggable
+                  onClick={() => handleSoundClick(sound)}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("text/plain", JSON.stringify(sound));
+                  }}
+                  style={{
+                    backgroundColor: colorsComponent.Background,
+                    borderColor: colorsComponent.Border,
+                    color: colorsComponent.Text,
+                    borderWidth: "1px",
+                    opacity: isLoaded ? 1 : 0.5,
+                    cursor: isLoaded ? "pointer" : "not-allowed"
+                  }}
+                >
+                  <p className="font-medium">{sound.name}</p>
+                  <p className="text-xs text-gray-400">Kit: {sound.kitName}</p>
+                  <p className="text-xs text-gray-400">Key: {sound.key}</p>
+                  <p className="text-xs text-gray-400">Tags: {sound.tags.join(", ")}</p>
+                  <p className="text-xs">
+                    {hasError ? (
+                      <span className="text-red-500">❌ Erreur de chargement</span>
+                    ) : isLoaded ? (
+                      <span className="text-green-500">✅ Chargé</span>
+                    ) : (
+                      <span className="text-yellow-500">⌛ Chargement...</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-500">ID: {soundId}</p>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
