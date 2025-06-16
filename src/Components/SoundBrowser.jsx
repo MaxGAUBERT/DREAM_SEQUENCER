@@ -3,6 +3,7 @@ import { useGlobalColorContext } from "../Contexts/GlobalColorContext";
 import * as Tone from "tone";
 import {useSoundBank} from "../Hooks/useSoundBank";
 
+
 export default function SoundBrowser() {
   const { colorsComponent } = useGlobalColorContext();
   const [searchTerm, setSearchTerm] = useState("");
@@ -97,8 +98,8 @@ export default function SoundBrowser() {
       }}
     >
       <div className="p-4 border-b" style={{ borderColor: colorsComponent.Border }}>
-        <h2 className="text-lg font-semibold">Sound Browser</h2>
-        <p className="text-sm text-gray-400 mb-2">Drag and drop / Click to preview</p>
+        <h2 className="text-lg font-semibold" style={{ color: colorsComponent.Text }}>Sound Browser</h2>
+        <p className="text-sm mb-2">Drag and drop / Click to preview</p>
 
         <input
           type="text"
