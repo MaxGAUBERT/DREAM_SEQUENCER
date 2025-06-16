@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-
+import { useState, useEffect, useRef } from "react";
+import * as Tone from "tone";
 
 export const soundBank = {
   "drumKits": {
@@ -10,28 +10,28 @@ export const soundBank = {
       "sounds": {
         "kick": {
           "name": "Kick Drum",
-          "url": "./Audio/acoustic/kick.wav",
+          "url": "/Audio/Drums/Progressive_Kick.wav",
           "key": "C1",
           "volume": 0.8,
           "tags": ["drum", "low", "punch"]
         },
         "snare": {
           "name": "Snare Drum",
-          "url": "./Audio/acoustic/",
+          "url": "./Audio/Drums/VEC1_Snare_025.wav",
           "key": "D1",
           "volume": 0.7,
           "tags": ["drum", "mid", "crack"]
         },
         "hihat_closed": {
           "name": "Hi-Hat Fermé",
-          "url": "./Audio/acoustic/hihat_closed.wav",
+          "url": "./Audio/Drums/VEC4_Closed_HH_018.wav",
           "key": "F#1",
           "volume": 0.6,
           "tags": ["cymbal", "high", "tight"]
         },
         "hihat_open": {
           "name": "Hi-Hat Ouvert",
-          "url": "./Audio/acoustic/hihat_open.wav",
+          "url": "./Audio/Drums/VEE_Open_Hihat_06.wav",
           "key": "A#1",
           "volume": 0.6,
           "tags": ["cymbal", "high", "open"]
@@ -79,8 +79,8 @@ export const soundBank = {
       "bpm": 128,
       "sounds": {
         "kick_808": {
-          "name": "808 Kick",
-          "url": "./Audio/electronic/kick_808.wav",
+          "name": "Synth Lead",
+          "url": "./Audio/Leads/Pattern_11_2.wav",
           "key": "C1",
           "volume": 0.9,
           "tags": ["electronic", "bass", "808"]
@@ -107,8 +107,8 @@ export const soundBank = {
           "tags": ["percussion", "high", "rhythm"]
         },
         "synth_lead": {
-          "name": "Synth Lead",
-          "url": "./Audio/electronic/synth_lead.wav",
+          "name": "Synth Lead 2",
+          "url": "/Audio/Leads/Pattern_11_2.wav",
           "key": "C3",
           "volume": 0.7,
           "tags": ["synth", "lead", "melody"]
@@ -126,13 +126,6 @@ export const soundBank = {
           "key": "D#3",
           "volume": 0.6,
           "tags": ["fx", "riser", "transition"]
-        },
-        "vocal_chop": {
-          "name": "Vocal Chop",
-          "url": "./Audio/electronic/vocal_chop.wav",
-          "key": "F3",
-          "volume": 0.7,
-          "tags": ["vocal", "chop", "texture"]
         }
       }
     }
@@ -179,43 +172,194 @@ export const soundBank = {
       }
     }
   }
-}
-
-
+};
 
 export const useSoundBank = (bank = soundBank) => {
   const [audioObjects, setAudioObjects] = useState({});
   const [loading, setLoading] = useState(true);
+  const playersRef = useRef(new Map());
 
   useEffect(() => {
     const loadSounds = async () => {
-      const sounds = {};
+      console.log('🔄 Début du chargement des sons...');
+      console.log('Bank reçu:', bank);
       
-      for (const sample of soundBank.samples) {
-        try {
-          // En développement, on simule le chargement
-          // En production, remplacez par : new Audio(sample.url)
-          sounds[sample.id] = {
-            play: () => console.log(`Playing ${sample.name}`),
-            name: sample.name,
-            loaded: true
-          };
-        } catch (error) {
-          console.error(`Erreur lors du chargement de ${sample.name}:`, error);
-          sounds[sample.id] = {
-            play: () => {},
-            name: sample.name,
-            loaded: false
-          };
+      try {
+        // Démarre le contexte audio Tone.js
+        if (Tone.context.state !== 'running') {
+          console.log('🎵 Démarrage du contexte Tone.js...');
+          await Tone.start();
         }
+
+        const sounds = {};
+        let totalSounds = 0;
+        let loadedSounds = 0;
+        let errorSounds = 0;
+        
+        // Compte le nombre total de sons
+        for (const [kitKey, kit] of Object.entries(bank.drumKits)) {
+          totalSounds += Object.keys(kit.sounds).length;
+        }
+        
+        console.log(`📊 Total de sons à charger: ${totalSounds}`);
+        
+        // Parcourt tous les kits et leurs sons
+        for (const [kitKey, kit] of Object.entries(bank.drumKits)) {
+          console.log(`🎹 Chargement du kit: ${kitKey} (${kit.name})`);
+          
+          for (const [soundKey, sound] of Object.entries(kit.sounds)) {
+            const soundId = `${kitKey}_${soundKey}`;
+            console.log(`🔊 Chargement du son: ${soundId} - ${sound.name} (${sound.url})`);
+            
+            try {
+              // Crée un player Tone.js pour chaque son
+              const player = new Tone.Player().toDestination();
+              
+              // Configure le volume
+              player.volume.value = Tone.gainToDb(sound.volume);
+              
+              // Stocke le player
+              playersRef.current.set(soundId, player);
+              
+              // Crée l'objet son
+              sounds[soundId] = {
+                play: async () => {
+                  try {
+                    console.log(`▶️ Tentative de lecture: ${sound.name}`);
+                    if (player.loaded) {
+                      // Arrête la lecture précédente si elle est en cours
+                      if (player.state === 'started') {
+                        player.stop();
+                      }
+                      player.start();
+                      console.log(`✅ Son joué: ${sound.name}`);
+                    } else {
+                      console.warn(`⚠️ Son ${sound.name} pas encore chargé`);
+                    }
+                  } catch (error) {
+                    console.error(`❌ Erreur lors de la lecture de ${sound.name}:`, error);
+                  }
+                },
+                stop: () => {
+                  if (player.state === 'started') {
+                    player.stop();
+                  }
+                },
+                player: player,
+                name: sound.name,
+                key: sound.key,
+                volume: sound.volume,
+                tags: sound.tags,
+                kitName: kit.name,
+                loaded: false,
+                soundData: sound,
+                url: sound.url
+              };
+
+              // Charge le fichier audio de manière asynchrone
+              player.load(sound.url).then(() => {
+                console.log(`✅ Fichier chargé: ${sound.name}`);
+                sounds[soundId].loaded = true;
+                loadedSounds++;
+                
+                // Met à jour l'état si tous les sons sont chargés
+                if (loadedSounds + errorSounds === totalSounds) {
+                  console.log(`🎉 Tous les sons traités! Chargés: ${loadedSounds}, Erreurs: ${errorSounds}`);
+                  setAudioObjects({...sounds});
+                  setLoading(false);
+                }
+              }).catch((error) => {
+                console.error(`❌ Erreur lors du chargement de ${sound.name}:`, error);
+                sounds[soundId].error = true;
+                sounds[soundId].loaded = false;
+                errorSounds++;
+                
+                // Met à jour l'état même en cas d'erreur
+                if (loadedSounds + errorSounds === totalSounds) {
+                  console.log(`🎉 Tous les sons traités! Chargés: ${loadedSounds}, Erreurs: ${errorSounds}`);
+                  setAudioObjects({...sounds});
+                  setLoading(false);
+                }
+              });
+              
+            } catch (error) {
+              console.error(`❌ Erreur lors de la création du player pour ${sound.name}:`, error);
+              sounds[soundId] = {
+                play: () => console.warn(`⚠️ Impossible de jouer ${sound.name}`),
+                stop: () => {},
+                player: null,
+                name: sound.name,
+                key: sound.key,
+                volume: sound.volume,
+                tags: sound.tags,
+                kitName: kit.name,
+                loaded: false,
+                soundData: sound,
+                error: true,
+                url: sound.url
+              };
+              errorSounds++;
+            }
+          }
+        }
+        
+        // Met à jour immédiatement l'état avec les objets créés (même s'ils ne sont pas encore chargés)
+        console.log('📦 Mise à jour initiale des audioObjects:', Object.keys(sounds));
+        setAudioObjects({...sounds});
+        
+        // Si aucun son à charger, arrête le loading
+        if (totalSounds === 0) {
+          setLoading(false);
+        }
+        
+      } catch (error) {
+        console.error('💥 Erreur critique lors du chargement des sons:', error);
+        setLoading(false);
       }
-      
-      setAudioObjects(sounds);
-      setLoading(false);
     };
 
     loadSounds();
+
+    // Nettoyage au démontage
+    return () => {
+      console.log('🧹 Nettoyage des players...');
+      playersRef.current.forEach(player => {
+        if (player) {
+          player.dispose();
+        }
+      });
+      playersRef.current.clear();
+    };
   }, [bank]);
 
-  return { audioObjects, loading };
+  // Fonction utilitaire pour jouer un son par kit et clé
+  const playSound = (kitKey, soundKey) => {
+    const soundId = `${kitKey}_${soundKey}`;
+    console.log(`🎵 Demande de lecture: ${soundId}`);
+    const sound = audioObjects[soundId];
+    if (sound) {
+      sound.play();
+    } else {
+      console.warn(`⚠️ Son ${soundId} non trouvé dans audioObjects`);
+      console.log('📋 AudioObjects disponibles:', Object.keys(audioObjects));
+    }
+  };
+
+  // Fonction utilitaire pour arrêter tous les sons
+  const stopAllSounds = () => {
+    console.log('⏹️ Arrêt de tous les sons...');
+    Object.values(audioObjects).forEach(sound => {
+      if (sound.stop) {
+        sound.stop();
+      }
+    });
+  };
+
+  return { 
+    audioObjects, 
+    loading, 
+    playSound, 
+    stopAllSounds,
+    soundBank: bank 
+  };
 };
