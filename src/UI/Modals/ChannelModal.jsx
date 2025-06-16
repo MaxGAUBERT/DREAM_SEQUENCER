@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { soundBank, useSoundBank } from '../../Hooks/useSoundBank';
 
 const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename }) => {
   const [activeTab, setActiveTab] = useState("General");
   const [localName, setLocalName] = useState(instrumentName);
+  const {
+    audioObjects, 
+    loading, 
+    playSound, 
+    stopAllSounds,
+    soundBank: bank 
+  } = useSoundBank();
 
   // Synchroniser avec le nom de l'instrument quand il change
   useEffect(() => {
@@ -62,6 +70,16 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename }) 
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
+
+            <select
+              className="w-full px-4 py-2 text-white bg-gray-500 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {Object.keys(audioObjects).map((idx, soundId) => (
+                <option key={idx} value={soundId}>
+                  {idx}: {soundId}
+                </option>
+              ))}
+            </select>
           </div>
         );
       case "Effects":
@@ -84,8 +102,7 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md relative">
+      <div className="bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md">
         <h2 className="text-2xl text-white font-bold mb-4">{instrumentName}</h2>
 
         {/* Tabs */}
@@ -132,7 +149,6 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename }) 
           ✕
         </button>
       </div>
-    </div>
   );
 };
 
