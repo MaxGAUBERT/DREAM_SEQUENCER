@@ -70,16 +70,22 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename }) 
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
-
+            <div className='p-2 w-full'>
+              <label className="block text-sm text-gray-600 font-medium mb-2">
+                Select a sound
+              </label>
             <select
               className="w-full px-4 py-2 text-white bg-gray-500 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
+          
               {Object.keys(audioObjects).map((idx, soundId) => (
                 <option key={idx} value={soundId}>
                   {idx}: {soundId}
                 </option>
               ))}
+              
             </select>
+            </div>
           </div>
         );
       case "Effects":
