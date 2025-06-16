@@ -387,10 +387,16 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       <input 
         type="number" 
         value={numSteps} 
-        min={4} 
-        max={128} 
+        min={8} 
+        max={256} 
+        step={8}
         className="w-20 px-2 py-1 `bg-[${colorComponent.Background}]` `text-[${colorComponent.Text}]` rounded border focus:border-blue-500 outline-none" 
-        onChange={(e) => setNumSteps(Number(e.target.value))} 
+        onChange={(e) => {
+          if (numSteps < 8 || numSteps > 256) {
+            return;
+          }
+          setNumSteps(Number(e.target.value))
+        }} 
       />
     
 
