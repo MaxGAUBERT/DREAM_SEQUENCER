@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { soundBank, useSoundBank } from '../../Hooks/useSoundBank';
+import { useSoundBank } from '../../Hooks/useSoundBank';
 
-const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename }) => {
+const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, onSelectSample}) => {
   const [activeTab, setActiveTab] = useState("General");
   const [localName, setLocalName] = useState(instrumentName);
+  const [selectedSoundId, setSelectedSoundId] = useState(null);
+
   const {
     audioObjects, 
     loading, 
@@ -32,6 +34,12 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename }) 
     } else if (setInstrumentName) {
       setInstrumentName(trimmedName);
     }
+
+    if (onSelectSample && selectedSoundId && audioObjects[selectedSoundId]) {
+      const sampleUrl = audioObjects[selectedSoundId].soundData.url;
+      onSelectSample(sampleUrl, selectedSoundId); // sampleUrl: string, soundId: string
+    }
+
     
     onClose();
   };
@@ -70,21 +78,23 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename }) 
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
-            <div className='p-2 w-full'>
+            <div className='w-full'>
               <label className="block text-sm text-gray-600 font-medium mb-2">
                 Select a sound
               </label>
             <select
               className="w-full px-4 py-2 text-white bg-gray-500 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={selectedSoundId || ""}
+              onChange={(e) => setSelectedSoundId(e.target.value)}
             >
-          
-              {Object.keys(audioObjects).map((idx, soundId) => (
-                <option key={idx} value={soundId}>
-                  {idx}: {soundId}
+              <option value="">-- Choose a sample --</option>
+              {Object.entries(audioObjects).map(([soundId, soundObj]) => (
+                <option key={soundId} value={soundId}>
+                  {soundObj.kitName} - {soundObj.name}
                 </option>
               ))}
-              
             </select>
+
             </div>
           </div>
         );
@@ -146,6 +156,8 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename }) 
             Cancel
           </button>
         </div>
+
+        
 
         {/* Close Icon */}
         <button
