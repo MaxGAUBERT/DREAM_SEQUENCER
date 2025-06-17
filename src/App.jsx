@@ -172,7 +172,7 @@ export default function App() {
       <MdGraphicEq size={300} className="absolute top-2/4 left-2/4 transform -translate-x-1/2 -translate-y-1/2 text-white"/>
       <span className="absolute top-2 right-2 text-white">
         <h3>
-           Dream Sequencer {currentProjectName}
+           Dream Sequencer: {currentProjectName}
         </h3>  
       </span>
       <GlobalColorContextProvider>
