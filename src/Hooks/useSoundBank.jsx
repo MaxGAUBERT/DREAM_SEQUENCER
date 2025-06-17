@@ -42,34 +42,6 @@ export const soundBank = {
           "key": "C#2",
           "volume": 0.5,
           "tags": ["cymbal", "high", "crash"]
-        },
-        "ride": {
-          "name": "Ride Cymbal",
-          "url": "./Audio/acoustic/ride.wav",
-          "key": "D#2",
-          "volume": 0.6,
-          "tags": ["cymbal", "high", "sustain"]
-        },
-        "tom_high": {
-          "name": "Tom Aigu",
-          "url": "./Audio/acoustic/tom_high.wav",
-          "key": "G1",
-          "volume": 0.7,
-          "tags": ["drum", "mid", "tom"]
-        },
-        "tom_mid": {
-          "name": "Tom Medium",
-          "url": "./Audio/acoustic/tom_mid.wav",
-          "key": "A1",
-          "volume": 0.7,
-          "tags": ["drum", "mid", "tom"]
-        },
-        "tom_low": {
-          "name": "Tom Grave",
-          "url": "./Audio/acoustic/tom_low.wav",
-          "key": "C2",
-          "volume": 0.7,
-          "tags": ["drum", "low", "tom"]
         }
       }
     },
@@ -78,13 +50,6 @@ export const soundBank = {
       "description": "Kit de samples electro",
       "bpm": 128,
       "sounds": {
-        "kick_808": {
-          "name": "Synth Lead",
-          "url": "./Audio/Leads/Pattern_11_2.wav",
-          "key": "C1",
-          "volume": 0.9,
-          "tags": ["electronic", "bass", "808"]
-        },
         "snare_clap": {
           "name": "Clap Snare",
           "url": "./Audio/electronic/snare_clap.wav",
@@ -105,13 +70,6 @@ export const soundBank = {
           "key": "G#1",
           "volume": 0.5,
           "tags": ["percussion", "high", "rhythm"]
-        },
-        "synth_lead": {
-          "name": "Synth Lead 2",
-          "url": "/Audio/Leads/Pattern_11_2.wav",
-          "key": "C3",
-          "volume": 0.7,
-          "tags": ["synth", "lead", "melody"]
         },
         "bass_sub": {
           "name": "Sub Bass",
