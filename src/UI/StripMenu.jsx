@@ -4,7 +4,7 @@ const MENU = [
   {
     id: "file",
     label: "File",
-    items: ["New Project", "Load Project", "Save As", "Save", "Exit"],
+    items: ["New Project", "Load Project", "Save As", "Save", "Settings", "Exit"],
   },
   {
     id: "edit",
