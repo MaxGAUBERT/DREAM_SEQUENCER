@@ -103,7 +103,7 @@ export default function SoundBrowser() {
 
         <input
           type="text"
-          placeholder="Rechercher un son ou un tag..."
+          placeholder="Search by name or tag"
           className="w-full p-2 mb-3 rounded border"
           style={{ 
             borderColor: colorsComponent.Border, 
@@ -127,17 +127,6 @@ export default function SoundBrowser() {
             </button>
           ))}
         </div>
-
-        {/* Bouton de debug */}
-        <button 
-          onClick={() => {
-            console.log('AudioObjects:', audioObjects);
-            console.log('Filtered sounds:', filteredSounds);
-          }}
-          className="mb-2 px-2 py-1 text-xs bg-gray-500 text-white rounded"
-        >
-          Debug
-        </button>
       </div>
 
       <div className="px-4 py-2">
