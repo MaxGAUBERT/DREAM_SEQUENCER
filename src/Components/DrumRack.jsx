@@ -286,6 +286,41 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
   
   setInstrumentName(trimmedName);
 }, [instrumentName, instrumentList, setInstrumentName]);
+
+const handleSelectSample = useCallback((url, soundId) => {
+  if (!instrumentName || !url) return;
+
+  // Crée un nouveau Sampler à partir de l'URL sélectionnée
+  const sampler = new Tone.Sampler({
+    urls: {
+      C4: url, // on utilise toujours C4 pour jouer
+    },
+    release: 1,
+    onload: () => {
+      console.log(`Sample chargé depuis la soundbank : ${url}`);
+    },
+    onerror: (error) => {
+      console.error(`Erreur de chargement du sample :`, error);
+    }
+  }).toDestination();
+
+  // Met à jour l'instrument dans le state
+  setInstrumentList(prev => {
+    const updated = { ...prev };
+    if (!updated[instrumentName]) return prev;
+
+    return {
+      ...prev,
+      [instrumentName]: {
+        ...prev[instrumentName],
+        sampler,
+        sampleUrl: url,
+        fileName: soundId  
+      }
+    };
+  });
+}, [instrumentName, setInstrumentList]);
+
     
   return (
     <div className="flex flex-col gap-1 flex-wrap absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-y-auto p-2 space-y-2 text-white" style={{backgroundColor: colorsComponent.Background}}>
@@ -385,21 +420,21 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       </div>
       
       <input 
-        type="number" 
+        type="range" 
         value={numSteps} 
         min={8} 
         max={256} 
-        step={8}
-        className="w-20 px-2 py-1 `bg-[${colorComponent.Background}]` `text-[${colorComponent.Text}]` rounded border focus:border-blue-500 outline-none" 
+        step={1}
+        title="Steps number"
+        className="w-60 px-2 py-1 `bg-[${colorComponent.Background}]` `text-[${colorComponent.Text}]` rounded border focus:border-blue-500 outline-none" 
         onChange={(e) => {
-          if (numSteps < 8 || numSteps > 256) {
+          if (e.target.value < 8 || e.target.value > 256) {
             return;
           }
           setNumSteps(Number(e.target.value))
         }} 
       />
-    
-
+      
       {input && (
         <div className="mt-2">
           <div className="flex gap-2">
@@ -443,6 +478,11 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
             instrumentName={instrumentName}
             setInstrumentName={setInstrumentName}
             onRename={handleRenameInstrument} 
+            onSelectSample={(url, sound) => {
+              console.log("Sample attribué :", url, sound);
+              handleSelectSample(url, sound);
+
+            }}
           />
         </div>
       )}
