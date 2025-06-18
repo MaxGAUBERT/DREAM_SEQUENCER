@@ -8,10 +8,7 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
 
   const {
     audioObjects, 
-    loading, 
-    playSound, 
-    stopAllSounds,
-    soundBank: bank 
+    soundBank: bank
   } = useSoundBank();
 
   // Synchroniser avec le nom de l'instrument quand il change
@@ -20,29 +17,30 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
   }, [instrumentName]);
 
   const handleSave = () => {
-    const trimmedName = localName.trim();
-    
-    // Validation basique
-    if (trimmedName === '') {
-      alert('Le nom du canal ne peut pas être vide');
-      return;
-    }
-    
-    // Appliquer le changement via les props
-    if (onRename) {
-      onRename(trimmedName);
-    } else if (setInstrumentName) {
-      setInstrumentName(trimmedName);
-    }
+  const trimmedName = localName.trim();
 
-    if (onSelectSample && selectedSoundId && audioObjects[selectedSoundId]) {
-      const sampleUrl = audioObjects[selectedSoundId].soundData.url;
-      onSelectSample(sampleUrl, selectedSoundId); // sampleUrl: string, soundId: string
-    }
+  if (trimmedName === '') {
+    alert('Le nom du canal ne peut pas être vide');
+    return;
+  }
 
-    
-    onClose();
-  };
+  // Renommer le canal
+  if (onRename) {
+    onRename(trimmedName);
+  } else if (setInstrumentName) {
+    setInstrumentName(trimmedName);
+  }
+
+  // Attribuer un sample si sélectionné
+  if (onSelectSample && selectedSoundId && audioObjects[selectedSoundId]) {
+    const sampleUrl = audioObjects[selectedSoundId].soundData.url;
+    const fileName = sampleUrl.split("/").pop(); // ✅ juste le nom du fichier
+    onSelectSample(sampleUrl, selectedSoundId, fileName);
+  }
+
+  onClose();
+};
+
 
   const handleCancel = () => {
     // Remettre la valeur originale
@@ -80,14 +78,14 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
             />
             <div className='w-full'>
               <label className="block text-sm text-gray-600 font-medium mb-2">
-                Select a sound
+                Assign a sample
               </label>
             <select
               className="w-full px-4 py-2 text-white bg-gray-500 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               value={selectedSoundId || ""}
               onChange={(e) => setSelectedSoundId(e.target.value)}
             >
-              <option value="">-- Choose a sample --</option>
+              <option value="">-- Select --</option>
               {Object.entries(audioObjects).map(([soundId, soundObj]) => (
                 <option key={soundId} value={soundId}>
                   {soundObj.kitName} - {soundObj.name}
