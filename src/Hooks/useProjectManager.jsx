@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { stringify, parse } from "flatted";
+
 function getColorByIndex(i) {
   const colors = [
     "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
@@ -18,13 +19,12 @@ export function useProjectManager() {
     id: 1,
     name: "Pattern 1",
     color: getColorByIndex(0),
-    grid: Array(numSteps).fill(false),
+    grid: Array(16).fill(false),
   }]);
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
 
   const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
 
-   // Initialiser avec toutes les grilles pour tous les patterns initiaux
   const initializeInstrumentList = useCallback(() => {
     return Object.fromEntries(
       DEFAULT_INSTRUMENTS.map(inst => [
@@ -41,59 +41,56 @@ export function useProjectManager() {
   }, [initLength]);
 
   const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
-
-  // Chargement initial depuis localStorage
   
   useEffect(() => {
-    const saved = localStorage.getItem("projects");
-    if (saved) {
-      try {
-        const parsed = parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setProjects(parsed);
-          const firstProject = parsed[0];
-          loadProject(firstProject.id, parsed); // préchargement
-        }
-      } catch (e) {
-        console.error("Erreur de chargement des projets :", e);
+  const saved = localStorage.getItem("projects");
+  if (saved) {
+    try {
+      const parsed = parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setProjects(parsed);
       }
+    } catch (e) {
+      console.error("Erreur de chargement des projets :", e);
     }
-  }, []);
-  
+  }
+}, []);
+
 
   const saveToLocalStorage = (updatedProjects) => {
     localStorage.setItem("projects", stringify(updatedProjects));
   };
-
+  
   const createProject = () => {
-    const newId = Math.max(0, ...projects.map(p => p.id)) + 1;
-    const newPatterns = Array.from({ length: initLength }, (_, i) => ({
-      id: i,
-      name: `Pattern ${i + 1}`,
-      color: getColorByIndex(i),
-      grid: Array(numSteps).fill(false),
-    }));
-    const newProject = {
-      id: newId,
-      name: "New Project",
-      patterns: newPatterns,
-      instrumentList: {
-        Kick: { grids: {} },
-        Snare: { grids: {} },
-        HiHat: { grids: {} },
-        Clap: { grids: {} },
-      },
-      numSteps,
-      selectedPatternID: newPatterns.length - 1,
-      createdAt: new Date().toISOString()
-    };
-    const updated = [...projects, newProject];
-    setProjects(updated);
-    saveToLocalStorage(updated);
-    loadProject(newId, updated);
-    setCurrentProjectId(newId);
-    saveAsProject(newProject.name);
+  const newId = Math.max(0, ...projects.map(p => p.id)) + 1;
+
+  const newPatterns = Array.from({ length: initLength }, (_, i) => ({
+    id: i,
+    name: `Pattern ${i + 1}`,
+    color: getColorByIndex(i),
+    grid: Array(16).fill(false),
+  }));
+
+  const newInstrumentList = initializeInstrumentList();
+
+  const newProject = {
+    id: newId,
+    name: "New Project",
+    patterns: newPatterns,
+    instrumentList: newInstrumentList,
+    numSteps: 16,
+    selectedPatternID: newPatterns.length - 1,
+    createdAt: new Date().toISOString()
   };
+
+  const updated = [...projects, newProject];
+  setProjects(updated);
+  saveToLocalStorage(updated);
+
+  // Charger le projet via la même méthode que celle utilisée ailleurs
+  loadProject(newId, updated);
+};
+
 
   const saveCurrentProject = () => {
     const updatedProjects = projects.map(p => {
@@ -161,6 +158,7 @@ export function useProjectManager() {
     createProject,
     saveCurrentProject,
     saveAsProject,
-    loadProject
+    loadProject,
+    deleteAllProjects: () => setProjects([]),
   };
 }
