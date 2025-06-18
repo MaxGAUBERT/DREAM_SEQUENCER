@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function LoadProjectModal({ savedProjects, onClose, onLoad }) {
+export default function LoadProjectModal({ savedProjects, onClose, onLoad, onDelete }) {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
 
   const handleLoadProject = (projectId) => {
@@ -12,6 +12,16 @@ export default function LoadProjectModal({ savedProjects, onClose, onLoad }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] relative">
         <h2 className="text-2xl font-bold mb-4">Load Project</h2>
+         <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            disabled={!savedProjects.length}
+            className="ml-4 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-colors"
+          >
+            Delete All Project
+          </button>
         
         {savedProjects.length === 0 ? (
           <div className="text-center py-8">

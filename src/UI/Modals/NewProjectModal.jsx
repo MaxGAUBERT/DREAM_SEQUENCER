@@ -16,7 +16,7 @@ export default function NewProjectModal({onClose, onCreate}) {
             className="w-full px-4 py-2 border rounded"
           />
           <button
-            type="submit"
+            onClick={onCreate}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
             Create
