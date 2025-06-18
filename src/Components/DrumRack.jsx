@@ -287,27 +287,35 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
   setInstrumentName(trimmedName);
 }, [instrumentName, instrumentList, setInstrumentName]);
 
-const handleSelectSample = useCallback((url, soundId) => {
+const handleSelectSample = useCallback((url, soundId, displayName) => {
   if (!instrumentName || !url) return;
 
-  // Crée un nouveau Sampler à partir de l'URL sélectionnée
-  const sampler = new Tone.Sampler({
-    urls: {
-      C4: url, // on utilise toujours C4 pour jouer
-    },
-    release: 1,
-    onload: () => {
-      console.log(`Sample chargé depuis la soundbank : ${url}`);
-    },
-    onerror: (error) => {
-      console.error(`Erreur de chargement du sample :`, error);
-    }
-  }).toDestination();
-
-  // Met à jour l'instrument dans le state
   setInstrumentList(prev => {
     const updated = { ...prev };
     if (!updated[instrumentName]) return prev;
+
+    // Disposer de l'ancien sampler s'il existe
+    const oldSampler = updated[instrumentName].sampler;
+    if (oldSampler) {
+      oldSampler.dispose();
+    }
+
+    // Nettoyer l'ancienne URL si elle existe
+    const oldUrl = updated[instrumentName].sampleUrl;
+    if (oldUrl && oldUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(oldUrl);
+    }
+
+    const sampler = new Tone.Sampler({
+      urls: { C4: url },
+      release: 1,
+      onload: () => {
+        console.log(`Sample chargé depuis la soundbank : ${displayName || soundId}`);
+      },
+      onerror: (error) => {
+        console.error(`Erreur de chargement du sample :`, error);
+      }
+    }).toDestination();
 
     return {
       ...prev,
@@ -315,7 +323,7 @@ const handleSelectSample = useCallback((url, soundId) => {
         ...prev[instrumentName],
         sampler,
         sampleUrl: url,
-        fileName: soundId  
+        fileName: displayName // Utiliser displayName en priorité
       }
     };
   });
@@ -327,7 +335,7 @@ const handleSelectSample = useCallback((url, soundId) => {
       <div className="text-xs border-b pb-2" style={{color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
         Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
         <div className="flex absolute top-0 right-0">
-           <button onClick={() => setIsPlaying(!isPlaying)} className="text-sm  border p-1 ml-2" style={{color: colorsComponent.Text}}>
+           <button onClick={() => setIsPlaying(!isPlaying)} className="text-sm  border p-1 ml-2 fixed right-0" style={{color: colorsComponent.Text}}>
              {isPlaying ? 'Pause' : 'Play'} Pattern
            </button>     
         </div>
@@ -342,9 +350,12 @@ const handleSelectSample = useCallback((url, soundId) => {
               <div className="text-xs">
                 {instrumentData.sampler 
                   ? <span className="text-green-400">
-                      {instrumentData.fileName || "loaded"}
+                      {instrumentData.sampleUrl || "loaded"} 
+                      {/* Ajoutez ceci pour debug */}
+                      <span className="text-xs text-gray-400">
+                        ({instrumentData.sampleUrl ? 'URL loaded' : 'No URL'})
+                      </span>
                     </span>
-
                   : <span style={{color: colorsComponent.Text}}>no sample</span>
                 }
               </div>
