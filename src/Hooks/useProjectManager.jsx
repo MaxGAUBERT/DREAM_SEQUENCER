@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { stringify, parse } from "flatted";
-
 function getColorByIndex(i) {
   const colors = [
     "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
@@ -24,7 +23,6 @@ export function useProjectManager() {
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
 
   const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
-
   const initializeInstrumentList = useCallback(() => {
     return Object.fromEntries(
       DEFAULT_INSTRUMENTS.map(inst => [
@@ -34,7 +32,11 @@ export function useProjectManager() {
             Array.from({ length: initLength }, (_, i) => [i, Array(16).fill(false)])
           ),
           value: null,
-          checked: false
+          sample:{
+            id: null,
+            url: null,
+            name: null
+          }
         }
       ])
     );
@@ -55,6 +57,21 @@ export function useProjectManager() {
     }
   }
 }, []);
+
+const assignSampleToInstrument = (instrumentName, sample) => {
+  setInstrumentList(prev => ({
+    ...prev,
+    [instrumentName]: {
+      ...prev[instrumentName],
+      sample: {
+        id: sample.id,
+        url: sample.url,
+        name: sample.name
+      }
+    }
+  }));
+};
+
 
 
   const saveToLocalStorage = (updatedProjects) => {
@@ -159,6 +176,7 @@ export function useProjectManager() {
     saveCurrentProject,
     saveAsProject,
     loadProject,
+    assignSampleToInstrument,
     deleteAllProjects: () => setProjects([]),
   };
 }
