@@ -6,6 +6,7 @@ import { MdDeleteOutline } from "react-icons/md";
 import { GrClearOption } from "react-icons/gr";
 import { useGlobalColorContext } from "../Contexts/GlobalColorContext"; // adapte le chemin
 import ChannelModal from "../UI/Modals/ChannelModal";
+import { useProjectManager } from "../Hooks/useProjectManager";
 
 const icon_size = 20;
 
@@ -13,6 +14,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
   const [input, setInput] = useState(false);
   const { samplerRef, sequencesRef, isPlaying, setIsPlaying, bpm, setBpm } = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
+  const {assignSampleToInstrument} = useProjectManager();
 
   // CORRECTION : Redimensionner les grilles sans perdre les données
   useEffect(() => {
@@ -49,7 +51,6 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
     setInstrumentList(prev => {
       const newInstrument = {
         value: null,
-        checked: false,
         grids: {}
       };
       
@@ -76,27 +77,13 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
     setInput(false);
     setInstrumentName("");
   }, [instrumentName, setInstrumentList, numSteps, selectedPatternID]);
-
-  const handleDeleteInstrument = useCallback(() => {
+  
+  const handleDeleteInstrument = useCallback((instrumentName) => {
     setInstrumentList(prev => {
       const newList = { ...prev };
-      Object.keys(newList).forEach(inst => {
-        if (newList[inst].checked) {
-          delete newList[inst];
-        }
-      });
+      delete newList[instrumentName];
       return newList;
     });
-  }, [setInstrumentList]);
-
-  const toggleInstrumentCheck = useCallback((instrumentName, checked) => {
-    setInstrumentList(prev => ({
-      ...prev,
-      [instrumentName]: {
-        ...prev[instrumentName],
-        checked: checked
-      }
-    }));
   }, [setInstrumentList]);
   
   const handleReset = useCallback(() => {
@@ -113,51 +100,50 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
   }, [setInstrumentList, selectedPatternID, numSteps]);
 
   const handleLoadSample = useCallback((instrument, e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const file = e.target.files[0];
+  if (!file) return;
 
-    // Vérifier le type de fichier
-    if (!file.type.startsWith('audio/')) {
-      console.error('Please select an audio file');
-      return;
+  if (!file.type.startsWith('audio/')) {
+    console.error('Please select an audio file');
+    return;
+  }
+
+  const cleanName = file.name.replace(/\.[^/.]+$/, ""); // sans extension
+  const truncatedName = cleanName.length > 20 ? cleanName.slice(0, 20) + "..." : cleanName;
+
+  setInstrumentList(prev => {
+    const oldData = prev[instrument];
+    if (oldData?.sampleUrl) {
+      URL.revokeObjectURL(oldData.sampleUrl);
     }
 
-    setInstrumentList(prev => {
-      // Nettoyer l'ancien sample s'il existe
-      const oldData = prev[instrument];
-      if (oldData?.sampleUrl) {
-        URL.revokeObjectURL(oldData.sampleUrl);
+    const newUrl = URL.createObjectURL(file);
+
+    const sampler = new Tone.Sampler({
+      urls: { C4: newUrl },
+      release: 1,
+      onload: () => {
+        console.log(`Sample loaded successfully for ${instrument}`);
+      },
+      onerror: (error) => {
+        console.error(`Error loading sample for ${instrument}:`, error);
       }
-      
+    }).toDestination();
 
-      const newUrl = URL.createObjectURL(file);
-      
-      // Créer le nouveau sampler
-      const sampler = new Tone.Sampler({
-        urls: { C4: newUrl },
-        release: 1,
-        onload: () => {
-          console.log(`Sample loaded successfully for ${instrument}`);
-        },
-        onerror: (error) => {
-          console.error(`Error loading sample for ${instrument}:`, error);
-        }
-      }).toDestination();
+    return {
+      ...prev,
+      [instrument]: {
+        ...prev[instrument],
+        sampler,
+        sampleUrl: newUrl,
+        fileName: truncatedName
+      }
+    };
+  });
 
-      return {
-        ...prev,
-        [instrument]: {
-          ...prev[instrument],
-          sampler,
-          sampleUrl: newUrl,
-          fileName: file.name
-        }
-      };
-    });
+  e.target.value = '';
+}, [setInstrumentList]);
 
-    // Reset l'input file pour permettre de recharger le même fichier
-    e.target.value = '';
-  }, [setInstrumentList]);
 
   useEffect(() => {
     // Nettoyage systématique à chaque changement
@@ -295,10 +281,12 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
     if (!updated[instrumentName]) return prev;
 
     // Disposer de l'ancien sampler s'il existe
+    
     const oldSampler = updated[instrumentName].sampler;
     if (oldSampler) {
       oldSampler.dispose();
     }
+  
 
     // Nettoyer l'ancienne URL si elle existe
     const oldUrl = updated[instrumentName].sampleUrl;
@@ -327,8 +315,12 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
       }
     };
   });
-}, [instrumentName, setInstrumentList]);
+});
 
+const handleResetChannels = useCallback(() => {
+  console.log('Resetting channels...');
+  setInstrumentList({});
+}, [setInstrumentList, instrumentList]);
     
   return (
     <div className="flex flex-col gap-1 flex-wrap absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-y-auto p-2 space-y-2 text-white" style={{backgroundColor: colorsComponent.Background}}>
@@ -351,10 +343,6 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
                 {instrumentData.sampler 
                   ? <span className="text-green-400">
                       {instrumentData.sampleUrl || "loaded"} 
-                      {/* Ajoutez ceci pour debug */}
-                      <span className="text-xs text-gray-400">
-                        ({instrumentData.sampleUrl ? 'URL loaded' : 'No URL'})
-                      </span>
                     </span>
                   : <span style={{color: colorsComponent.Text}}>no sample</span>
                 }
@@ -368,24 +356,23 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
                 onChange={(e) => handleLoadSample(instrumentName, e)} 
               />
             </div>
-            
-            <input 
-              type="checkbox" 
-              checked={instrumentData.checked || false} 
-              onChange={(e) => toggleInstrumentCheck(instrumentName, e.target.checked)} 
-              className="w-4 h-4 flex-shrink-0"
-            />
-
-            <div className="font-semibold text-white">
+      
+            <div className="font-semibold">
               <button 
                 onClick={() => {setChannelModalOpen(!channelModalOpen); setInstrumentName(instrumentName)}}
                 className="hover:text-white transition-colors"
                 style={{color: colorsComponent.Text}}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  if (e.button === 2) {
+                    handleDeleteInstrument(instrumentName);
+                  }
+                }}
               >
                 {instrumentName}
               </button>
+              
             </div>
-
             <div className="flex flex-row gap-1 ml-2 relative">
               {currentGrid.map((active, i) => (
                 <button
@@ -406,7 +393,7 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
           onClick={() => setInput(!input)}
           className=" hover:text-white transition-colors"
           style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text}}
-          title="Add instrument"
+          title="Add channel"
         >
           <IoAddOutline size={icon_size}/>
         </button>
@@ -415,7 +402,7 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
           onClick={handleDeleteInstrument}
           className=" hover:text-red-300 transition-colors"
           style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text}}
-          title="Delete selected instruments"
+          title="Delete all channels"
         >
           <MdDeleteOutline size={icon_size}/>
         </button>
@@ -489,12 +476,23 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
             instrumentName={instrumentName}
             setInstrumentName={setInstrumentName}
             onRename={handleRenameInstrument} 
-            onSelectSample={(url, sound) => {
-              console.log("Sample attribué :", url, sound);
-              handleSelectSample(url, sound);
-
+            onSelectSample={(instrumentName, sample) => {
+             handleSelectSample(sample.url, sample.id, sample.name, instrumentName);
             }}
           />
+        </div>
+      )}
+
+      {!instrumentList.length && (
+        <div className="flex gap-2 mt-2 relative">
+          <button 
+            onClick={handleResetChannels}
+            className="px-3 py-1 `bg-[${colorsComponent.Background}]` `text-[${colorsComponent.Text}]` hover:bg-gray-700 rounded transition-colors"
+            style={{position: 'absolute', right: '0px', top: '0px'}}
+          >
+            Reset 
+          </button>
+
         </div>
       )}
     </div>
