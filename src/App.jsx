@@ -39,7 +39,8 @@ export default function App() {
     createProject,
     saveCurrentProject,
     saveAsProject,
-    loadProject
+    loadProject,
+    deleteAllProjects
   } = useProjectManager();
 
   const [openComponents, setOpenComponents] = useState({
@@ -89,7 +90,8 @@ export default function App() {
                 patterns.map(pattern => [pattern.id, Array(16).fill(false)])
               ),
               value: null,
-              checked: false
+              //checked: false,
+              muted: false
             }
           ])
         );
@@ -191,6 +193,7 @@ export default function App() {
           savedProjects={projects} 
           onClose={() => closeModal("load")}
           onLoad={loadProject}
+          onDelete={deleteAllProjects}
         />
       )}
       
@@ -200,6 +203,7 @@ export default function App() {
           onSaveAs={saveAsProject} 
         />
       )}
+
       <PlayContext>
         {openComponents["Drum Rack"] && (
           <DrumRack 
