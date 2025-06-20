@@ -6,15 +6,14 @@ import { MdDeleteOutline } from "react-icons/md";
 import { GrClearOption } from "react-icons/gr";
 import { useGlobalColorContext } from "../Contexts/GlobalColorContext"; // adapte le chemin
 import ChannelModal from "../UI/Modals/ChannelModal";
-import { useProjectManager } from "../Hooks/useProjectManager";
 
 const icon_size = 20;
 
 const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrumentList, selectedPatternID, channelModalOpen, setChannelModalOpen, instrumentName, setInstrumentName}) => {
   const [input, setInput] = useState(false);
-  const { samplerRef, sequencesRef, isPlaying, setIsPlaying, bpm, setBpm } = usePlayContext();
+  const { sequencesRef, isPlaying, setIsPlaying, bpm} = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
-  const {assignSampleToInstrument} = useProjectManager();
+
 
   // CORRECTION : Redimensionner les grilles sans perdre les données
   useEffect(() => {
@@ -324,7 +323,7 @@ const handleResetChannels = useCallback(() => {
     
   return (
     <div className="flex flex-col absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-auto text-white" style={{backgroundColor: colorsComponent.Background}}>
-      <div className="text-xs border-b pb-2" style={{color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
+      <div className="text-xs border-b p-2 pb-2" style={{color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
         Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
         <div className="flex absolute top-0 right-0">
            <button onClick={() => setIsPlaying(!isPlaying)} className="text-sm  border p-1 ml-2 fixed right-0" style={{color: colorsComponent.Text}}>
