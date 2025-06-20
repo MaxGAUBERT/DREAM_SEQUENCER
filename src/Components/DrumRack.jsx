@@ -323,7 +323,7 @@ const handleResetChannels = useCallback(() => {
 }, [setInstrumentList, instrumentList]);
     
   return (
-    <div className="flex flex-col gap-1 flex-wrap absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-y-auto p-2 space-y-2 text-white" style={{backgroundColor: colorsComponent.Background}}>
+    <div className="flex flex-col absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-auto text-white" style={{backgroundColor: colorsComponent.Background}}>
       <div className="text-xs border-b pb-2" style={{color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
         Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
         <div className="flex absolute top-0 right-0">
@@ -388,7 +388,7 @@ const handleResetChannels = useCallback(() => {
         );
       })}
 
-      <div className="pt-2 flex gap-4">
+      <div className="flex gap-1 ml-2">
         <button 
           onClick={() => setInput(!input)}
           className=" hover:text-white transition-colors"
@@ -434,7 +434,7 @@ const handleResetChannels = useCallback(() => {
       />
       
       {input && (
-        <div className="mt-2">
+        <div>
           <div className="flex gap-2">
             <input 
               type="text" 
