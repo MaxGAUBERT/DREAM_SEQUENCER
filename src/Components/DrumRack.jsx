@@ -11,7 +11,7 @@ const icon_size = 20;
 
 const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrumentList, selectedPatternID, channelModalOpen, setChannelModalOpen, instrumentName, setInstrumentName}) => {
   const [input, setInput] = useState(false);
-  const { sequencesRef, isPlaying, setIsPlaying, bpm} = usePlayContext();
+  const { sequencesRef, isPlaying, setIsPlaying, bpm, metronome, metronomeSampler} = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
 
 
@@ -76,6 +76,22 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
     setInput(false);
     setInstrumentName("");
   }, [instrumentName, setInstrumentList, numSteps, selectedPatternID]);
+
+  useEffect(() => {
+  if (metronome && metronomeSampler && metronomeSampler.loaded) {
+    const metroLoop = new Tone.Loop((time) => {
+      metronomeSampler.triggerAttackRelease("C4", "8n", time);
+    }, "4n"); // "4n" = chaque temps (1 battement)
+
+    metroLoop.start(0); // commence dès le début
+    Tone.Transport.start();
+
+    return () => {
+      metroLoop.dispose(); // nettoyer à l'arrêt ou démontage
+    };
+  }
+  }, [metronome, metronomeSampler]);
+
   
   const handleDeleteInstrument = useCallback((instrumentName) => {
     setInstrumentList(prev => {
@@ -249,7 +265,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       };
     });
   }, [selectedPatternID, numSteps, setInstrumentList]);
-  
+
   const handleRenameInstrument = useCallback((newName) => {
   const trimmedName = newName.trim();
   

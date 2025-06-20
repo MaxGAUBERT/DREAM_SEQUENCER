@@ -6,13 +6,7 @@ import { PiMetronomeBold } from "react-icons/pi";
 
 
 const TransportBar = () => {
-    const {bpm, setBpm} = usePlayContext();
-    
-    
-
-
-
-
+    const {bpm, setBpm, metronome, setMetronome} = usePlayContext();
 
 
     return (
@@ -41,8 +35,10 @@ const TransportBar = () => {
                     title="Adjust BPM"
                 />
                 <button 
-                    className="bg-gray-500 text-white rounded hover:bg-blue-600"
+                    className="bg-gray-500 text-white rounded"
                     title="Metronome"
+                    style={{ backgroundColor: metronome ? "blue" : "gray" }}
+                    onClick={() => setMetronome(!metronome)}
                 >
                     <PiMetronomeBold size={20} />
                 </button>
