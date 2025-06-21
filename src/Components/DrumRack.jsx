@@ -12,7 +12,7 @@ const icon_size = 20;
 
 const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrumentList, selectedPatternID, channelModalOpen, setChannelModalOpen, instrumentName, setInstrumentName, onOpenPianoRoll}) => {
   const [input, setInput] = useState(false);
-  const { sequencesRef, isPlaying, setIsPlaying, bpm, metronome, metronomeSampler} = usePlayContext();
+  const { sequencesRef, isPlaying, setIsPlaying, bpm, metronome, metronomeSampler, playMode, setPlayMode} = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
   const [selectedInstrument, setSelectedInstrument] = useState(null);
   const {isPianoOpen, setIsPianoOpen} = useTogglePiano();
@@ -182,7 +182,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
     cleanup();
 
     // Si pas de lecture demandée, on s'arrête là
-    if (!isPlaying) {
+    if (!isPlaying || playMode !== 'Pattern') {
       return;
     }
 
@@ -337,14 +337,9 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
   
 
   return (
-    <div className="flex flex-col absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-auto text-white resize-y" style={{backgroundColor: colorsComponent.Background}}>
-      <div className="text-xs border-b p-2 pb-2" style={{color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
+    <div className="flex flex-col absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-auto resize-y" style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
+      <div className="text-xs border-b p-2 pb-2">
         Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
-        <div className="flex absolute top-0 right-0">
-           <button onClick={() => setIsPlaying(!isPlaying)} className="text-sm  border p-1 ml-2 fixed right-0" style={{color: colorsComponent.Text}}>
-             {isPlaying ? 'Pause' : 'Play'} Pattern
-           </button>     
-        </div>
       </div>
       
       {Object.entries(instrumentList).map(([instrumentName, instrumentData]) => {
@@ -368,7 +363,6 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
               <button 
                 onClick={() => {setChannelModalOpen(!channelModalOpen); setInstrumentName(instrumentName)}}
                 className="hover:text-white transition-colors"
-                style={{color: colorsComponent.Text}}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   if (e.button === 2) {
@@ -399,7 +393,6 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
         <button 
           onClick={() => setInput(!input)}
           className=" hover:text-white transition-colors"
-          style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text}}
           title="Add channel"
         >
           <IoAddOutline size={icon_size}/>
@@ -454,7 +447,6 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
                 }
               }}
               className="px-2 py-1 rounded border focus:border-blue-500 outline-none"
-              style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text}}
               autoFocus
             />
             <button 
@@ -468,7 +460,7 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
                 setInput(false);
                 setInstrumentName('');
               }}
-              className="px-3 py-1 `bg-[${colorsComponent.Background}]` `text-[${colorsComponent.Text}]` hover:bg-gray-700 rounded transition-colors"
+              className="px-3 py-1 hover:bg-gray-700 rounded transition-colors"
             >
               Cancel
             </button>

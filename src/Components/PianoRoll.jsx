@@ -1,5 +1,6 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useProjectManager } from '../Hooks/useProjectManager';
+import {usePlayContext} from '../Contexts/PlayContext';
 const PianoRoll = ({selectedInstrument, onOpen, onClose}) => {
   const [selectedNote, setSelectedNote] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -7,6 +8,7 @@ const PianoRoll = ({selectedInstrument, onOpen, onClose}) => {
   const gridRef = useRef(null);
 
   const { notes, setNotes } = useProjectManager();
+  const { sequencesRef, isPlaying, setIsPlaying, bpm, setBpm, volume, setVolume } = usePlayContext();
 
   // Configuration
   const ROWS = 48; // 4 octaves
@@ -15,6 +17,28 @@ const PianoRoll = ({selectedInstrument, onOpen, onClose}) => {
   const CELL_HEIGHT = 20;
   
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+  useEffect(() => {
+    if (!isPlaying || !notes) return;
+    
+    const interval = setInterval(() => {
+      if (sequencesRef.current.length > 0) {
+        sequencesRef.current.forEach((sequence) => {
+          if (sequence.instrument === selectedInstrument) {
+            const currentStep = sequence.currentStep % sequence.grid.length;
+            if (sequence.grid[currentStep]) {
+              // Play the note for this step
+              console.log(`Playing note for ${selectedInstrument} at step ${currentStep}`);
+              // Here you would trigger the actual sound playback
+            }
+            sequence.currentStep++;
+          }
+        });
+      }
+    }, (60 / bpm) * 1000);
+    return () => clearInterval(interval);
+  
+  }, [isPlaying, bpm, selectedInstrument, sequencesRef]);
   
   const getNoteLabel = (row) => {
     const octave = Math.floor((ROWS - 1 - row) / 12) + 2;
