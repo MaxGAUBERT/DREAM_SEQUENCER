@@ -21,6 +21,7 @@ export function useProjectManager() {
     grid: Array(16).fill(false),
   }]);
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
+  const [notes, setNotes] = useState([]);
 
   const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
   const initializeInstrumentList = useCallback(() => {
@@ -95,6 +96,7 @@ const assignSampleToInstrument = (instrumentName, sample) => {
     name: "New Project",
     patterns: newPatterns,
     instrumentList: newInstrumentList,
+    notes,
     numSteps: 16,
     selectedPatternID: newPatterns.length - 1,
     createdAt: new Date().toISOString()
@@ -116,6 +118,7 @@ const assignSampleToInstrument = (instrumentName, sample) => {
           ...p,
           patterns,
           instrumentList,
+          notes,
           numSteps,
           selectedPatternID,
           lastSaved: new Date().toISOString()
@@ -134,6 +137,7 @@ const assignSampleToInstrument = (instrumentName, sample) => {
       name,
       patterns,
       instrumentList,
+      notes,
       numSteps,
       selectedPatternID,
       createdAt: new Date().toISOString()
@@ -162,6 +166,8 @@ const assignSampleToInstrument = (instrumentName, sample) => {
     instrumentList,
     setInstrumentList,
     initializeInstrumentList,
+    notes,
+    setNotes,
     currentProjectId,
     currentProject: projects.find(p => p.id === currentProjectId),
     initLength,
