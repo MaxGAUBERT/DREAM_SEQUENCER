@@ -8,6 +8,7 @@ export const usePlayContext = () => useContext(CreatePlayContext);
 const PlayContext = ({ children }) => {
     const samplerRef = useRef("");
     const sequencesRef = useRef([]);
+    const [playMode, setPlayMode] = useState("Song");
     const [isPlaying, setIsPlaying] = useState(false);
     const [bpm, setBpm] = useState(140);
     const [volume, setVolume] = useState(0);
@@ -21,7 +22,7 @@ const PlayContext = ({ children }) => {
     );
 
     return (
-        <CreatePlayContext.Provider value={{samplerRef, sequencesRef, isPlaying, setIsPlaying, bpm, setBpm, volume, setVolume, metronome, setMetronome, metronomeSampler, setMetronomeSampler}}>
+        <CreatePlayContext.Provider value={{playMode, setPlayMode, samplerRef, sequencesRef, isPlaying, setIsPlaying, bpm, setBpm, volume, setVolume, metronome, setMetronome, metronomeSampler, setMetronomeSampler}}>
             {children}
         </CreatePlayContext.Provider>
     );
