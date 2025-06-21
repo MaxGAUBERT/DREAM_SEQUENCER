@@ -1,7 +1,6 @@
 import {useState, useEffect, useCallback, useRef} from "react";
 import { stringify, parse } from "flatted";
 import StripMenu from "./UI/StripMenu";
-import SoundBrowser from "./Components/SoundBrowser";
 import DrumRack from "./Components/DrumRack";
 import PatternSelector from "./Components/PatternSelector";
 import NewProjectModal from "./UI/Modals/NewProjectModal";
@@ -12,6 +11,9 @@ import * as Tone from "tone";
 import PlayContext from "./Contexts/PlayContext";
 import { MdGraphicEq } from "react-icons/md";
 import GlobalColorContextProvider from "./Contexts/GlobalColorContext";
+import TransportBar from "./Components/TransportBar";
+import PianoRoll from "./Components/PianoRoll";
+//import { useTogglePiano } from "./Hooks/useTogglePiano";
 
 function getColorByIndex(i) {
   const colors = [
@@ -43,6 +45,9 @@ export default function App() {
     deleteAllProjects
   } = useProjectManager();
 
+  const [isPianoRollOpen, setIsPianoRollOpen] = useState(false);
+  const [pianoRollInstrument, setPianoRollInstrument] = useState(null);
+
   const [openComponents, setOpenComponents] = useState({
     "Drum Rack": true,
     "Pattern Selector": true,
@@ -67,6 +72,12 @@ export default function App() {
       );
     }
   }, [instrumentList, currentProject]);
+
+  const openPianoRollForInstrument = (instrumentName) => {
+    setPianoRollInstrument(instrumentName);
+    setIsPianoRollOpen(!isPianoRollOpen);
+  };
+
 
   // Charger l'état complet depuis localStorage lors du chargement d'un projet
   useEffect(() => {
@@ -150,6 +161,12 @@ export default function App() {
           "Pattern Selector": !prev["Pattern Selector"]
         }));
         break;
+      case "Piano Roll":
+        setOpenComponents(prev => ({
+          ...prev,
+          "Piano Roll": !prev["Piano Roll"]
+        }))
+        break;
       case "New Project":
         openModal("new");
         break;
@@ -171,12 +188,14 @@ export default function App() {
 
   return (
     <div className="w-full h-screen bg-gray-900 font-['Orbitron'] text-sm font-bold relative">
+     
       <MdGraphicEq size={300} className="absolute top-2/4 left-2/4 transform -translate-x-1/2 -translate-y-1/2 text-white"/>
       <span className="absolute top-2 right-2 text-white">
         <h3>
            Dream Sequencer: {currentProjectName}
         </h3>  
       </span>
+     
       <GlobalColorContextProvider>
       
       <StripMenu onAction={handleRunAction} />
@@ -216,6 +235,7 @@ export default function App() {
             setChannelModalOpen={setChannelModalOpen}
             instrumentName={instrumentName}
             setInstrumentName={setInstrumentName}
+            onOpenPianoRoll={openPianoRollForInstrument}
           />
         )}
 
@@ -230,11 +250,20 @@ export default function App() {
             setInstrumentList={setInstrumentList}
           />
         )}
+
+        {isPianoRollOpen && (
+          <PianoRoll selectedInstrument={pianoRollInstrument} onOpen={setIsPianoRollOpen} onClose={() => setIsPianoRollOpen(false)}/>
+        )}
+
+        <TransportBar />
+    
       </PlayContext>
-      
-      {openComponents["Sound Browser"] && <SoundBrowser />}
 
       </GlobalColorContextProvider>
     </div>
+ 
   );
 }
+
+
+// modif: app, drum rack, ch modal, 
