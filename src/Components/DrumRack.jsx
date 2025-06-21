@@ -6,13 +6,16 @@ import { MdDeleteOutline } from "react-icons/md";
 import { GrClearOption } from "react-icons/gr";
 import { useGlobalColorContext } from "../Contexts/GlobalColorContext"; // adapte le chemin
 import ChannelModal from "../UI/Modals/ChannelModal";
+import { useTogglePiano } from "../Hooks/useTogglePiano";
 
 const icon_size = 20;
 
-const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrumentList, selectedPatternID, channelModalOpen, setChannelModalOpen, instrumentName, setInstrumentName}) => {
+const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrumentList, selectedPatternID, channelModalOpen, setChannelModalOpen, instrumentName, setInstrumentName, onOpenPianoRoll}) => {
   const [input, setInput] = useState(false);
   const { sequencesRef, isPlaying, setIsPlaying, bpm, metronome, metronomeSampler} = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
+  const [selectedInstrument, setSelectedInstrument] = useState(null);
+  const {isPianoOpen, setIsPianoOpen} = useTogglePiano();
 
 
   // CORRECTION : Redimensionner les grilles sans perdre les données
@@ -331,14 +334,10 @@ const handleSelectSample = useCallback((url, soundId, displayName) => {
     };
   });
 });
+  
 
-const handleResetChannels = useCallback(() => {
-  console.log('Resetting channels...');
-  setInstrumentList({});
-}, [setInstrumentList, instrumentList]);
-    
   return (
-    <div className="flex flex-col absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-auto text-white" style={{backgroundColor: colorsComponent.Background}}>
+    <div className="flex flex-col absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-auto text-white resize-y" style={{backgroundColor: colorsComponent.Background}}>
       <div className="text-xs border-b p-2 pb-2" style={{color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
         Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
         <div className="flex absolute top-0 right-0">
@@ -354,25 +353,18 @@ const handleResetChannels = useCallback(() => {
         return (
           <div key={instrumentName} className="grid grid-cols-[auto_auto_80px_1fr] items-center gap-x-4">
             <div className="flex items-center space-x-2">
-              <div className="text-xs">
-                {instrumentData.sampler 
-                  ? <span className="text-green-400">
-                      {instrumentData.sampleUrl || "loaded"} 
-                    </span>
-                  : <span style={{color: colorsComponent.Text}}>no sample</span>
-                }
-              </div>
               <input 
                 type="file" 
                 accept="audio/*" 
-                title="Load sample"  
+                title="Load sample"
                 className="w-16 h-6 flex-shrink-0 text-xs cursor-pointer"
                 style={{color: colorsComponent.Background}}  
                 onChange={(e) => handleLoadSample(instrumentName, e)} 
+                {...instrumentData.sampler ? {disabled: true, hidden: true} : {}}
               />
             </div>
       
-            <div className="font-semibold">
+            <div className="font-semibold text-gray-700 rounded">
               <button 
                 onClick={() => {setChannelModalOpen(!channelModalOpen); setInstrumentName(instrumentName)}}
                 className="hover:text-white transition-colors"
@@ -388,7 +380,7 @@ const handleResetChannels = useCallback(() => {
               </button>
               
             </div>
-            <div className="flex flex-row gap-1 ml-2 relative">
+            <div className="flex flex-row gap-1 ml-40 absolute">
               {currentGrid.map((active, i) => (
                 <button
                   key={i}
@@ -494,20 +486,9 @@ const handleResetChannels = useCallback(() => {
             onSelectSample={(instrumentName, sample) => {
              handleSelectSample(sample.url, sample.id, sample.name, instrumentName);
             }}
+            channelUrl={instrumentList[instrumentName]?.sampleUrl}
+            onOpenPianoRoll={onOpenPianoRoll}
           />
-        </div>
-      )}
-
-      {!instrumentList.length && (
-        <div className="flex gap-2 mt-2 relative">
-          <button 
-            onClick={handleResetChannels}
-            className="px-3 py-1 `bg-[${colorsComponent.Background}]` `text-[${colorsComponent.Text}]` hover:bg-gray-700 rounded transition-colors"
-            style={{position: 'absolute', right: '0px', top: '0px'}}
-          >
-            Reset 
-          </button>
-
         </div>
       )}
     </div>
