@@ -45,7 +45,7 @@ const StripMenu = React.memo(({ onAction }) =>{
   return (
     <div
       ref={menuRef}
-      className="flex bg-gray-900 border-2 border-gray-700 text-white p-1 gap-1 z-10"
+      className="flex bg-gray-900 border-2 z-50 border-gray-700 text-white p-1 gap-1"
     >
       {MENU.map((menu) => (
         <div key={menu.id} className="relative">
