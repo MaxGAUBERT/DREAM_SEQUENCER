@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSoundBank } from '../../Hooks/useSoundBank';
 
-const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, onSelectSample}) => {
+const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, onSelectSample, channelUrl, onOpenPianoRoll}) => {
   const [activeTab, setActiveTab] = useState("General");
   const [localName, setLocalName] = useState(instrumentName);
   const [selectedSoundId, setSelectedSoundId] = useState(null);
@@ -16,30 +16,48 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
     setLocalName(instrumentName);
   }, [instrumentName]);
 
-  const handleSave = () => {
-  const trimmedName = localName.trim();
+  function cleanSampleName(filePath, maxLength) {
+  if (!filePath) return "";
 
-  if (trimmedName === '') {
-    alert('Le nom du canal ne peut pas être vide');
-    return;
+  // Étape 1 : extraire le nom du fichier (sans dossier)
+  const fileName = filePath.split("/").pop() || filePath;
+
+  // Étape 2 : retirer l'extension
+  const noExtension = fileName.replace(/\.[^/.]+$/, "");
+
+  // Étape 3 : remplacer les underscores ou tirets par des espaces
+  const readable = noExtension.replace(/[_\-]+/g, " ");
+
+  // Étape 4 : tronquer si trop long
+  return readable.length > maxLength
+    ? readable.slice(0, maxLength).trim() + "..."
+    : readable;
   }
 
+
+  const handleSave = () => {
   // Renommer le canal
   if (onRename) {
-    onRename(trimmedName);
+    onRename(localName);
   } else if (setInstrumentName) {
-    setInstrumentName(trimmedName);
+    setInstrumentName(localName);
   }
 
   // Attribuer un sample si sélectionné
   if (onSelectSample && selectedSoundId && audioObjects[selectedSoundId]) {
-    const sampleUrl = audioObjects[selectedSoundId].soundData.url;
-    const fileName = sampleUrl.split("/").pop(); // ✅ juste le nom du fichier
-    onSelectSample(sampleUrl, selectedSoundId, fileName);
+    const rawPath = audioObjects[selectedSoundId].soundData.url;
+    const displayName = cleanSampleName(rawPath, 20);
+
+    onSelectSample(instrumentName, {
+      id: selectedSoundId,
+      url: rawPath,
+      name: displayName,
+    });
   }
 
   onClose();
 };
+
 
 
   const handleCancel = () => {
@@ -56,6 +74,15 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
     }
   };
 
+  const handleOpenPianoRoll = () => {
+  if (onOpenPianoRoll) {
+    onOpenPianoRoll(instrumentName);
+    onClose();
+
+  }
+};
+
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "General":
@@ -64,6 +91,9 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
             <p>
               Channel properties
             </p>
+            <label className="block text-sm text-gray-600 font-medium mb-2">
+              Sample url: {channelUrl}
+            </label>
             <label className="block text-sm text-gray-600 font-medium mb-2">
               Rename {instrumentName}
             </label>
@@ -88,10 +118,19 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
               <option value="">-- Select --</option>
               {Object.entries(audioObjects).map(([soundId, soundObj]) => (
                 <option key={soundId} value={soundId}>
-                  {soundObj.kitName} - {soundObj.name}
+                  {soundObj.name}
                 </option>
               ))}
             </select>
+            
+            <button
+              type="button"
+              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              onClick={handleOpenPianoRoll}
+            >
+              PianoRoll
+            </button>
+            
 
             </div>
           </div>
