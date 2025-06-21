@@ -6,7 +6,6 @@ import { MdDeleteOutline } from "react-icons/md";
 import { GrClearOption } from "react-icons/gr";
 import { useGlobalColorContext } from "../Contexts/GlobalColorContext"; // adapte le chemin
 import ChannelModal from "../UI/Modals/ChannelModal";
-import { useTogglePiano } from "../Hooks/useTogglePiano";
 
 const icon_size = 20;
 
@@ -14,8 +13,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
   const [input, setInput] = useState(false);
   const { sequencesRef, isPlaying, setIsPlaying, bpm, metronome, metronomeSampler, playMode, setPlayMode} = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
-  const [selectedInstrument, setSelectedInstrument] = useState(null);
-  const {isPianoOpen, setIsPianoOpen} = useTogglePiano();
+
 
 
   // CORRECTION : Redimensionner les grilles sans perdre les données
