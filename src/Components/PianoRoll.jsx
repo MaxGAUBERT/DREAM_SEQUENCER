@@ -143,7 +143,7 @@ const PianoRoll = ({selectedInstrument, onOpen, onClose}) => {
   };
 
   return (
-    <div ref={onOpen} className="w-230 h-140 fixed bg-gray-900 text-white border-2 border-white p-4 overflow-auto resize">
+    <div ref={onOpen} className="w-230 h-140 max-w-326.5 max-h-200 fixed bg-gray-900 text-white border-2 border-white p-4 overflow-auto resize">
       <div className="mb-4 flex gap-2 items-center ml-20 justify-start">
         <label
           className="absolute left-0 px-4 py-2 ml-4 bg-gray-800 rounded transition-colors"

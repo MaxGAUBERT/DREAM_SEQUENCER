@@ -376,7 +376,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
   
 
   return (
-    <div className="flex flex-col absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[700px] overflow-auto resize-y" style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
+    <div className="flex flex-col absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[800px] overflow-auto resize-y" style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
       <div className="text-xs border-b p-2 pb-2">
         Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
       </div>
