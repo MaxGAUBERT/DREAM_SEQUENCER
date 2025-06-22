@@ -45,7 +45,7 @@ const StripMenu = React.memo(({ onAction }) =>{
   return (
     <div
       ref={menuRef}
-      className="flex bg-gray-900 border-2 z-50 border-gray-700 text-white p-1 gap-1"
+      className="flex flex-row bg-gray-900 border-2 border-gray-700 p-1 gap-1"
     >
       {MENU.map((menu) => (
         <div key={menu.id} className="relative">
@@ -61,7 +61,7 @@ const StripMenu = React.memo(({ onAction }) =>{
           </button>
 
           {openDropdown === menu.id && (
-            <div className="absolute mt-1 left-0 w-40 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+            <div className="absolute mt-1 left-0 w-40 z-50 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
               {menu.items.map((item) => (
                 <button
                   key={item}
