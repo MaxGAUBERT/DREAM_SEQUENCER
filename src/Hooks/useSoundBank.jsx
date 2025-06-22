@@ -139,13 +139,13 @@ export const useSoundBank = (bank = soundBank) => {
 
   useEffect(() => {
     const loadSounds = async () => {
-      console.log('🔄 Début du chargement des sons...');
-      console.log('Bank reçu:', bank);
+      //console.log('🔄 Début du chargement des sons...');
+      //console.log('Bank reçu:', bank);
       
       try {
         // Démarre le contexte audio Tone.js
         if (Tone.context.state !== 'running') {
-          console.log('🎵 Démarrage du contexte Tone.js...');
+          //console.log('🎵 Démarrage du contexte Tone.js...');
           await Tone.start();
         }
 
@@ -315,6 +315,7 @@ export const useSoundBank = (bank = soundBank) => {
 
   return { 
     audioObjects, 
+    setAudioObjects,
     loading, 
     playSound, 
     stopAllSounds,
