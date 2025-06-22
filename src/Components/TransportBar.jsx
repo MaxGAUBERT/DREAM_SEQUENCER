@@ -13,26 +13,14 @@ const TransportBar = () => {
     return (
         <div className="flex flex-row absolute top-2 right-100">
             <div className="flex flex-row gap-1">
-                <div className="flex flex-row gap-1 items-center border-2 border-gray-500 rounded p-1">
-                    <label className="text-white">Mode {playMode}</label>
-                    <input
-                        type="radio"
-                        name="playMode"
-                        value="Song"
-                        checked={playMode === "Song"}
-                        onChange={() => setPlayMode("Song")}
-                        className="bg-gray-500 text-white rounded w-5"
-                        title="Song Mode"
-                    />
-                    <input
-                        type="radio"
-                        name="playMode"
-                        value="Pattern"
-                        checked={playMode === "Pattern"}
-                        onChange={() => setPlayMode("Pattern")}
-                        className="bg-gray-500 text-white rounded w-5"
-                        title="Pattern Mode"
-                    />
+                <div className="flex flex-row items-center border-1 border-gray-500 rounded">
+                    <button
+                        onClick={() => setPlayMode(playMode === "Song" ? "Pattern" : "Song")}
+                        className={`px-2 py-1 rounded ${playMode === "Song" ? "bg-blue-600" : "bg-gray-500 hover:bg-gray-600"}`}
+                        title="Switch to Song Mode"
+                    >
+                        {playMode === "Song" ? "Pattern" : "Song"}
+                    </button>
 
                 </div>
                 <button 
