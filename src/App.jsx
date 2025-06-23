@@ -8,12 +8,11 @@ import LoadProjectModal from "./UI/Modals/LoadProjectModal";
 import SaveAsProjectModal from "./UI/Modals/SaveAsProjectModal";
 import {useProjectManager} from "./Hooks/useProjectManager";
 import * as Tone from "tone";
-import PlayContext from "./Contexts/PlayContext";
+import PlayContext, { usePlayContext } from "./Contexts/PlayContext";
 import { MdGraphicEq } from "react-icons/md";
 import GlobalColorContextProvider from "./Contexts/GlobalColorContext";
 import TransportBar from "./Components/TransportBar";
 import PianoRoll from "./Components/PianoRoll";
-//import { useTogglePiano } from "./Hooks/useTogglePiano";
 
 function getColorByIndex(i) {
   const colors = [
@@ -29,6 +28,10 @@ export default function App() {
     instrumentList,
     setInstrumentList,
     initializeInstrumentList,
+    DEFAULT_INSTRUMENTS,
+    notes,
+    setNotes,
+    currentProjectId,
     currentProject,
     initLength,
     INITIAL_PATTERN_ID,
@@ -42,6 +45,10 @@ export default function App() {
     saveCurrentProject,
     saveAsProject,
     loadProject,
+    deleteProject,
+    assignSampleToInstrument,
+    selectedSoundId,
+    setSelectedSoundId,
     deleteAllProjects
   } = useProjectManager();
 
@@ -184,10 +191,16 @@ export default function App() {
     }
   }, [openComponents, modals, saveCurrentProject]);
 
-  const currentProjectName = currentProject ? currentProject.name : "Untitled";
+  const currentProjectName = projects.find(p => p.id === currentProjectId)?.name || "New Project";
+  if (currentProjectName){
+    console.log("Current project name:", currentProjectName);
+  }
+
+
+
 
   return (
-    <div className="w-full h-screen bg-gray-900 font-['Orbitron'] text-sm font-bold relative">
+    <div className="min-h-screen h-screen bg-gray-900 font-['Orbitron'] text-sm font-bold relative">
      
       <MdGraphicEq size={300} className="absolute top-2/4 left-2/4 transform -translate-x-1/2 -translate-y-1/2 text-white"/>
       <span className="absolute top-2 right-2 text-white">
@@ -256,8 +269,8 @@ export default function App() {
         )}
 
         <TransportBar />
-    
       </PlayContext>
+      
 
       </GlobalColorContextProvider>
     </div>
