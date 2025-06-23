@@ -13,6 +13,7 @@ import { MdGraphicEq } from "react-icons/md";
 import GlobalColorContextProvider from "./Contexts/GlobalColorContext";
 import TransportBar from "./Components/TransportBar";
 import PianoRoll from "./Components/PianoRoll";
+import LaunchAnimation from "./UI/LaunchAnimation";
 
 function getColorByIndex(i) {
   const colors = [
@@ -265,7 +266,7 @@ export default function App() {
         )}
 
         {isPianoRollOpen && (
-          <PianoRoll selectedInstrument={pianoRollInstrument} onOpen={setIsPianoRollOpen} onClose={() => setIsPianoRollOpen(false)}/>
+          <PianoRoll selectedInstrument={pianoRollInstrument} instrumentList={instrumentList} onOpen={setIsPianoRollOpen} onClose={() => setIsPianoRollOpen(false)}/>
         )}
 
         <TransportBar />
@@ -280,3 +281,4 @@ export default function App() {
 
 
 // modif: app, drum rack, ch modal, 
+// <LaunchAnimation />
