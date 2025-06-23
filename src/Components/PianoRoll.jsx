@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useProjectManager } from '../Hooks/useProjectManager';
 import * as Tone from 'tone';
 
@@ -61,6 +61,8 @@ const PianoRoll = ({selectedInstrument, instrumentList, onOpen, onClose}) => {
         pitch: ROWS - 1 - row
       };
       setNotes(prev => [...prev, newNote]);
+      console.log(newNote.pitch);
+      setSelectedNote(newNote.pitch);
     }
   }, [notes, isResizing]);
 
@@ -102,7 +104,7 @@ const PianoRoll = ({selectedInstrument, instrumentList, onOpen, onClose}) => {
     setResizeDirection(null);
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
@@ -119,20 +121,24 @@ const PianoRoll = ({selectedInstrument, instrumentList, onOpen, onClose}) => {
     setSelectedNote(null);
   };
 
- const handlePlaySound = async () => {
-  await Tone.start(); // Nécessaire pour activer le contexte audio
+ const handlePlaySound = async (selectedNote, i) => {
+
+
+  setSelectedNote(getNoteLabel(i));
+  console.log("Note à jouer:", getNoteLabel(i));
+
+  await Tone.start();
 
   const instrument = instrumentList[selectedInstrument];
-  
-  if (!instrument) {
+
+  if (!instrument || !instrument.sampler) {
     console.warn("Aucun sampler chargé pour l’instrument sélectionné.");
     return;
   }
 
-  console.log("Jouer le son de l’instrument:", instrument);
-  instrument.sampler.triggerAttackRelease("C4", "8n");
+  //console.log(`Jouer ${noteLabel} sur ${selectedInstrument}`);
+  instrument.sampler.triggerAttackRelease(selectedNote, "8n");
 };
-
 
   return (
     <div ref={onOpen} className="w-230 h-140 fixed bg-gray-900 text-white border-2 border-white p-4 overflow-auto resize">
@@ -147,12 +153,6 @@ const PianoRoll = ({selectedInstrument, instrumentList, onOpen, onClose}) => {
           className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition-colors"
         >
           Clear All
-        </button>
-        <button
-          className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 transition-colors"
-          onClick={handlePlaySound}
-        >
-          Play Sound
         </button>
         <button className="relative top-0 left-8 px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 transition-colors" onClick={onClose}> X </button>
       </div>
@@ -171,6 +171,7 @@ const PianoRoll = ({selectedInstrument, instrumentList, onOpen, onClose}) => {
                   : 'bg-gray-100 text-gray-800'
                 }
               `}
+              onClick={() => handlePlaySound(selectedNote, i)}
               style={{ height: `${CELL_HEIGHT}px` }}>
                 {getNoteLabel(i)}
               </button>
