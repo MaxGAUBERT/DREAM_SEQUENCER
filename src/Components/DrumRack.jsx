@@ -14,7 +14,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
   const [input, setInput] = useState(false);
   const { sequencesRef, isPlaying, setIsPlaying, bpm, metronome, metronomeSampler, playMode, setPlayMode} = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
-  const {selectedSoundId, setSelectedSoundId, assignSampleToInstrument} = useProjectManager();
+  const {assignSampleToInstrument} = useProjectManager();
 
 
 
@@ -99,10 +99,9 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
     Object.entries(instrumentList).forEach(([instrumentName, instrumentData]) => {
       const sampleData = instrumentData.sample;
       
-      // Si l'instrument a des données de sample mais pas de sampler Tone.js
-      if (sampleData && sampleData.url && !instrumentData.sampler) {
+      if (sampleData && sampleData.urls?.C4 && !instrumentData.sampler) {
         const sampler = new Tone.Sampler({
-          urls: { C4: sampleData.url },
+          urls: { C4: sampleData.urls.C4 },
           release: 1,
           onload: () => {
             console.log(`Sample restauré pour ${instrumentName}: ${sampleData.name}`);
@@ -112,17 +111,17 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
           }
         }).toDestination();
 
-        // Mettre à jour l'instrument avec le sampler restauré
         setInstrumentList(prev => ({
           ...prev,
           [instrumentName]: {
             ...prev[instrumentName],
             sampler,
-            sampleUrl: sampleData.url,
+            sampleUrl: sampleData.urls.C4,
             fileName: sampleData.name
           }
         }));
       }
+
     });
   }, [instrumentList, setInstrumentList]);
   
@@ -183,17 +182,22 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       [instrument]: {
         ...prev[instrument],
         sampler,
-        sampleUrl: newUrl,
-        fileName: truncatedName
+        sample: {
+        ...prev[instrument].sample,
+        urls: { C4: newUrl },
+        name: truncatedName
+      }
+
       }
     };
+
   });
 
   e.target.value = '';
 }, [setInstrumentList]);
 
 
-  useEffect(() => {
+useEffect(() => {
     // Nettoyage systématique à chaque changement
     const cleanup = () => {
       if (Tone.Transport.state === 'started') {
@@ -215,6 +219,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
     if (!isPlaying || playMode !== 'Pattern') {
       return;
     }
+    
     // Configuration du BPM
     Tone.Transport.bpm.value = bpm;
     
@@ -224,9 +229,22 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       const pattern = instrumentData.grids?.[selectedPatternID];
       const sampler = instrumentData.sampler;
 
-      // Vérifications plus strictes
-      if (!sampler || !pattern || !Array.isArray(pattern)) {
-        console.log(`Skip ${instrumentName}: no sampler or invalid pattern`);
+      console.log(`Checking ${instrumentName}:`, {
+        hasPattern: !!pattern,
+        hasSampler: !!sampler,
+        samplerLoaded: sampler?.loaded,
+        patternLength: pattern?.length,
+        pattern: pattern
+      });
+
+      // Vérifications de base
+      if (!pattern || !Array.isArray(pattern)) {
+        console.log(`Skip ${instrumentName}: no valid pattern`);
+        return;
+      }
+
+      if (!sampler) {
+        console.log(`Skip ${instrumentName}: no sampler`);
         return;
       }
 
@@ -240,9 +258,13 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
       try {
         const seq = new Tone.Sequence((time, stepIndex) => {
           if (pattern[stepIndex] === true) {
-            // Vérifier que le sampler est toujours valide avant de jouer
-            if (sampler && sampler.loaded || selectedSoundId) {
-              sampler.triggerAttackRelease("C4", "8n", time);
+            // Vérifier que le sampler est valide avant de jouer
+            if (sampler && (sampler.loaded !== false)) {
+              try {
+                sampler.triggerAttackRelease("C4", "8n", time);
+              } catch (playError) {
+                console.error(`Error playing sample for ${instrumentName}:`, playError);
+              }
             }
           }
         }, Array.from({ length: pattern.length }, (_, i) => i), "16n");
@@ -250,7 +272,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
         seq.start(0);
         sequencesRef.current.push(seq);
         hasValidSequences = true;
-        console.log(`Sequence created for ${instrumentName} with ${pattern.length} steps`);
+        console.log(`✓ Sequence created for ${instrumentName} with ${pattern.filter(s => s).length} active steps`);
       } catch (error) {
         console.error(`Error creating sequence for ${instrumentName}:`, error);
       }
@@ -260,17 +282,23 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
     if (hasValidSequences) {
       try {
         Tone.Transport.start();
-        console.log(`Transport started for pattern ${selectedPatternID}`);
+        console.log(`✓ Transport started for pattern ${selectedPatternID + 1} with ${sequencesRef.current.length} sequences`);
       } catch (error) {
         console.error('Error starting transport:', error);
       }
     } else {
-      console.log('No valid sequences to play');
+      console.log(`⚠ No valid sequences to play for pattern ${selectedPatternID + 1}`);
+      console.log('Debug info:', {
+        totalInstruments: Object.keys(instrumentList).length,
+        selectedPattern: selectedPatternID,
+        isPlaying,
+        playMode
+      });
     }
 
     // Cleanup au démontage
     return cleanup;
-  }, [instrumentList, selectedPatternID, isPlaying, bpm]);
+  }, [instrumentList, selectedPatternID, isPlaying, bpm, playMode]);
 
   const toggleStep = useCallback((instrumentName, stepIndex) => {
     if (selectedPatternID === null || selectedPatternID === undefined) return;
@@ -321,62 +349,80 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
 }, [instrumentName, instrumentList, setInstrumentName]);
 
 
-  const handleSelectSample = useCallback((url, soundId, displayName, targetInstrument) => {
-    const targetInst = targetInstrument || instrumentName;
-    if (!targetInst || !url) return;
+  // CORRECTION : Fonction handleSelectSample corrigée
+  const handleSelectSample = useCallback(async (sample, targetInstrument) => {
+    const targetInst = targetInstrument;
+    if (!targetInst || !sample) return;
 
-    setInstrumentList(prev => {
-      const updated = { ...prev };
-      if (!updated[targetInst]) return prev;
+    console.log('Assigning sample:', sample, 'to instrument:', targetInst);
 
-      // Disposer de l'ancien sampler s'il existe
-      const oldSampler = updated[targetInst].sampler;
-      if (oldSampler) {
-        oldSampler.dispose();
-      }
+    try {
+      // Récupérer l'URL du sample
+      const sampleUrl = sample.url;
+      
+      setInstrumentList(prev => {
+        const updated = { ...prev };
+        if (!updated[targetInst]) return prev;
 
-      // Nettoyer l'ancienne URL si elle existe
-      const oldUrl = updated[targetInst].sampleUrl;
-      if (oldUrl && oldUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(oldUrl);
-      }
-
-      const sampler = new Tone.Sampler({
-        urls: { C4: url },
-        release: 1,
-        onload: () => {
-          console.log(`Sample chargé depuis la soundbank : ${displayName || soundId}`);
-        },
-        onerror: (error) => {
-          console.error(`Erreur de chargement du sample :`, error);
+        // Disposer de l'ancien sampler s'il existe
+        const oldSampler = updated[targetInst].sampler;
+        if (oldSampler) {
+          oldSampler.dispose();
         }
-      }).toDestination();
 
-      const sampleData = {
-        id: soundId,
-        url: url,
-        name: displayName || soundId
-      };
+        // Nettoyer l'ancienne URL si elle existe
+        const oldUrl = updated[targetInst].sampleUrl;
+        if (oldUrl && oldUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(oldUrl);
+        }
 
-      // Utiliser la fonction du ProjectManager pour sauvegarder
-      assignSampleToInstrument(targetInst, sampleData);
+        // Créer le nouveau sampler avec l'URL directe
+        const sampler = new Tone.Sampler({
+          urls: { C4: sampleUrl },
+          release: 1,
+          onload: () => {
+            console.log(`✓ Sample loaded successfully: ${sample.name} -> ${targetInst}`);
+          },
+          onerror: (error) => {
+            console.error(`✗ Error loading sample for ${targetInst}:`, error);
+          }
+        }).toDestination();
+        
+        const sampleData = {
+          id: sample.id,
+          urls: { C4: sampleUrl },
+          name: sample.name
+        };
 
-      return {
-        ...prev,
-        [targetInst]: {
+        // Utiliser la fonction du ProjectManager pour sauvegarder
+        assignSampleToInstrument(targetInst, sampleData);
+
+        const updatedInstrument = {
           ...prev[targetInst],
           sampler,
-          sampleUrl: url,
-          fileName: displayName || soundId,
-          sample: sampleData
-        }
-      };
-    });
+          sample: sampleData,
+          sampleUrl: sampleUrl,
+          fileName: sample.name
+        };
+
+        console.log(`✓ Instrument ${targetInst} updated with sample:`, updatedInstrument);
+
+        return {
+          ...prev,
+          [targetInst]: updatedInstrument
+        };
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'attribution du sample:', error);
+    }
+    console.log("Instrument updated:", instrumentList[instrumentName]);
   }, [instrumentName, setInstrumentList, assignSampleToInstrument]);
   
 
   return (
-    <div className="flex flex-col absolute top-12.5 border-2 right-0 w-[600px] h-[560px] max-w-[650px] max-h-[800px] overflow-auto resize-y" style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
+    <div className="absolute top-[50px] right-0 border-2 overflow-auto resize-y flex flex-col w-full sm:w-[400px] md:w-[500px] lg:w-[600px] max-h-[80vh]      
+  shadow-lg
+" style={{backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: colorsComponent.Border}}>
       <div className="text-xs border-b p-2 pb-2">
         Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
       </div>
@@ -394,8 +440,9 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
                 className="w-16 h-6 flex-shrink-0 text-xs cursor-pointer"
                 style={{color: colorsComponent.Background}}  
                 onChange={(e) => handleLoadSample(instrumentName, e)} 
-                {...instrumentData.sampler ? {disabled: true, hidden: true} : {}}
+                {...instrumentData.sampler ? {disabled: true, hidden: false} : {}}
               />
+               
             </div>
       
             <div className="font-semibold text-gray-700 rounded">
@@ -514,9 +561,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
             instrumentName={instrumentName}
             setInstrumentName={setInstrumentName}
             onRename={handleRenameInstrument} 
-            onSelectSample={(instrumentName, sample) => {
-             handleSelectSample(sample.url, sample.id, sample.name, instrumentName);
-            }}
+            onSelectSample={handleSelectSample}
             channelUrl={instrumentList[instrumentName]?.sampleUrl}
             onOpenPianoRoll={onOpenPianoRoll}
           />

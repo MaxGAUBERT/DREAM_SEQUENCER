@@ -1,15 +1,14 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useProjectManager } from '../Hooks/useProjectManager';
-import {usePlayContext} from '../Contexts/PlayContext';
-const PianoRoll = ({selectedInstrument, onOpen, onClose}) => {
+import * as Tone from 'tone';
+
+const PianoRoll = ({selectedInstrument, instrumentList, onOpen, onClose}) => {
   const [selectedNote, setSelectedNote] = useState(null);
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState(null);
   const gridRef = useRef(null);
 
   const { notes, setNotes } = useProjectManager();
-  const { sequencesRef, isPlaying, setIsPlaying, bpm, setBpm, volume, setVolume } = usePlayContext();
-
   // Configuration
   const ROWS = 48; // 4 octaves
   const COLS = 64; // 16 mesures * 4 temps
@@ -17,28 +16,6 @@ const PianoRoll = ({selectedInstrument, onOpen, onClose}) => {
   const CELL_HEIGHT = 20;
   
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-
-  useEffect(() => {
-    if (!isPlaying || !notes) return;
-    
-    const interval = setInterval(() => {
-      if (sequencesRef.current.length > 0) {
-        sequencesRef.current.forEach((sequence) => {
-          if (sequence.instrument === selectedInstrument) {
-            const currentStep = sequence.currentStep % sequence.grid.length;
-            if (sequence.grid[currentStep]) {
-              // Play the note for this step
-              console.log(`Playing note for ${selectedInstrument} at step ${currentStep}`);
-              // Here you would trigger the actual sound playback
-            }
-            sequence.currentStep++;
-          }
-        });
-      }
-    }, (60 / bpm) * 1000);
-    return () => clearInterval(interval);
-  
-  }, [isPlaying, bpm, selectedInstrument, sequencesRef]);
   
   const getNoteLabel = (row) => {
     const octave = Math.floor((ROWS - 1 - row) / 12) + 2;
@@ -142,8 +119,23 @@ const PianoRoll = ({selectedInstrument, onOpen, onClose}) => {
     setSelectedNote(null);
   };
 
+ const handlePlaySound = async () => {
+  await Tone.start(); // Nécessaire pour activer le contexte audio
+
+  const instrument = instrumentList[selectedInstrument];
+  
+  if (!instrument) {
+    console.warn("Aucun sampler chargé pour l’instrument sélectionné.");
+    return;
+  }
+
+  console.log("Jouer le son de l’instrument:", instrument);
+  instrument.sampler.triggerAttackRelease("C4", "8n");
+};
+
+
   return (
-    <div ref={onOpen} className="w-230 h-140 max-w-326.5 max-h-200 fixed bg-gray-900 text-white border-2 border-white p-4 overflow-auto resize">
+    <div ref={onOpen} className="w-230 h-140 fixed bg-gray-900 text-white border-2 border-white p-4 overflow-auto resize">
       <div className="mb-4 flex gap-2 items-center ml-20 justify-start">
         <label
           className="absolute left-0 px-4 py-2 ml-4 bg-gray-800 rounded transition-colors"
@@ -155,6 +147,12 @@ const PianoRoll = ({selectedInstrument, onOpen, onClose}) => {
           className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition-colors"
         >
           Clear All
+        </button>
+        <button
+          className="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 transition-colors"
+          onClick={handlePlaySound}
+        >
+          Play Sound
         </button>
         <button className="relative top-0 left-8 px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 transition-colors" onClick={onClose}> X </button>
       </div>
