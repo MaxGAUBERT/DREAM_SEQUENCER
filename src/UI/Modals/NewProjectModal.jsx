@@ -1,9 +1,12 @@
-
-
+import { useState } from "react";
 
 
 export default function NewProjectModal({onClose, onCreate}) {
-    
+  const [newProjectName, setNewProjectName] = useState('');
+  const handleCreateProject = () => {
+    onCreate(newProjectName);
+    onClose();
+  }
 
     return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-50">
@@ -13,10 +16,13 @@ export default function NewProjectModal({onClose, onCreate}) {
           <input
             type="text"
             placeholder="Project Name"
+            value={newProjectName}
+            onChange={(e) => setNewProjectName(e.target.value)}
             className="w-full px-4 py-2 border rounded"
           />
           <button
-            onClick={onCreate}
+            type="button"
+            onClick={handleCreateProject}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
             Create
