@@ -11,12 +11,17 @@ function getColorByIndex(i) {
 }
 
 export function useProjectManager() {
-  const initLength = 8;
   const INITIAL_PATTERN_ID = 0;
   const [numSteps, setNumSteps] = useState(16);
   const [projects, setProjects] = useState([]);
   const [currentProjectId, setCurrentProjectId] = useState(0);
   const [selectedSoundId, setSelectedSoundId] = useState("acoustic_kick");
+  const [notes, setNotes] = useState([]);
+  const {
+    audioObjects,
+    setAudioObjects
+  } = useSoundBank();
+  const initLength = 8;
   const [patterns, setPatterns] = useState([{
     id: 1,
     name: "Pattern 1",
@@ -24,14 +29,9 @@ export function useProjectManager() {
     grid: Array(16).fill(false),
   }]);
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
-  const [notes, setNotes] = useState([]);
-  const {
-    audioObjects,
-    setAudioObjects
-  } = useSoundBank();
 
   const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
-  
+
   const initializeInstrumentList = useCallback(() => {
     return Object.fromEntries(
       DEFAULT_INSTRUMENTS.map(inst => [
@@ -43,7 +43,7 @@ export function useProjectManager() {
           value: null,
           sample: {
             id: null,
-            url: null,
+            urls: { C4: null },
             name: null
           }
         }
@@ -52,7 +52,7 @@ export function useProjectManager() {
   }, [initLength]);
 
   const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
-  
+
   useEffect(() => {
     const saved = localStorage.getItem("projects");
     if (saved) {
@@ -74,7 +74,7 @@ export function useProjectManager() {
         ...prev[instrumentName],
         sample: {
           id: sample.id,
-          url: sample.url,
+          urls: { C4: sample.url },
           name: sample.name
         }
       }
@@ -84,8 +84,8 @@ export function useProjectManager() {
   const saveToLocalStorage = (updatedProjects) => {
     localStorage.setItem("projects", stringify(updatedProjects));
   };
-  
-  const createProject = () => {
+
+  const createProject = (newName) => {
     const newId = Math.max(0, ...projects.map(p => p.id)) + 1;
 
     const newPatterns = Array.from({ length: initLength }, (_, i) => ({
@@ -99,7 +99,7 @@ export function useProjectManager() {
 
     const newProject = {
       id: newId,
-      name: "New Project",
+      name: newName,
       patterns: newPatterns,
       instrumentList: newInstrumentList,
       notes,
@@ -110,9 +110,8 @@ export function useProjectManager() {
 
     const updated = [...projects, newProject];
     setProjects(updated);
+    setCurrentProjectId(newId);
     saveToLocalStorage(updated);
-
-    // Charger le projet via la même méthode que celle utilisée ailleurs
     loadProject(newId, updated);
   };
 
@@ -166,11 +165,8 @@ export function useProjectManager() {
 
     setCurrentProjectId(projectId);
     setPatterns(project.patterns || []);
-    
-    // CORRECTION : Charger les instrumentList avec la structure sample correcte
+
     const loadedInstrumentList = project.instrumentList || {};
-    
-    // S'assurer que chaque instrument a une structure sample correcte
     const normalizedInstrumentList = Object.fromEntries(
       Object.entries(loadedInstrumentList).map(([name, data]) => [
         name,
@@ -181,8 +177,6 @@ export function useProjectManager() {
             url: null,
             name: null
           },
-          // Ne pas restaurer les samplers Tone.js ici, 
-          // c'est fait dans DrumRack avec un useEffect
           sampler: undefined,
           sampleUrl: data.sample?.url || data.sampleUrl,
           fileName: data.sample?.name || data.fileName
@@ -192,7 +186,6 @@ export function useProjectManager() {
 
     setInstrumentList(normalizedInstrumentList);
     setSelectedSoundId(project.selectedSoundId || "acoustic_kick");
-    setAudioObjects(project.audioObjects || {});
     setNumSteps(project.numSteps || 16);
     setSelectedPatternID(
       typeof project.selectedPatternID === "number" ? project.selectedPatternID : 0
@@ -205,12 +198,10 @@ export function useProjectManager() {
     const updated = projects.filter(p => p.id !== projectId);
     setProjects(updated);
     saveToLocalStorage(updated);
-    
-    // Si on supprime le projet courant, charger le premier disponible
+
     if (currentProjectId === projectId && updated.length > 0) {
       loadProject(updated[0].id, updated);
     } else if (updated.length === 0) {
-      // Réinitialiser si plus de projets
       setCurrentProjectId(0);
       setInstrumentList(initializeInstrumentList());
       setPatterns([{
@@ -228,6 +219,7 @@ export function useProjectManager() {
     instrumentList,
     setInstrumentList,
     initializeInstrumentList,
+    DEFAULT_INSTRUMENTS,
     notes,
     setNotes,
     currentProjectId,
