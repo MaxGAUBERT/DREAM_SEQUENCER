@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { stringify, parse } from "flatted";
 import { useSoundBank } from "./useSoundBank";
 
@@ -12,11 +12,11 @@ function getColorByIndex(i) {
 
 export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
+  const gridRef = useRef(null);
   const [numSteps, setNumSteps] = useState(16);
   const [projects, setProjects] = useState([]);
   const [currentProjectId, setCurrentProjectId] = useState(0);
   const [selectedSoundId, setSelectedSoundId] = useState("acoustic_kick");
-  const [notes, setNotes] = useState([]);
   const {
     audioObjects,
     setAudioObjects
@@ -27,6 +27,7 @@ export function useProjectManager() {
     name: "Pattern 1",
     color: getColorByIndex(0),
     grid: Array(16).fill(false),
+    
   }]);
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
 
@@ -41,6 +42,10 @@ export function useProjectManager() {
             Array.from({ length: initLength }, (_, i) => [i, Array(16).fill(false)])
           ),
           value: null,
+          pianoData: {
+            notes: []
+          },
+          muted: false,
           sample: {
             id: null,
             urls: { C4: null },
@@ -52,6 +57,7 @@ export function useProjectManager() {
   }, [initLength]);
 
   const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
+  const [notes, setNotes] = useState([]);
 
   useEffect(() => {
     const saved = localStorage.getItem("projects");
@@ -190,7 +196,7 @@ export function useProjectManager() {
     setSelectedPatternID(
       typeof project.selectedPatternID === "number" ? project.selectedPatternID : 0
     );
-
+    setNotes(project.notes || []);
     console.log("Projet chargé avec instrumentList:", normalizedInstrumentList);
   };
 
@@ -216,6 +222,7 @@ export function useProjectManager() {
 
   return {
     projects,
+    gridRef,
     instrumentList,
     setInstrumentList,
     initializeInstrumentList,
