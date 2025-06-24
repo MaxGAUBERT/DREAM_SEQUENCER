@@ -12,7 +12,7 @@ const icon_size = 20;
 
 const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrumentList, selectedPatternID, channelModalOpen, setChannelModalOpen, instrumentName, setInstrumentName, onOpenPianoRoll}) => {
   const [input, setInput] = useState(false);
-  const { sequencesRef, isPlaying, bpm, metronome, metronomeSampler, playMode} = usePlayContext();
+  const {sequencesRef, isPlaying, bpm, metronome, metronomeSampler, playMode} = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
   const {assignSampleToInstrument} = useProjectManager();
 
@@ -243,6 +243,12 @@ useEffect(() => {
         return;
       }
 
+      if (instrumentData.muted) {
+        console.log(`Skip ${instrumentName}: instrument is muted`);
+        return;
+      }
+
+
       // Vérifier si le pattern a au moins un step actif
       const hasActiveSteps = pattern.some(step => step === true);
       if (!hasActiveSteps) {
@@ -343,9 +349,29 @@ useEffect(() => {
   setInstrumentName(trimmedName);
 }, [instrumentName, instrumentList, setInstrumentName]);
 
+const handleToggleMute = useCallback((instrumentName, muted) => {
+  if (!instrumentName) return;
 
-  // CORRECTION : Fonction handleSelectSample corrigée
-  const handleSelectSample = useCallback(async (sample, targetInstrument) => {
+  setInstrumentList(prev => {
+    const instrument = prev[instrumentName];
+    if (!instrument) return prev;
+
+    return {
+      ...prev,
+      [instrumentName]: {
+        ...instrument,
+        muted: muted
+      }
+    };
+  });
+
+  console.log(`Instrument ${instrumentName} muted: ${muted}`);
+}, []);
+
+
+
+// CORRECTION : Fonction handleSelectSample corrigée
+const handleSelectSample = useCallback(async (sample, targetInstrument) => {
     const targetInst = targetInstrument;
     if (!targetInst || !sample) return;
 
@@ -435,6 +461,12 @@ useEffect(() => {
                 className="w-15 h-6 flex-shrink-0 text-xs cursor-pointer"
                 style={{color: colorsComponent.Background}}  
                 onChange={(e) => handleLoadSample(instrumentName, e)} 
+              />
+              <input 
+                type="checkbox"
+                checked={instrumentData.muted}
+                onChange={(e) => handleToggleMute(instrumentName, e.target.checked)}
+                className="w-3 h-3 flex-shrink-0 cursor-pointer"
               />
                
             </div>
