@@ -12,11 +12,9 @@ const icon_size = 20;
 
 const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrumentList, selectedPatternID, channelModalOpen, setChannelModalOpen, instrumentName, setInstrumentName, onOpenPianoRoll}) => {
   const [input, setInput] = useState(false);
-  const { sequencesRef, isPlaying, setIsPlaying, bpm, metronome, metronomeSampler, playMode, setPlayMode} = usePlayContext();
+  const { sequencesRef, isPlaying, bpm, metronome, metronomeSampler, playMode} = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
   const {assignSampleToInstrument} = useProjectManager();
-
-
 
   // CORRECTION : Redimensionner les grilles sans perdre les données
   useEffect(() => {
@@ -85,7 +83,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
     const metroLoop = new Tone.Loop((time) => {
       metronomeSampler.triggerAttackRelease("C4", "8n", time);
     }, "4n"); // "4n" = chaque temps (1 battement)
-
+    
     metroLoop.start(0); // commence dès le début
     Tone.Transport.start();
 
@@ -219,9 +217,6 @@ useEffect(() => {
     if (!isPlaying || playMode !== 'Pattern') {
       return;
     }
-    
-    // Configuration du BPM
-    Tone.Transport.bpm.value = bpm;
     
     let hasValidSequences = false;
 
@@ -437,10 +432,9 @@ useEffect(() => {
                 type="file" 
                 accept="audio/*" 
                 title="Load sample"
-                className="w-16 h-6 flex-shrink-0 text-xs cursor-pointer"
+                className="w-15 h-6 flex-shrink-0 text-xs cursor-pointer"
                 style={{color: colorsComponent.Background}}  
                 onChange={(e) => handleLoadSample(instrumentName, e)} 
-                {...instrumentData.sampler ? {disabled: true, hidden: false} : {}}
               />
                
             </div>

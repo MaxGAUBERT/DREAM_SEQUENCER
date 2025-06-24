@@ -3,12 +3,9 @@ import { usePlayContext } from "../Contexts/PlayContext";
 import { FaRegCirclePlay } from "react-icons/fa6";
 import { FaRegStopCircle } from "react-icons/fa";
 import { PiMetronomeBold } from "react-icons/pi";
-import { RadioGroup } from "@headlessui/react";
-
 
 const TransportBar = () => {
     const {bpm, setBpm, metronome, setMetronome, isPlayling, setIsPlaying, playMode, setPlayMode} = usePlayContext();
-
 
     return (
         <div className="flex flex-row absolute top-2 right-100">
