@@ -6,7 +6,6 @@ export const usePlayContext = () => useContext(CreatePlayContext);
 
 
 const PlayContext = ({ children }) => {
-    const samplerRef = useRef("");
     const sequencesRef = useRef([]);
     const [playMode, setPlayMode] = useState("Song");
     const [isPlaying, setIsPlaying] = useState(false);
@@ -21,8 +20,10 @@ const PlayContext = ({ children }) => {
       }).toDestination()
     );
 
+    Tone.Transport.bpm.value = bpm;
+
     return (
-        <CreatePlayContext.Provider value={{playMode, setPlayMode, samplerRef, sequencesRef, isPlaying, setIsPlaying, bpm, setBpm, volume, setVolume, metronome, setMetronome, metronomeSampler, setMetronomeSampler}}>
+        <CreatePlayContext.Provider value={{ playMode, setPlayMode, sequencesRef, isPlaying, setIsPlaying, bpm, setBpm, volume, setVolume, metronome, setMetronome, metronomeSampler, setMetronomeSampler}}>
             {children}
         </CreatePlayContext.Provider>
     );
