@@ -1,4 +1,4 @@
-import {useState, useEffect, useCallback, useRef} from "react";
+import {useState, useEffect, useCallback} from "react";
 import { stringify, parse } from "flatted";
 import StripMenu from "./UI/StripMenu";
 import DrumRack from "./Components/DrumRack";
@@ -46,10 +46,6 @@ export default function App() {
     saveCurrentProject,
     saveAsProject,
     loadProject,
-    deleteProject,
-    assignSampleToInstrument,
-    selectedSoundId,
-    setSelectedSoundId,
     deleteAllProjects
   } = useProjectManager();
 
@@ -108,6 +104,7 @@ export default function App() {
               grids: Object.fromEntries(
                 patterns.map(pattern => [pattern.id, Array(16).fill(false)])
               ),
+              piano: {},
               value: null,
               //checked: false,
               muted: false
@@ -129,25 +126,30 @@ export default function App() {
 
   // Simplifier la sélection de pattern - pas besoin de charger depuis localStorage
   const handleSelectPattern = (id) => {
-    //if (id == null) return;
+  setSelectedPatternID(id);
+
+  setInstrumentList(prev => {
+    const updated = { ...prev };
     
-    setSelectedPatternID(id);
-    console.log("Selected pattern:", selectedPatternID);
-    
-    // S'assurer que les grilles existent pour ce pattern
-    setInstrumentList(prev => {
-      const updated = { ...prev };
-      Object.keys(updated).forEach(inst => {
-        if (!updated[inst].grids) {
-          updated[inst].grids = {};
-        }
-        if (!updated[inst].grids[id]) {
-          updated[inst].grids[id] = Array(16).fill(false);
-        }
-      });
-      return updated;
+    Object.keys(updated).forEach(inst => {
+      if (!updated[inst].grids) updated[inst].grids = {};
+      if (!updated[inst].grids[id]) {
+        updated[inst].grids[id] = Array(16).fill(false);
+      }
+
+      if (!updated[inst].pianoData) updated[inst].pianoData = {};
+
+      if (!updated[inst].pianoData[id]) {
+        updated[inst].pianoData[id] = [];
+      }
+
     });
-  };
+
+    return updated;
+  });
+  console.log("Updated instrumentList:", instrumentList, "for pattern:", patterns);
+};
+
 
   const handleRunAction = useCallback((action) => {
     switch (action) {
@@ -196,10 +198,7 @@ export default function App() {
   if (currentProjectName){
     console.log("Current project name:", currentProjectName);
   }
-
-
-
-
+  
   return (
     <div className="min-h-screen h-screen bg-gray-900 font-['Orbitron'] text-sm font-bold relative">
      
@@ -266,7 +265,7 @@ export default function App() {
         )}
 
         {isPianoRollOpen && (
-          <PianoRoll selectedInstrument={pianoRollInstrument} instrumentList={instrumentList} onOpen={setIsPianoRollOpen} onClose={() => setIsPianoRollOpen(false)}/>
+          <PianoRoll notes={notes} setNotes={setNotes} selectedPatternID={selectedPatternID} selectedInstrument={pianoRollInstrument} instrumentList={instrumentList} setInstrumentList={setInstrumentList} onOpen={setIsPianoRollOpen} onClose={() => setIsPianoRollOpen(false)}/>
         )}
 
         <TransportBar />
@@ -279,6 +278,4 @@ export default function App() {
   );
 }
 
-
-// modif: app, drum rack, ch modal, 
 // <LaunchAnimation />
