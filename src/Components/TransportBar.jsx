@@ -1,11 +1,16 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { usePlayContext } from "../Contexts/PlayContext";
 import { FaRegCirclePlay } from "react-icons/fa6";
 import { FaRegStopCircle } from "react-icons/fa";
 import { PiMetronomeBold } from "react-icons/pi";
+import { Tone } from "tone/build/esm/core/Tone";
 
 const TransportBar = () => {
     const {bpm, setBpm, metronome, setMetronome, isPlayling, setIsPlaying, playMode, setPlayMode} = usePlayContext();
+
+    useEffect(() => {
+        console.log("PlayMode changed:", playMode);
+    }, [playMode]);
 
     return (
         <div className="flex flex-row absolute top-2 right-100">

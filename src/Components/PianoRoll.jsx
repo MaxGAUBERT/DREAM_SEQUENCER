@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import * as Tone from 'tone';
-
+import { usePlayContext } from '../Contexts/PlayContext';
 const PianoRoll = ({
   notes, setNotes,
   selectedPatternID,
@@ -14,6 +14,8 @@ const PianoRoll = ({
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState(null);
   const gridRef = useRef(null);
+  const { playMode, bpm, isPlaying } = usePlayContext();
+  const currentNotes = instrumentList[selectedInstrument]?.pianoData[selectedPatternID] || [];
 
   const ROWS = 48;
   const COLS = 64;
@@ -21,6 +23,31 @@ const PianoRoll = ({
   const CELL_HEIGHT = 20;
 
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+  useEffect(() => {
+  if (!isPlaying || !currentNotes || playMode !== 'Pattern') return;
+
+  const sampler = instrumentList[selectedInstrument]?.sampler;
+
+  console.log("Current sampler: ",sampler);
+  if (!sampler) return;
+
+
+  const loop = new Tone.Loop((time) => {
+    currentNotes.forEach((note) => {
+      const noteName = getNoteLabel(note.row); // à écrire ou adapter
+      sampler.triggerAttackRelease(noteName, "8n", time + note.start * Tone.Time("16n").toSeconds());
+    });
+  }, "1m"); // Exécuter toutes les mesures (ou ajuste selon la grille)
+
+  loop.start(0);
+  Tone.Transport.start();
+
+  return () => {
+    loop.dispose();
+    Tone.Transport.stop();
+  };
+}, [isPlaying, playMode, currentNotes, bpm]);
 
   const getNoteLabel = (row) => {
     const octave = Math.floor((ROWS - 1 - row) / 12) + 2;
@@ -32,8 +59,6 @@ const PianoRoll = ({
     const noteIndex = (ROWS - 1 - row) % 12;
     return [1, 3, 6, 8, 10].includes(noteIndex);
   };
-
-  const currentNotes = instrumentList[selectedInstrument]?.pianoData[selectedPatternID] || [];
 
   const handleSetNotes = useCallback((updater) => {
     setInstrumentList(prev => {
@@ -58,34 +83,6 @@ const PianoRoll = ({
     });
     console.log('updated notes',  instrumentList);
   }, [selectedInstrument, selectedPatternID, setInstrumentList]);
-
-  /*
-  const toggleStep = useCallback((instrumentName, stepIndex) => {
-      if (selectedPatternID === null || selectedPatternID === undefined) return;
-      
-      setInstrumentList(prev => {
-        const instrument = prev[instrumentName];
-        if (!instrument) return prev;
-        
-        const grids = instrument.grids || {};
-        const patternGrid = grids[selectedPatternID] || Array(numSteps).fill(false);
-  
-        const newGrid = [...patternGrid];
-        newGrid[stepIndex] = !newGrid[stepIndex];
-  
-        return {
-          ...prev,
-          [instrumentName]: {
-            ...instrument,
-            grids: {
-              ...grids,
-              [selectedPatternID]: newGrid
-            }
-          }
-        };
-      });
-    }, [selectedPatternID, numSteps, setInstrumentList]);
-    */
 
   const handleGridClick = useCallback((e) => {
   if (isResizing) return;
@@ -145,21 +142,29 @@ const PianoRoll = ({
   const col = Math.floor(x / CELL_WIDTH);
 
   handleSetNotes(prevNotes =>
-    prevNotes.map(note => {
-      if (note.id !== selectedNoteId) return note;
+  prevNotes.map(note => {
+    if (note.id !== selectedNoteId) return note;
 
-      if (resizeDirection === 'left') {
-        const newStart = Math.max(0, Math.min(col, note.start + note.length - 1));
-        const newLength = note.start + note.length - newStart;
-        return { ...note, start: newStart, length: newLength };
-      } else if (resizeDirection === 'right') {
-        const newLength = Math.max(1, col - note.start + 1);
-        return { ...note, length: Math.min(newLength, COLS - note.start) };
-      }
+    const debugInfo = { oldLength: note.length };
+    const minCol = col / 0.5;
 
-      return note;
-    })
-  );
+    if (resizeDirection === 'left') {
+      const newStart = Math.max(0, Math.min(minCol, note.start + note.length - 1));
+      const newLength = note.start + note.length - newStart;
+      debugInfo.newLength = newLength;
+      console.log('Resize left', debugInfo);
+      return { ...note, start: newStart, length: newLength };
+    } else if (resizeDirection === 'right') {
+      const newLength = Math.max(1, minCol - note.start + 1);
+      debugInfo.newLength = newLength;
+      console.log('Resize right', debugInfo);
+      return { ...note, length: Math.min(newLength, COLS - note.start) };
+    }
+
+    return note;
+  })
+);
+
 }, [isResizing, selectedNoteId, resizeDirection, gridRef, handleSetNotes]);
 
 
@@ -270,7 +275,7 @@ const PianoRoll = ({
             {currentNotes.map((note) => (
               <div
                 key={note.noteLabel}
-                className={`absolute rounded border-2 cursor-pointer transition-all ${
+                className={`absolute rounded border-2 cursor-grab ${
                   selectedNoteId === note.id
                     ? 'bg-blue-500 border-blue-300 shadow-lg'
                     : 'bg-blue-600 border-blue-400 hover:bg-blue-500'

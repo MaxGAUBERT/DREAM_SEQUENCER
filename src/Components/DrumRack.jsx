@@ -243,7 +243,7 @@ useEffect(() => {
         return;
       }
 
-      if (instrumentData.muted) {
+      if (instrumentData.muted || playMode !== 'Pattern') {
         console.log(`Skip ${instrumentName}: instrument is muted`);
         return;
       }
