@@ -17,48 +17,51 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
   }, [instrumentName]);
 
   function cleanSampleName(filePath, maxLength) {
-  if (!filePath) return "";
+    if (!filePath) return "";
 
-  // Étape 1 : extraire le nom du fichier (sans dossier)
-  const fileName = filePath.split("/").pop() || filePath;
+    // Étape 1 : extraire le nom du fichier (sans dossier)
+    const fileName = filePath.split("/").pop() || filePath;
 
-  // Étape 2 : retirer l'extension
-  const noExtension = fileName.replace(/\.[^/.]+$/, "");
+    // Étape 2 : retirer l'extension
+    const noExtension = fileName.replace(/\.[^/.]+$/, "");
 
-  // Étape 3 : remplacer les underscores ou tirets par des espaces
-  const readable = noExtension.replace(/[_\-]+/g, " ");
+    // Étape 3 : remplacer les underscores ou tirets par des espaces
+    const readable = noExtension.replace(/[_\-]+/g, " ");
 
-  // Étape 4 : tronquer si trop long
-  return readable.length > maxLength
-    ? readable.slice(0, maxLength).trim() + "..."
-    : readable;
+    // Étape 4 : tronquer si trop long
+    return readable.length > maxLength
+      ? readable.slice(0, maxLength).trim() + "..."
+      : readable;
   }
 
-
+  // CORRECTION : Fonction handleSave corrigée
   const handleSave = () => {
-  // Renommer le canal
-  if (onRename) {
-    onRename(localName);
-  } else if (setInstrumentName) {
-    setInstrumentName(localName);
-  }
+    // Renommer le canal
+    if (onRename) {
+      onRename(localName);
+    } else if (setInstrumentName) {
+      setInstrumentName(localName);
+    }
 
-  // Attribuer un sample si sélectionné
-  if (onSelectSample && selectedSoundId && audioObjects[selectedSoundId]) {
-    const rawPath = audioObjects[selectedSoundId].soundData.url;
-    const displayName = cleanSampleName(rawPath, 20);
+    // Attribuer un sample si sélectionné
+    if (onSelectSample && selectedSoundId && audioObjects[selectedSoundId]) {
+      const soundObject = audioObjects[selectedSoundId];
+      const rawPath = soundObject.soundData.url;
+      const displayName = cleanSampleName(rawPath, 20);
 
-    onSelectSample(instrumentName, {
-      id: selectedSoundId,
-      url: rawPath,
-      name: displayName,
-    });
-  }
+      // Créer l'objet sample avec les bonnes propriétés
+      const sampleData = {
+        id: selectedSoundId,
+        url: rawPath, // URL directe du sample
+        name: displayName
+      };
 
-  onClose();
-};
+      // Appeler onSelectSample avec les bons paramètres
+      onSelectSample(sampleData, instrumentName);
+    }
 
-
+    onClose();
+  };
 
   const handleCancel = () => {
     // Remettre la valeur originale
@@ -75,13 +78,11 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
   };
 
   const handleOpenPianoRoll = () => {
-  if (onOpenPianoRoll) {
-    onOpenPianoRoll(instrumentName);
-    onClose();
-
-  }
-};
-
+    if (onOpenPianoRoll) {
+      onOpenPianoRoll(instrumentName);
+      onClose();
+    }
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -91,7 +92,7 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
             <p>
               Channel properties
             </p>
-            <label className="block text-sm text-gray-600 font-medium mb-2">
+            <label className="block text-sm text-red-600 font-medium mb-2">
               Sample url: {channelUrl}
             </label>
             <label className="block text-sm text-gray-600 font-medium mb-2">
@@ -106,7 +107,7 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
               className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
-            <div className='w-full'>
+            <div className='w-full mt-2'>
               <label className="block text-sm text-gray-600 font-medium mb-2">
                 Assign a sample
               </label>
