@@ -12,7 +12,7 @@ function getColorByIndex(i) {
 
 export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
-  const gridRef = useRef(null);
+  const [notes, setNotes] = useState([]);
   const [numSteps, setNumSteps] = useState(16);
   const [projects, setProjects] = useState([]);
   const [currentProjectId, setCurrentProjectId] = useState(0);
@@ -27,7 +27,7 @@ export function useProjectManager() {
     name: "Pattern 1",
     color: getColorByIndex(0),
     grid: Array(16).fill(false),
-    
+    pianoData: []
   }]);
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
 
@@ -43,8 +43,9 @@ export function useProjectManager() {
           ),
           value: null,
           pianoData: {
-            notes: []
+            [selectedPatternID]: []
           },
+
           muted: false,
           sample: {
             id: null,
@@ -57,7 +58,6 @@ export function useProjectManager() {
   }, [initLength]);
 
   const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
-  const [notes, setNotes] = useState([]);
 
   useEffect(() => {
     const saved = localStorage.getItem("projects");
@@ -222,7 +222,6 @@ export function useProjectManager() {
 
   return {
     projects,
-    gridRef,
     instrumentList,
     setInstrumentList,
     initializeInstrumentList,
