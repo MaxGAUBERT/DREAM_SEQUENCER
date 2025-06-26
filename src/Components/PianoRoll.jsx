@@ -4,7 +4,8 @@ import { usePlayContext } from '../Contexts/PlayContext';
 import { RxWidth } from "react-icons/rx";
 import { ImPencil } from "react-icons/im";
 import { HiPaintBrush } from "react-icons/hi2";
-const PianoRoll = ({
+import { MdOutlineDeleteOutline } from "react-icons/md";
+const PianoRoll = React.memo(({
   notes, setNotes,
   selectedPatternID,
   selectedInstrument,
@@ -24,7 +25,7 @@ const PianoRoll = ({
   const currentNotes = instrumentList[selectedInstrument]?.pianoData[selectedPatternID] || [];
 
   const ROWS = 48;
-  const COLS = 64;
+  const COLS = 128;
   const CELL_WIDTH = 20;
   const CELL_HEIGHT = 20;
 
@@ -33,42 +34,9 @@ const PianoRoll = ({
   const toggleMode = (newMode) => {
     setMode((prev) => (prev === newMode ? null : newMode));
   };
-  /*
-
-  useEffect(() => {
-  if (!isPlaying || !currentNotes || playMode === 'Pattern') return;
-
-  const sampler = instrumentList[selectedInstrument]?.sampler;
-  let step = 0;
-
-  console.log("Current sampler: ",sampler);
-  if (!sampler) return;
-
-  
-  const loop = new Tone.Loop((time) => { 
-    setCurrentStep(step);
-    currentNotes.forEach((note) => {
-      const noteName = getNoteLabel(note.row); 
-      step = (step + 1) % COLS;
-      sampler.triggerAttackRelease(noteName, "8n", time + note.start * Tone.Time("16n").toSeconds());
-      console.log("Step: ", step);
-    });
-  }, "4m"); // Exécuter toutes les mesures (ou ajuste selon la grille)
-
-  loop.start(0);
-  Tone.Transport.start();
-           
-  return () => {
-    loop.dispose();
-    Tone.Transport.stop();
-    Tone.Transport.cancel();
-    setCurrentStep(0);  
-  };
-}, [isPlaying, playMode, currentNotes]);
-*/
 
 useEffect(() => {
-  if (!isPlaying || !currentNotes || playMode === 'Pattern') return;
+  if (!isPlaying || !currentNotes /*|| playMode === 'Pattern'*/) return;
 
   const sampler = instrumentList[selectedInstrument]?.sampler;
   if (!sampler) return;
@@ -76,16 +44,18 @@ useEffect(() => {
   let step = 0;
 
   const loop = new Tone.Loop((time) => {
-    setCurrentStep(step);
+  setCurrentStep(step);
 
-    const stepNotes = currentNotes.filter(note => note.start === step);
-    stepNotes.forEach(note => {
-      const noteName = getNoteLabel(note.row);
-      sampler.triggerAttackRelease(noteName, "8n", time);
-    });
+  const stepNotes = currentNotes.filter(note => note.start === step);
+  stepNotes.forEach(note => {
+    const noteName = getNoteLabel(note.row);
+    const duration = new Tone.Time("16n").toSeconds() * note.length;
+    sampler.triggerAttackRelease(noteName, duration, time);
+  });
 
-    step = (step + 1) % COLS;
-  }, "16n"); // une colonne toutes les double-croches
+  step = (step + 1) % COLS;
+}, "16n");
+
 
   loop.start(0);
   Tone.Transport.start();
@@ -96,7 +66,7 @@ useEffect(() => {
     Tone.Transport.cancel();
     setCurrentStep(0);
   };
-}, [isPlaying, playMode, currentNotes]);
+}, [isPlaying, currentNotes]);
 
 
 
@@ -133,7 +103,7 @@ useEffect(() => {
       };
     });
     console.log('updated notes',  instrumentList);
-  }, [selectedInstrument, selectedPatternID, setInstrumentList]);
+  }, [selectedInstrument, selectedPatternID]);
 
   const handleGridClick = useCallback((e) => {
   if (isResizing) return;
@@ -292,9 +262,9 @@ useEffect(() => {
   };
 
   return (
-    <div ref={onOpen} className="w-230 h-140 fixed bg-gray-900 text-white border-2 border-white p-4 overflow-auto resize">
-      <div className="mb-4 flex gap-2 items-center ml-20 justify-start">
-        <label className="absolute left-0 px-4 py-2 ml-4 bg-gray-800 rounded">{selectedInstrument}</label>
+    <div ref={onOpen} className="w-screen h-140 max-h-140 fixed bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize">
+      <div className="flex gap-2 mt-2 mb-2 items-center ml-20">
+        <label className="absolute left-0 px-4 py-2 ml-0 bg-gray-800 rounded">{selectedInstrument}</label>
         <button
           onClick={() => toggleMode('draw')}
           className={`px-4 py-2 rounded ${mode === 'draw' ? 'bg-green-600' : 'bg-gray-800 hover:bg-gray-700'}`}
@@ -314,7 +284,7 @@ useEffect(() => {
           <RxWidth size={20} />
         </button>
 
-        <button onClick={clearAll} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded">Clear All</button>
+        <button onClick={clearAll} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded"><MdOutlineDeleteOutline size={20} /></button>
         <button className="relative top-0 left-8 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded" onClick={onClose}>X</button>
       </div>
 
@@ -411,7 +381,7 @@ useEffect(() => {
                 key={note.id}
                 className={`absolute rounded border-2 cursor-grab ${
                   selectedNoteId === note.id
-                    ? 'bg-blue-500 border-blue-300 shadow-lg'
+                    ? 'bg-red-800 border-red-800 shadow-md'
                     : 'bg-blue-600 border-blue-400 hover:bg-blue-500'
                 }`}
                 style={{
@@ -441,6 +411,6 @@ useEffect(() => {
       </div>
     </div>
   );
-};
+});
 
 export default PianoRoll;

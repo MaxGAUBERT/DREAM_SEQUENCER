@@ -166,7 +166,7 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
 
     const sampler = new Tone.Sampler({
       urls: { C4: newUrl },
-      release: 1,
+      release: 1, 
       onload: () => {
         console.log(`Sample loaded successfully for ${instrument}`);
       },
@@ -214,7 +214,7 @@ useEffect(() => {
     cleanup();
 
     // Si pas de lecture demandée, on s'arrête là
-    if (!isPlaying || playMode !== 'Pattern') {
+    if (!isPlaying /*|| playMode !== 'Pattern'*/) {
       return;
     }
     

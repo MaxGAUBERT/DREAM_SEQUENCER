@@ -18,18 +18,20 @@ const TransportBar = () => {
                 <div className="flex flex-row items-center border-1 border-gray-500 rounded">
                     <button
                         onClick={() => setPlayMode(playMode === "Song" ? "Pattern" : "Song")}
-                        className={`px-2 py-1 rounded ${playMode === "Song" ? "bg-blue-600" : "bg-gray-500 hover:bg-gray-600"}`}
+                        className={`px-2 py-1 rounded ${playMode === "Song" ? "bg-red-600" : "bg-green-500 hover:bg-gray-600"}`}
                         title="Switch to Song Mode"
                     >
                         {playMode === "Song" ? "Pattern" : "Song"}
                     </button>
-
                 </div>
                 <button 
                     onClick={() => {
+                        if (!isPlayling){
                         // Logic to play the song
                         console.log("Playing song at BPM:", bpm);
                         setIsPlaying(!isPlayling);
+                        }
+                        
                     }}
                     className="bg-gray-500 rounded hover:bg-green-600"
                     title="Play Song"
@@ -43,6 +45,7 @@ const TransportBar = () => {
                         // Logic to stop the song
                         console.log("Stopping pattern");
                         setIsPlaying(false);
+                        Tone.Transport().cancel();
                     }}
                 >
                     <FaRegStopCircle size={20} />
