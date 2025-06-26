@@ -265,7 +265,7 @@ export default function App() {
         )}
 
         {isPianoRollOpen && (
-          <PianoRoll notes={notes} setNotes={setNotes} selectedPatternID={selectedPatternID} selectedInstrument={pianoRollInstrument} instrumentList={instrumentList} setInstrumentList={setInstrumentList} onOpen={setIsPianoRollOpen} onClose={() => setIsPianoRollOpen(false)}/>
+          <PianoRoll selectedPatternID={selectedPatternID} selectedInstrument={pianoRollInstrument} instrumentList={instrumentList} setInstrumentList={setInstrumentList} onOpen={setIsPianoRollOpen} onClose={() => setIsPianoRollOpen(false)}/>
         )}
 
         <TransportBar />
