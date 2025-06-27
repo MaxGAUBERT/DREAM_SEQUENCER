@@ -20,7 +20,7 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState(null);
   const gridRef = useRef(null);
-  const { isPlaying } = usePlayContext();
+  const { isPlaying, playMode } = usePlayContext();
 
   const currentNotes = useMemo(() => instrumentList[selectedInstrument]?.pianoData?.[selectedPatternID] || [], [instrumentList, selectedInstrument, selectedPatternID]);
 
@@ -58,31 +58,40 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
   const isBlackKey = useCallback((row) => [1, 3, 6, 8, 10].includes((ROWS - 1 - row) % 12), []);
 
   useEffect(() => {
-    if (!isPlaying || !currentNotes) return;
-    const sampler = instrumentList[selectedInstrument]?.sampler;
-    if (!sampler) return;
+  if (!isPlaying) return;
 
-    let step = 0;
-    const loop = new Tone.Loop((time) => {
-      setCurrentStep(step);
-      currentNotes.filter(n => n.start === step).forEach(note => {
-        const noteName = noteLabels[note.row];
-        const duration = new Tone.Time("16n").toSeconds() * note.length;
-        sampler.triggerAttackRelease(noteName, duration, time);
-      });
-      step = (step + 1) % COLS;
-    }, "16n");
+  let step = 0;
+  const loop = new Tone.Loop((time) => {
+    setCurrentStep(step);
 
-    loop.start(0);
-    Tone.Transport.start();
+    Object.entries(instrumentList).forEach(([_, instrument]) => {
+      const sampler = instrument?.sampler;
+      const pianoData = instrument?.pianoData?.[selectedPatternID] || [];
 
-    return () => {
-      loop.dispose();
-      Tone.Transport.stop();
-      Tone.Transport.cancel();
-      setCurrentStep(0);
-    };
-  }, [isPlaying, currentNotes]);
+      if (!sampler || playMode !== 'Pattern') return;
+
+      pianoData
+        .filter(note => note.start === step)
+        .forEach(note => {
+          const noteName = noteLabels[note.row]; // ou noteLabels[note.row] si déjà mémorisé
+          const duration = new Tone.Time("16n").toSeconds() * note.length;
+          sampler.triggerAttackRelease(noteName, duration, time);
+        });
+    });
+
+    step = (step + 1) % COLS;
+  }, "16n");
+
+  loop.start(0);
+  Tone.Transport.start();
+
+  return () => {
+    loop.dispose();
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    setCurrentStep(0);
+  };
+}, [isPlaying, instrumentList, selectedPatternID]);
 
   const handleSetNotes = useCallback((updater) => {
     setInstrumentList(prev => {
@@ -195,7 +204,7 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
     await Tone.start();
     const noteLabel = noteLabels[row];
     const instrument = instrumentList[selectedInstrument];
-    instrument?.sampler?.triggerAttackRelease(noteLabel, "8n");
+    instrument?.sampler?.triggerAttackRelease(noteLabel, "4n");
   };
 
   const handlePaintCell = (row, col) => {

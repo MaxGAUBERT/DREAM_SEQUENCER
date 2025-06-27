@@ -214,7 +214,7 @@ useEffect(() => {
     cleanup();
 
     // Si pas de lecture demandée, on s'arrête là
-    if (!isPlaying /*|| playMode !== 'Pattern'*/) {
+    if (!isPlaying || playMode !== 'Pattern') {
       return;
     }
     
