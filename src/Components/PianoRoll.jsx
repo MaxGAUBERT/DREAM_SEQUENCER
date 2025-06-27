@@ -26,11 +26,34 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
 
   const toggleMode = (newMode) => setMode((prev) => (prev === newMode ? null : newMode));
 
-  const getNoteLabel = useCallback((row) => {
-    const octave = Math.floor((ROWS - 1 - row) / 12) + 2;
-    const noteIndex = (ROWS - 1 - row) % 12;
+  const noteLabels = useMemo(() => {
+  return Array.from({ length: ROWS }, (_, i) => {
+    const octave = Math.floor((ROWS - 1 - i) / 12) + 2;
+    const noteIndex = (ROWS - 1 - i) % 12;
     return `${noteNames[noteIndex]}${octave}`;
-  }, []);
+  });
+  }, [noteNames]);
+
+  const horizontalGridLines = useMemo(() =>
+    Array.from({ length: ROWS + 1 }, (_, i) => (
+      <div key={`h-${i}`} className={`absolute border-t ${i % 12 === 0 ? 'border-gray-500' : 'border-gray-700'}`} style={{ top: `${i * CELL_HEIGHT}px`, width: '100%' }} />
+    )), []
+  );
+
+  const verticalGridLines = useMemo(() =>
+    Array.from({ length: COLS + 1 }, (_, i) => (
+      <div key={`v-${i}`} className={`absolute border-l ${i % 4 === 0 ? 'border-gray-500' : 'border-gray-700'}`} style={{ left: `${i * CELL_WIDTH}px`, height: '100%' }} />
+    )), []
+  );
+
+  const topBarMeasureLabels = useMemo(() =>
+    Array.from({ length: COLS / 4 }, (_, i) => (
+      <div key={i} className="border-r border-gray-600 text-center text-xs py-1 text-gray-300" style={{ width: `${CELL_WIDTH * 4}px` }}>{i + 1}</div>
+    )), []
+  );
+
+
+
 
   const isBlackKey = useCallback((row) => [1, 3, 6, 8, 10].includes((ROWS - 1 - row) % 12), []);
 
@@ -43,7 +66,7 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
     const loop = new Tone.Loop((time) => {
       setCurrentStep(step);
       currentNotes.filter(n => n.start === step).forEach(note => {
-        const noteName = getNoteLabel(note.row);
+        const noteName = noteLabels[note.row];
         const duration = new Tone.Time("16n").toSeconds() * note.length;
         sampler.triggerAttackRelease(noteName, duration, time);
       });
@@ -170,7 +193,7 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
 
   const handlePlaySound = async (_, row) => {
     await Tone.start();
-    const noteLabel = getNoteLabel(row);
+    const noteLabel = noteLabels[row];
     const instrument = instrumentList[selectedInstrument];
     instrument?.sampler?.triggerAttackRelease(noteLabel, "8n");
   };
@@ -202,15 +225,13 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
               className={`w-15 h-5 border-gray-600 flex items-center justify-end ${isBlackKey(i) ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-800'}`}
               onClick={() => handlePlaySound(null, i)}
               style={{ height: `${CELL_HEIGHT}px` }}
-            >{getNoteLabel(i)}</button>
+            >{noteLabels[i]}</button>
           ))}
         </div>
 
         <div className="relative">
           <div className="flex border-b border-gray-600 bg-gray-800">
-            {Array.from({ length: COLS / 4 }, (_, i) => (
-              <div key={i} className="border-r border-gray-600 text-center text-xs py-1 text-gray-300" style={{ width: `${CELL_WIDTH * 4}px` }}>{i + 1}</div>
-            ))}
+           {topBarMeasureLabels}
           </div>
           <div
             ref={gridRef}
@@ -225,12 +246,8 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
               ))
             )}
             <div className="absolute inset-0 pointer-events-none">
-              {Array.from({ length: ROWS + 1 }, (_, i) => (
-                <div key={`h-${i}`} className={`absolute border-t ${i % 12 === 0 ? 'border-gray-500' : 'border-gray-700'}`} style={{ top: `${i * CELL_HEIGHT}px`, width: '100%' }} />
-              ))}
-              {Array.from({ length: COLS + 1 }, (_, i) => (
-                <div key={`v-${i}`} className={`absolute border-l ${i % 4 === 0 ? 'border-gray-500' : 'border-gray-700'}`} style={{ left: `${i * CELL_WIDTH}px`, height: '100%' }} />
-              ))}
+              {horizontalGridLines}
+              {verticalGridLines}
             </div>
             {currentNotes.map((note) => (
               <div
@@ -241,7 +258,7 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
               >
                 <div className="absolute left-0 top-0 w-2 h-full cursor-ew-resize bg-blue-300 bg-opacity-50 hover:bg-opacity-80" onMouseDown={(e) => handleNoteMouseDown(e, note, 'left')} />
                 <div className="absolute right-0 top-0 w-2 h-full cursor-ew-resize bg-blue-300 bg-opacity-50 hover:bg-opacity-80" onMouseDown={(e) => handleNoteMouseDown(e, note, 'right')} />
-                <div className="absolute inset-2 flex items-center justify-center text-xs font-semibold text-white">{getNoteLabel(note.row)}</div>
+                <div className="absolute inset-2 flex items-center justify-center text-xs font-semibold text-white">{noteLabels[note.row]}</div>
               </div>
             ))}
           </div>
