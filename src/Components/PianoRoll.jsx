@@ -73,9 +73,11 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
       pianoData
         .filter(note => note.start === step)
         .forEach(note => {
-          const noteName = noteLabels[note.row]; // ou noteLabels[note.row] si déjà mémorisé
+          const noteName = noteLabels[note.row]; 
           const duration = new Tone.Time("16n").toSeconds() * note.length;
-          sampler.triggerAttackRelease(noteName, duration, time);
+          sampler.triggerAttack(noteName, time); // Commence à jouer
+          sampler.triggerRelease(duration, time + 1); // Relâche après 1 seconde
+
         });
     });
 
@@ -123,6 +125,7 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
     if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
 
     if (mode === 'draw') {
+      handlePlaySound(null, row);
       handleSetNotes((prev) => {
         const existingIndex = prev.findIndex(n => row >= n.row && row < n.row + n.height && col >= n.start && col < n.start + n.length);
         if (existingIndex !== -1) {
@@ -219,11 +222,11 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
     <div ref={onOpen} className="w-screen h-140 fixed bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize">
       <div className="flex gap-2 mb-2 items-center ml-20">
         <label className="absolute left-0 px-4 py-2 bg-gray-800 rounded">{selectedInstrument}</label>
+        <button onClick={onClose} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded ml-4">X</button>
         <button onClick={() => toggleMode('draw')} className={`px-4 py-2 rounded ${mode === 'draw' ? 'bg-green-600' : 'bg-gray-800 hover:bg-gray-700'}`}><ImPencil size={20} /></button>
         <button onClick={() => toggleMode('paint')} className={`px-4 py-2 rounded ${mode === 'paint' ? 'bg-green-600' : 'bg-gray-800 hover:bg-gray-700'}`}><HiPaintBrush size={20} /></button>
         <button onClick={() => toggleMode('resize')} className={`px-4 py-2 rounded ${mode === 'resize' ? 'bg-green-600' : 'bg-gray-800 hover:bg-gray-700'}`}><RxWidth size={20} /></button>
         <button onClick={clearAll} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded"><MdOutlineDeleteOutline size={20} /></button>
-        <button onClick={onClose} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded ml-4">X</button>
       </div>
 
       <div className="flex">
