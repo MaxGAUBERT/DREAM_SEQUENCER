@@ -13,6 +13,7 @@ import { MdGraphicEq } from "react-icons/md";
 import GlobalColorContextProvider from "./Contexts/GlobalColorContext";
 import TransportBar from "./Components/TransportBar";
 import PianoRoll from "./Components/PianoRoll";
+import Playlist from "./Components/Playlist";
 import LaunchAnimation from "./UI/LaunchAnimation";
 
 function getColorByIndex(i) {
@@ -177,6 +178,12 @@ export default function App() {
           "Piano Roll": !prev["Piano Roll"]
         }))
         break;
+      case "Playlist": 
+        setOpenComponents(prev => ({
+          ...prev,
+          "Playlist": !prev["Playlist"]
+        }))
+        break;
       case "New Project":
         openModal("new");
         break;
@@ -261,6 +268,13 @@ export default function App() {
             onSelect={handleSelectPattern} 
             selectedPatternID={selectedPatternID}
             setInstrumentList={setInstrumentList}
+          />
+        )}
+
+        {openComponents["Playlist"] && (
+          <Playlist 
+            onSelectPattern={handleSelectPattern}
+            selectedPatternID={selectedPatternID}
           />
         )}
 
