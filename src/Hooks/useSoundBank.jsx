@@ -3,9 +3,9 @@ import * as Tone from "tone";
 
 export const soundBank = {
   "drumKits": {
-    "acoustic": {
-      "name": "Acoustic Drum Kit",
-      "description": "Kit de batterie acoustique traditionnel",
+    "electronic": {
+      "name": "electronic Drum Kit",
+      "description": "Kit de sons électroniques",
       "bpm": 120,
       "sounds": {
         "kick": {
@@ -23,70 +23,42 @@ export const soundBank = {
           "tags": ["drum", "mid", "crack"]
         },
         "hihat_closed": {
-          "name": "Hi-Hat Fermé",
+          "name": "Closed Hi-Hat",
           "url": "./Audio/Drums/VEC4_Closed_HH_018.wav",
           "key": "F#1",
           "volume": 0.6,
           "tags": ["cymbal", "high", "tight"]
         },
         "hihat_open": {
-          "name": "Hi-Hat Ouvert",
+          "name": "Open Hi-Hat",
           "url": "./Audio/Drums/VEE_Open_Hihat_06.wav",
           "key": "A#1",
           "volume": 0.6,
           "tags": ["cymbal", "high", "open"]
         },
-        "crash": {
-          "name": "Crash Cymbal",
-          "url": "./Audio/acoustic/crash.wav",
-          "key": "C#2",
-          "volume": 0.5,
+        "basic clap": {
+          "name": "Clap",
+          "url": "./Audio/Drums/VEH3_Claps_011.wav",
+          "key": "D#1",
+          "volume": 0.6,
           "tags": ["cymbal", "high", "crash"]
+        },
+         "future clap": {
+          "name": "Future Clap",
+          "url": "./Audio/Drums/KSHMR_Clap_Dirty_03.wav",
+          "key": "D#1",
+          "volume": 0.6,
+          "tags": ["cymbal", "high", "crash"]
+        },
+        "Super Lead":{
+          "name": "Super Lead",
+          "url": "./Audio/Leads/Pattern_11_2.wav",
+          "key": "C1",
+          "volume": 0.8,
+          "tags": ["lead", "epic", "punch"]
         }
       }
     },
-    "electronic": {
-      "name": "Electronic Drum Kit",
-      "description": "Kit de samples electro",
-      "bpm": 128,
-      "sounds": {
-        "snare_clap": {
-          "name": "Clap Snare",
-          "url": "./Audio/electronic/snare_clap.wav",
-          "key": "D1",
-          "volume": 0.8,
-          "tags": ["electronic", "clap", "mid"]
-        },
-        "hihat_digital": {
-          "name": "Hi-Hat Digital",
-          "url": "./Audio/electronic/hihat_digital.wav",
-          "key": "F#1",
-          "volume": 0.6,
-          "tags": ["electronic", "high", "digital"]
-        },
-        "perc_shaker": {
-          "name": "Shaker",
-          "url": "./Audio/electronic/shaker.wav",
-          "key": "G#1",
-          "volume": 0.5,
-          "tags": ["percussion", "high", "rhythm"]
-        },
-        "bass_sub": {
-          "name": "Sub Bass",
-          "url": "./Audio/electronic/bass_sub.wav",
-          "key": "C2",
-          "volume": 0.8,
-          "tags": ["bass", "sub", "low"]
-        },
-        "fx_riser": {
-          "name": "Riser FX",
-          "url": "./Audio/electronic/fx_riser.wav",
-          "key": "D#3",
-          "volume": 0.6,
-          "tags": ["fx", "riser", "transition"]
-        }
-      }
-    }
   },
   "metadata": {
     "version": "1.0",
@@ -139,13 +111,13 @@ export const useSoundBank = (bank = soundBank) => {
 
   useEffect(() => {
     const loadSounds = async () => {
-      //console.log('🔄 Début du chargement des sons...');
-      //console.log('Bank reçu:', bank);
+      console.log('🔄 Début du chargement des sons...');
+      console.log('Bank reçu:', bank);
       
       try {
         // Démarre le contexte audio Tone.js
         if (Tone.context.state !== 'running') {
-          //console.log('🎵 Démarrage du contexte Tone.js...');
+          console.log('🎵 Démarrage du contexte Tone.js...');
           await Tone.start();
         }
 
@@ -315,7 +287,6 @@ export const useSoundBank = (bank = soundBank) => {
 
   return { 
     audioObjects, 
-    setAudioObjects,
     loading, 
     playSound, 
     stopAllSounds,
