@@ -2,12 +2,13 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import * as Tone from "tone";
 import { usePlayContext } from "../Contexts/PlayContext";
 import { IoAddOutline } from "react-icons/io5";
+import { FiUpload } from "react-icons/fi";
 import { MdDeleteOutline } from "react-icons/md";
 import { GrClearOption } from "react-icons/gr";
 import { useGlobalColorContext } from "../Contexts/GlobalColorContext"; // adapte le chemin
 import ChannelModal from "../UI/Modals/ChannelModal";
 import { useProjectManager } from "../Hooks/useProjectManager";
-import { steps } from "framer-motion";
+import { useFXChain } from "../Hooks/useFXChain";
 
 const icon_size = 20;
 
@@ -16,7 +17,6 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
   const {sequencesRef, isPlaying, bpm, metronome, metronomeSampler, playMode} = usePlayContext();
   const { colorsComponent} = useGlobalColorContext();
   const {assignSampleToInstrument} = useProjectManager();
-
   // CORRECTION : Redimensionner les grilles sans perdre les données
   useEffect(() => {
     if (!numSteps || numSteps < 4) return;
@@ -441,6 +441,22 @@ const handleSelectSample = useCallback(async (sample, targetInstrument) => {
     }
     console.log("Instrument updated:", instrumentList[instrumentName]);
   }, [instrumentName, setInstrumentList, assignSampleToInstrument]);
+
+  const handleSlotChange = (instrumentName, slotNumber) => {
+    if (!instrumentName) return;
+    setInstrumentList(prev => {
+      const instrument = prev[instrumentName];
+      if (!instrument) return prev;
+      return {
+        ...prev,
+        [instrumentName]: {
+          ...instrument,
+          slot: slotNumber
+        }
+      };
+    });
+    console.log(`Slot ${slotNumber} selected for instrument ${instrumentName}`);
+  }
   
 
   return (
@@ -456,25 +472,42 @@ const handleSelectSample = useCallback(async (sample, targetInstrument) => {
         
         return (
           <div key={instrumentName} className="grid grid-cols-[auto_auto_80px_1fr] items-center gap-x-4">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-5">
               <input 
                 type="file" 
+                id={`file-${instrumentName}`}
                 accept="audio/*" 
                 title="Load sample"
-                className="w-15 h-6 flex-shrink-0 text-xs cursor-pointer"
+                className="w-10 h-6 flex-shrink-0 text-xs cursor-pointer"
                 style={{color: colorsComponent.Background}}  
                 onChange={(e) => handleLoadSample(instrumentName, e)} 
+                hidden
               />
+              <button onClick={() => document.getElementById(`file-${instrumentName}`).click()} title="Load sample">
+                <FiUpload size={16} />
+              </button>
+
               <input 
                 type="checkbox"
                 checked={instrumentData.muted}
                 onChange={(e) => handleToggleMute(instrumentName, e.target.checked)}
-                className="w-3 h-3 flex-shrink-0 cursor-pointer"
+                className="w-3 h-3 flex-shrink-10 cursor-pointer"
               />
+              <input
+              title="FX Slot"
+               type="number"
+               min={0}
+               max={200}
+               value={instrumentData.slot}
+               step={1}
+               onChange={(e) => handleSlotChange(instrumentName, Number(e.target.value))}
+               className="w-10 h-6 mr-5 flex-shrink-0"
+               style={{color: colorsComponent.Background, backgroundColor: "red"}}  
+               />
                
             </div>
       
-            <div className="font-semibold text-gray-700 rounded">
+            <div className="font-semibold absolute left-35 text-gray-700 rounded">
               <button 
                 onClick={() => {setChannelModalOpen(!channelModalOpen); setInstrumentName(instrumentName)}}
                 className="hover:text-white transition-colors"
@@ -489,7 +522,7 @@ const handleSelectSample = useCallback(async (sample, targetInstrument) => {
               </button>
               
             </div>
-            <div className="flex flex-row gap-1 ml-40 absolute">
+            <div className="flex flex-row gap-1 ml-60 absolute">
               {currentGrid.map((active, i) => (
                 <button
                   key={i}
@@ -586,7 +619,9 @@ const handleSelectSample = useCallback(async (sample, targetInstrument) => {
       {channelModalOpen && (
         <div className="inset-0 z-50 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full flex items-center justify-center bg-opacity-50">
           <ChannelModal 
-            onClose={() => setChannelModalOpen(!channelModalOpen)} 
+            onClose={() => setChannelModalOpen(!channelModalOpen)}
+            instrumentList={instrumentList}
+            setInstrumentList={setInstrumentList} 
             instrumentName={instrumentName}
             setInstrumentName={setInstrumentName}
             onRename={handleRenameInstrument} 
