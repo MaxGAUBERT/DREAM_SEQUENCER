@@ -51,7 +51,8 @@ export function useProjectManager() {
             id: null,
             urls: { C4: null },
             name: null
-          }
+          },
+          slot: 0
         }
       ])
     );
