@@ -7,6 +7,7 @@ import { GrClearOption } from "react-icons/gr";
 import { useGlobalColorContext } from "../Contexts/GlobalColorContext"; // adapte le chemin
 import ChannelModal from "../UI/Modals/ChannelModal";
 import { useProjectManager } from "../Hooks/useProjectManager";
+import { steps } from "framer-motion";
 
 const icon_size = 20;
 
@@ -79,19 +80,19 @@ const DrumRack = React.memo(({numSteps, setNumSteps, instrumentList, setInstrume
   }, [instrumentName, setInstrumentList, numSteps, selectedPatternID]);
 
   useEffect(() => {
-  if (metronome && metronomeSampler && metronomeSampler.loaded) {
-    const metroLoop = new Tone.Loop((time) => {
-      metronomeSampler.triggerAttackRelease("C4", "8n", time);
-    }, "4n"); // "4n" = chaque temps (1 battement)
-    
-    metroLoop.start(0); // commence dès le début
-    Tone.Transport.start();
+    if (metronome && metronomeSampler && metronomeSampler.loaded) {
+      const metroLoop = new Tone.Loop((time) => {
+        metronomeSampler.triggerAttackRelease("C4", "8n", time);
+      }, "4n"); // "4n" = chaque temps (1 battement)
+      
+      metroLoop.start(0); // commence dès le début
+      Tone.Transport.start();
 
-    return () => {
-      metroLoop.dispose(); // nettoyer à l'arrêt ou démontage
-    };
-  }
-  }, [metronome, metronomeSampler]);
+      return () => {
+        metroLoop.dispose(); // nettoyer à l'arrêt ou démontage
+      };
+    }
+  }, [metronome, metronomeSampler, isPlaying]);
 
   useEffect(() => {
     Object.entries(instrumentList).forEach(([instrumentName, instrumentData]) => {
@@ -214,7 +215,7 @@ useEffect(() => {
     cleanup();
 
     // Si pas de lecture demandée, on s'arrête là
-    if (!isPlaying || playMode !== 'Pattern') {
+    if (!isPlaying || playMode !== 'Pattern' || !instrumentList) {
       return;
     }
     
@@ -299,7 +300,7 @@ useEffect(() => {
 
     // Cleanup au démontage
     return cleanup;
-  }, [instrumentList, selectedPatternID, isPlaying, bpm, playMode]);
+  }, [isPlaying, bpm, playMode]);
 
   const toggleStep = useCallback((instrumentName, stepIndex) => {
     if (selectedPatternID === null || selectedPatternID === undefined) return;
@@ -325,7 +326,7 @@ useEffect(() => {
         }
       };
     });
-  }, [selectedPatternID, numSteps, setInstrumentList]);
+  }, [instrumentList, selectedPatternID, numSteps]);
 
   const handleRenameInstrument = useCallback((newName) => {
   const trimmedName = newName.trim();
@@ -386,10 +387,12 @@ const handleSelectSample = useCallback(async (sample, targetInstrument) => {
         if (!updated[targetInst]) return prev;
 
         // Disposer de l'ancien sampler s'il existe
+        /*
         const oldSampler = updated[targetInst].sampler;
         if (oldSampler) {
           oldSampler.dispose();
         }
+        */
 
         // Nettoyer l'ancienne URL si elle existe
         const oldUrl = updated[targetInst].sampleUrl;
