@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSoundBank } from '../../Hooks/useSoundBank';
 
-const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, onSelectSample, channelUrl, onOpenPianoRoll}) => {
+const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentName, setInstrumentName, onRename, onSelectSample, channelUrl, onOpenPianoRoll}) => {
   const [activeTab, setActiveTab] = useState("General");
   const [localName, setLocalName] = useState(instrumentName);
   const [selectedSoundId, setSelectedSoundId] = useState(null);
@@ -60,7 +60,7 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
       onSelectSample(sampleData, instrumentName);
     }
 
-    onClose();
+    //onClose();
   };
 
   const handleCancel = () => {
@@ -78,11 +78,25 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
   };
 
   const handleOpenPianoRoll = () => {
-    if (onOpenPianoRoll) {
-      onOpenPianoRoll(instrumentName);
-      onClose();
-    }
+    onOpenPianoRoll(instrumentName);
+    onClose();
   };
+
+  const handleSetFxSlot = (instrumentName, slotNumber) => {
+    if (!instrumentName) return;
+    setInstrumentList(prev => {
+      const instrument = prev[instrumentName];
+      if (!instrument) return prev;
+      return {
+        ...prev,
+        [instrumentName]: {
+          ...instrument,
+          slot: slotNumber
+        }
+      };
+    });
+    console.log(`Slot ${slotNumber} selected for instrument ${instrumentName}`);
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -140,7 +154,14 @@ const ChannelModal = ({ onClose, instrumentName, setInstrumentName, onRename, on
         return (
           <div className="text-white">
             <p>Assign channels to FX slots</p>
-            {/* Ajoute ici tes contrôles d'effets */}
+            <input
+              type='number'
+              value={instrumentList[instrumentName].slot}
+              min={0}
+              max={200}
+              onChange={(e) => handleSetFxSlot(instrumentName, Number(e.target.value))}
+              className="w-20 mt-5 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
         );
       case "Advanced":
