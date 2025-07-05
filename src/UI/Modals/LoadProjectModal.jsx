@@ -11,7 +11,7 @@ export default function LoadProjectModal({ savedProjects, onClose, onLoad, onDel
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] relative">
-        <h2 className="text-2xl font-bold mb-4">Load Project</h2>
+        <h2 className="text-2xl text-black font-bold mb-4">Load Project</h2>
          <button 
             onClick={(e) => {
               e.stopPropagation();
