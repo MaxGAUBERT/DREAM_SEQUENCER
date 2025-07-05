@@ -19,7 +19,6 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState(null);
   const [cols, setCols] = useState(16);
-
   const gridRef = useRef(null);
   const loopRef = useRef(null);
   const stepRef = useRef(0);
@@ -27,7 +26,8 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
   const selectedPatternIDRef = useRef(selectedPatternID);
   const noteLabelsRef = useRef([]);
 
-  const { isPlaying, playModeRef, playMode } = usePlayContext();
+  const { isPlaying, playMode } = usePlayContext();
+  const playModeRef = useRef(playMode);
   const COLS = cols;
 
   const currentNotes = useMemo(() =>
