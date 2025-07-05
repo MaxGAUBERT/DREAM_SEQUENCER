@@ -14,7 +14,7 @@ import TransportBar from "./Components/TransportBar";
 import PianoRoll from "./Components/PianoRoll";
 import Playlist from "./Components/Playlist";
 
-// Mémoiser la fonction getColorByIndex
+
 const getColorByIndex = (() => {
   const colors = [
     "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
@@ -24,7 +24,6 @@ const getColorByIndex = (() => {
   return (i) => colors[i % colors.length];
 })();
 
-// Composant optimisé pour les modales
 const ModalManager = ({
   modals,
   projects,
@@ -103,19 +102,16 @@ export default function App() {
     saveAs: false,
   }));
 
-  // Mémoiser le nom du projet actuel
   const currentProjectName = useMemo(() => 
     projects.find(p => p.id === currentProjectId)?.name || "New Project",
     [projects, currentProjectId]
   );
 
-  // Optimiser la fonction openPianoRoll
   const openPianoRollForInstrument = useCallback((instrumentName) => {
     setPianoRollInstrument(instrumentName);
     setIsPianoRollOpen(prev => !prev);
   }, []);
 
-  // Optimiser les callbacks des modales
   const openModal = useCallback((name) => {
     setModals(prev => ({ ...prev, [name]: true }));
   }, []);
@@ -124,7 +120,6 @@ export default function App() {
     setModals(prev => ({ ...prev, [name]: false }));
   }, []);
 
-  // Optimiser handleSelectPattern
   const handleSelectPattern = useCallback((id) => {
     setSelectedPatternID(id);
 
@@ -146,7 +141,6 @@ export default function App() {
     });
   }, [setSelectedPatternID, setInstrumentList]);
 
-  // Optimiser handleRunAction avec useMemo pour les actions statiques
   const actionHandlers = useMemo(() => ({
     "Drum Rack": () => setOpenComponents(prev => ({ ...prev, "Drum Rack": !prev["Drum Rack"] })),
     "Sound Browser": () => setOpenComponents(prev => ({ ...prev, "Sound Browser": !prev["Sound Browser"] })),
@@ -166,7 +160,6 @@ export default function App() {
     }
   }, [actionHandlers]);
 
-  // Optimiser les effets avec des dépendances précises
   useEffect(() => {
     if (currentProject && Object.keys(instrumentList).length > 0) {
       const debounceTimer = setTimeout(() => {
@@ -174,7 +167,7 @@ export default function App() {
           `project_${currentProject.id}_instruments`, 
           stringify(instrumentList)
         );
-      }, 300); // Debounce pour éviter trop de sauvegardes
+      }, 300); 
 
       return () => clearTimeout(debounceTimer);
     }
@@ -193,7 +186,6 @@ export default function App() {
         setInstrumentList(initializeInstrumentList());
       }
     } else {
-      // Nouveau projet : initialiser avec les patterns existants
       const newInstrumentList = Object.fromEntries(
         DEFAULT_INSTRUMENTS.map(inst => [
           inst,
@@ -201,7 +193,7 @@ export default function App() {
             grids: Object.fromEntries(
               patterns.map(pattern => [pattern.id, Array(16).fill(false)])
             ),
-            piano: {},
+            pianoData: {},
             value: null,
             muted: false,
             slot: 0
@@ -210,7 +202,7 @@ export default function App() {
       );
       setInstrumentList(newInstrumentList);
     }
-  }, [currentProject, patterns, initializeInstrumentList, DEFAULT_INSTRUMENTS, setInstrumentList]);
+  }, [currentProject, setInstrumentList]);
 
   return (
     <div className="min-h-screen h-screen bg-gray-900 font-['Orbitron'] text-sm font-bold relative">
