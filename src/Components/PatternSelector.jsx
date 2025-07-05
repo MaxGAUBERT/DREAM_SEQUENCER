@@ -152,7 +152,7 @@ const PatternSelector = React.memo(({ patterns, setPatterns, colorByIndex, initL
       <button 
         onClick={handleAddPattern}
         className="w-15 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
-        style={{ backgroundColor: colorsComponent.Button }}      
+        style={{ backgroundColor: "black" }}      
       >
         +
       </button>
@@ -160,7 +160,7 @@ const PatternSelector = React.memo(({ patterns, setPatterns, colorByIndex, initL
       <button 
         onClick={() => handleDeletePattern(selectedPatternID)}
         className="w-15 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
-        style={{ backgroundColor: colorsComponent.Button }}
+        style={{ backgroundColor: "black"}}
         disabled={patterns.length <= 1}
       >
         -
@@ -170,7 +170,7 @@ const PatternSelector = React.memo(({ patterns, setPatterns, colorByIndex, initL
         <button 
           onClick={handleDeleteAllPatterns}
           className="w-20 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
-          style={{ backgroundColor: colorsComponent.Button }}        
+          style={{ backgroundColor: "black" }}        
         >
           Delete All
         </button>
