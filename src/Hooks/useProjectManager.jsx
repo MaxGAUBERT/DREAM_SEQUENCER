@@ -143,26 +143,36 @@ export function useProjectManager() {
     saveToLocalStorage(updatedProjects);
   };
 
-  const saveAsProject = (name) => {
-    const newId = Math.max(0, ...projects.map(p => p.id)) + 1;
-    const newProject = {
-      id: newId,
-      name,
-      patterns,
-      instrumentList,
-      selectedSoundId,
-      audioObjects,
-      notes,
-      numSteps,
-      selectedPatternID,
-      createdAt: new Date().toISOString()
-    };
-    const updated = [...projects, newProject];
-    setProjects(updated);
-    setCurrentProjectId(newId);
-    saveToLocalStorage(updated);
-    console.log("Project saved as:", updated);
+const saveAsProject = (name) => {
+  const newId = Math.max(0, ...projects.map(p => p.id)) + 1;
+  
+  const newProject = {
+    id: newId,
+    name,
+    patterns,
+    instrumentList,
+    selectedSoundId,
+    audioObjects,
+    notes,
+    numSteps,
+    selectedPatternID,
+    createdAt: new Date().toISOString()
   };
+
+  const updated = [...projects, newProject];
+  setProjects(updated);
+  setCurrentProjectId(newId);
+
+  // ✅ Sauvegarde explicite pour le projet cloné
+  localStorage.setItem(
+    `project_${newId}_instruments`,
+    stringify(instrumentList)
+  );
+
+  saveToLocalStorage(updated);
+  console.log("Project saved as:", updated);
+};
+
 
   const loadProject = (projectId, fromProjects = projects) => {
     const project = fromProjects.find(p => p.id === projectId);
