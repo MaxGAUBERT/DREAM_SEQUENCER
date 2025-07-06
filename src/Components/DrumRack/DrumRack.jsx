@@ -8,7 +8,6 @@ import InstrumentInput from "../DrumRack/InstrumentInput";
 import ChannelModal from "../../UI/Modals/ChannelModal";
 import { usePlayContext } from "../../Contexts/PlayContext";
 import * as Tone from "tone";
-import { steps } from "framer-motion";
 
 const DrumRack = ({
   numSteps,
@@ -107,7 +106,7 @@ const DrumRack = ({
                   }
                 }
               }
-            }, Array.from({ length: pattern.length }, (_, i) => i), "16n");
+            }, Array.from({ length: numSteps }, (_, i) => i), "16n");
     
             seq.start(0);
             sequencesRef.current.push(seq);
@@ -138,7 +137,7 @@ const DrumRack = ({
     
         // Cleanup au démontage
         return cleanup;
-      }, [isPlaying, bpm, playMode, instrumentList, selectedPatternID]);
+      }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
 
   return (
     <div className="absolute top-[50px] right-0 border-2 overflow-auto resize-y flex flex-col w-full sm:w-[400px] md:w-[500px] lg:w-[600px] max-h-[80vh] shadow-lg" 
