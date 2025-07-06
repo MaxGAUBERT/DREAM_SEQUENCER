@@ -1,14 +1,92 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MdDelete } from "react-icons/md";
+import { usePlayContext } from "../Contexts/PlayContext";
+import * as Tone from "tone";
 
 const WIDTH = 30; // nombre de colonnes
 const HEIGHT = 30; // nombre de lignes
 const CELL_SIZE = 50; // taille en pixels
 
-const Playlist = ({onSelectPattern, selectedPatternID}) => {
+const Playlist = ({selectedPatternID, patterns, instrumentList}) => {
   const [cells, setCells] = useState(Array(WIDTH * HEIGHT).fill(0));
+  const {isPlaying, playMode, bpm} = usePlayContext();
 
-  const placePattern = (index) => {
+  useEffect(() => {
+  if (!isPlaying || playMode !== "Song") return;
+
+  // Set tempo
+  Tone.Transport.bpm.value = bpm;
+
+  // Cancel previous scheduled events & reset Transport
+  Tone.Transport.cancel();
+  Tone.Transport.stop();
+
+  // On va accumuler la durée pour enchaîner les patterns
+  let timeline = 0;
+
+  // Parcourir la grille playlist (rows × cols)
+  for (let row = 0; row < HEIGHT; row++) {
+    for (let col = 0; col < WIDTH; col++) {
+      const index = row * WIDTH + col;
+      const patternID = cells[index];
+
+      if (patternID && patterns[patternID]) {
+        const pattern = patterns[patternID - 1];
+
+        // Ex: durée pattern = 1 mesure ("1m"), à ajuster selon ta config
+        const patternDuration = Tone.Time("1m").toSeconds();
+
+        // Programmer la lecture du pattern à timeline
+        Tone.Transport.scheduleOnce((time) => {
+          playPattern(pattern, instrumentList, time);
+        }, timeline);
+
+        timeline += patternDuration;
+      }
+    }
+  }
+
+  // Démarrer la lecture
+  Tone.Transport.start();
+
+  // Nettoyage à l'arrêt (optionnel)
+  return () => {
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+  };
+
+}, [isPlaying, playMode, bpm, cells, patterns, instrumentList]);
+
+
+function playPattern(pattern, instrumentList, startTime) {
+  // Pour chaque instrument concerné dans le pattern
+  Object.entries(instrumentList).forEach(([instrumentName, instrument]) => {
+    const samplerUrl = instrument?.sample?.urls?.C4;
+    if (!samplerUrl) return; 
+
+    const gridSteps = instrument?.grids?.[pattern.id] || [];
+
+    gridSteps.forEach((stepActive, stepIndex) => {
+      if (stepActive) {
+        const stepDuration = Tone.Time("16n").toSeconds();
+        const noteTime = startTime + stepIndex * stepDuration;
+        instrument.sampler?.triggerAttackRelease("C4", "8n", noteTime);
+      }
+    });
+     
+    /*
+    const noteData = instrument?.pianoData?.[pattern.id];
+    noteData.forEach((note) => {
+      const stepDuration = Tone.Time("16n").toSeconds();
+      const noteTime = startTime + note.start * stepDuration;
+      instrument.sampler?.triggerAttackRelease(note.name, note.length, noteTime);
+    });
+    */
+    // De même, tu peux jouer les notes de pianoData si nécessaire
+  });
+}
+
+const placePattern = (index) => {
   setCells(prev => {
     const newCells = [...prev];
     
@@ -24,6 +102,8 @@ const Playlist = ({onSelectPattern, selectedPatternID}) => {
     return newCells;
   });
 };
+
+
 
 
 
