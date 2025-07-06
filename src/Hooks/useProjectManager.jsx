@@ -52,6 +52,7 @@ export function useProjectManager() {
             urls: { C4: null },
             name: null
           },
+          sampler: null,
           slot: 0
         }
       ])
@@ -83,7 +84,8 @@ export function useProjectManager() {
           id: sample.id,
           urls: { C4: sample.url },
           name: sample.name
-        }
+        }, 
+        sampler
       }
     }));
   }, []);
@@ -173,7 +175,6 @@ const saveAsProject = (name) => {
   console.log("Project saved as:", updated);
 };
 
-
   const loadProject = (projectId, fromProjects = projects) => {
     const project = fromProjects.find(p => p.id === projectId);
     if (!project) return;
@@ -194,8 +195,8 @@ const saveAsProject = (name) => {
             url: null,
             name: null
           },
-          sampler: undefined,
-          sampleUrl: data.sample?.url || data.sampleUrl,
+          sampler: data?.sampler,
+          sampleUrl: data.sampleUrl,
           fileName: data.sample?.name || data.fileName
         }
       ])
