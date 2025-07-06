@@ -12,8 +12,8 @@ function getColorByIndex(i) {
 
 export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
-  const [notes, setNotes] = useState([]);
   const [numSteps, setNumSteps] = useState(16);
+  const [notes, setNotes] = useState([]);
   const [projects, setProjects] = useState([]);
   const [currentProjectId, setCurrentProjectId] = useState(0);
   const [selectedSoundId, setSelectedSoundId] = useState("acoustic_kick");
@@ -234,6 +234,7 @@ const saveAsProject = (name) => {
   return {
     projects,
     instrumentList,
+    audioObjects,
     setInstrumentList,
     initializeInstrumentList,
     DEFAULT_INSTRUMENTS,
@@ -245,8 +246,6 @@ const saveAsProject = (name) => {
     INITIAL_PATTERN_ID,
     patterns,
     setPatterns,
-    numSteps,
-    setNumSteps,
     selectedPatternID,
     setSelectedPatternID,
     createProject,
@@ -254,6 +253,8 @@ const saveAsProject = (name) => {
     saveAsProject,
     loadProject,
     deleteProject,
+    numSteps,
+    setNumSteps,
     assignSampleToInstrument,
     selectedSoundId,
     setSelectedSoundId,

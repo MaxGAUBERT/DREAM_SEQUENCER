@@ -1,0 +1,177 @@
+// useDrumRackHandlers.js
+import { useCallback } from "react";
+import * as Tone from "tone";
+import { useProjectManager } from "./useProjectManager";
+
+export default function useDrumRackHandlers({
+  instrumentName,
+  setInstrumentName,
+  setInstrumentList,
+  instrumentList,
+  numSteps,
+  selectedPatternID
+}) {
+  const { assignSampleToInstrument } = useProjectManager();
+
+  const toggleStep = useCallback((name, index) => {
+    setInstrumentList((prev) => {
+      const inst = prev[name];
+      const pattern = inst.grids?.[selectedPatternID] || Array(numSteps).fill(false);
+      const newPattern = [...pattern];
+      newPattern[index] = !newPattern[index];
+      return {
+        ...prev,
+        [name]: {
+          ...inst,
+          grids: {
+            ...inst.grids,
+            [selectedPatternID]: newPattern,
+          },
+        },
+      };
+    });
+  }, [numSteps, selectedPatternID]);
+
+  const handleMute = useCallback((name, muted) => {
+    setInstrumentList((prev) => ({
+      ...prev,
+      [name]: {
+        ...prev[name],
+        muted,
+      },
+    }));
+  }, []);
+
+  const handleSlotChange = useCallback((name, slot) => {
+    setInstrumentList((prev) => ({
+      ...prev,
+      [name]: {
+        ...prev[name],
+        slot,
+      },
+    }));
+  }, []);
+
+  const handleSampleLoad = useCallback((name, e) => {
+  const file = e.target.files[0];
+  if (!file || !file.type.startsWith("audio/")) return;
+
+  const url = URL.createObjectURL(file);
+  const cleanName = file.name.replace(/\.[^/.]+$/, "");
+
+  const sample = {
+    name: cleanName,
+    urls: { C4: url },
+  };
+
+  const sampler = new Tone.Sampler({
+    urls: { C4: url },
+    release: 1,
+    onload: () => {
+      console.log(`✓ Sample loaded for ${name}`);
+      
+      // Appeler la fonction de sauvegarde projet (si besoin)
+      assignSampleToInstrument(name, sample);
+
+      // Mettre à jour l'état avec le sampler chargé
+      setInstrumentList((prev) => ({
+        ...prev,
+        [name]: {
+          ...prev[name],
+          sampler,
+          sample,
+          sampleUrl: url,
+        },
+      }));
+    },
+    onerror: (err) => {
+      console.error(`✗ Failed to load sample for ${name}:`, err);
+    }
+  }).toDestination();
+
+  // Important : remettre input à zéro pour recharger un fichier identique plus tard
+  e.target.value = "";
+}, [assignSampleToInstrument, setInstrumentList]);
+
+
+  const handleDeleteInstrument = useCallback((name) => {
+    setInstrumentList((prev) => {
+      const newList = { ...prev };
+      delete newList[name];
+      return newList;
+    });
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setInstrumentList((prev) => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach((name) => {
+        if (updated[name].grids?.[selectedPatternID]) {
+          updated[name].grids[selectedPatternID] = Array(numSteps).fill(false);
+        }
+      });
+      return updated;
+    });
+  }, [selectedPatternID, numSteps]);
+
+  const handleDeleteAll = useCallback(() => {
+    setInstrumentList({});
+  }, []);
+
+  const handleRename = useCallback((newName) => {
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === instrumentName || instrumentList[trimmed]) return;
+    setInstrumentList((prev) => {
+      const entries = Object.entries(prev).map(([key, val]) =>
+        key === instrumentName ? [trimmed, val] : [key, val]
+      );
+      return Object.fromEntries(entries);
+    });
+    setInstrumentName(trimmed);
+  }, [instrumentName, instrumentList]);
+
+  const handleAddInstrument = useCallback((e) => {
+    e?.preventDefault?.();
+    if (!instrumentName.trim()) return;
+    setInstrumentList((prev) => {
+      const newInst = { value: null, grids: {} };
+      const patternIds = Object.keys(prev)[0] ? Object.keys(Object.values(prev)[0].grids || {}) : [selectedPatternID];
+      patternIds.forEach((id) => {
+        newInst.grids[id] = Array(numSteps).fill(false);
+      });
+      return {
+        ...prev,
+        [instrumentName.trim()]: newInst,
+      };
+    });
+    setInstrumentName("");
+  }, [instrumentName, selectedPatternID, numSteps]);
+
+  const handleSelectSample = useCallback((sample, name) => {
+    const url = sample.url;
+    const sampler = new Tone.Sampler({ urls: { C4: url }, release: 1 }).toDestination();
+    assignSampleToInstrument(name, sample);
+    setInstrumentList((prev) => ({
+      ...prev,
+      [name]: {
+        ...prev[name],
+        sampler,
+        sample,
+        sampleUrl: url,
+      },
+    }));
+  }, []);
+
+  return {
+    toggleStep,
+    onMute: handleMute,
+    onSlotChange: handleSlotChange,
+    onSampleLoad: handleSampleLoad,
+    onDeleteInstrument: handleDeleteInstrument,
+    onReset: handleReset,
+    onDeleteAll: handleDeleteAll,
+    onRename: handleRename,
+    onAddInstrument: handleAddInstrument,
+    onSelectSample: handleSelectSample
+  };
+}
