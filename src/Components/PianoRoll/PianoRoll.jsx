@@ -1,22 +1,19 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import * as Tone from 'tone';
 import { usePlayContext } from '../../Contexts/PlayContext';
-import { RxWidth } from "react-icons/rx";
-import { ImPencil } from "react-icons/im";
-import { HiPaintBrush } from "react-icons/hi2";
-import { MdOutlineDeleteOutline } from "react-icons/md";
-import { IoMusicalNotesSharp } from "react-icons/io5";
 import { TopBar } from './TopBar';
 import { NoteBlock } from './NoteBlock';
 import { NoteLabels } from './NoteLabels';
 import { useChordGenerator } from '../../Hooks/useChordGenerator';
+import { rowToNoteName } from '../Utils/noteUtils';
 
 
 
-const ROWS = 48;
-const CELL_WIDTH = 20;
-const CELL_HEIGHT = 20;
-const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+export const ROWS = 48;
+export const CELL_WIDTH = 20;
+export const CELL_HEIGHT = 20;
+export const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
 
 const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumentList, setInstrumentList, onOpen, onClose }) => {
@@ -53,7 +50,11 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
     [instrumentList, selectedInstrument, selectedPatternID]
   );
 
-  const toggleMode = (newMode) => setMode((prev) => (prev === newMode ? null : newMode));
+  const toggleMode = (newMode) => {
+    setMode((prev) => (prev === newMode ? null : newMode));
+    console.log(`Mode changed to ${newMode}`);
+  };
+
 
   const horizontalGridLines = useMemo(() =>
     Array.from({ length: ROWS + 1 }, (_, i) => (
@@ -74,14 +75,11 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
   );
 
   const noteLabels = useMemo(() => {
-    const labels = Array.from({ length: ROWS }, (_, i) => {
-      const octave = Math.floor((ROWS - 1 - i) / 12) + 2;
-      const noteIndex = (ROWS - 1 - i) % 12;
-      return `${noteNames[noteIndex]}${octave}`;
-    });
+    const labels = Array.from({ length: ROWS }, (_, i) => rowToNoteName(i));
     noteLabelsRef.current = labels;
     return labels;
   }, []);
+
 
   const isBlackKey = useCallback((row) => [1, 3, 6, 8, 10].includes((ROWS - 1 - row) % 12), []);
 
@@ -110,6 +108,7 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
           const duration = new Tone.Time("16n").toSeconds() * n.length;
           sampler.triggerAttack(noteName, time);
           sampler.triggerRelease(duration, time + 1);
+          console.log(`Playing note: ${noteName} at time: ${time}`);
         });
       });
 
@@ -152,7 +151,8 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
 
   const handlePlaySound = async (_, row) => {
     await Tone.start();
-    const noteLabel = noteLabelsRef.current[row];
+    //const noteLabel = noteLabelsRef.current[row];
+    const noteLabel = rowToNoteName(row);
     const instrument = instrumentList[selectedInstrument];
     instrument?.sampler?.triggerAttackRelease(noteLabel, "4n");
   };
@@ -189,7 +189,6 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
       handlePlaySound(null, row);
     }
 
-
    }, [isResizing, mode, COLS, handleSetNotes]);
 
   const handleNoteMouseDown = useCallback((e, note, direction = null) => {
@@ -198,33 +197,59 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
     if (direction) {
       setIsResizing(true);
       setResizeDirection(direction);
+      setMode('resize');
+      console.log(`Resizing ${note.id} ${direction}`);
     }
-  }, []);
+  }, [isResizing, selectedNoteId, resizeDirection]);
 
   const handleMouseMove = useCallback((e) => {
-    if (!isResizing || !selectedNoteId || mode !== 'resize') return;
-    const rect = gridRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const col = Math.floor(x / CELL_WIDTH);
+  if (!isResizing || !selectedNoteId || mode !== 'resize') return;
 
-    handleSetNotes(prev => prev.map(note => {
+  const rect = gridRef.current.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const col = Math.floor(x / CELL_WIDTH);
+
+  handleSetNotes((prevNotes) => {
+    return prevNotes.map((note) => {
       if (note.id !== selectedNoteId) return note;
+
+      const maxCol = COLS - 1;
+
       if (resizeDirection === 'left') {
         const newStart = Math.max(0, Math.min(col, note.start + note.length - 1));
         const newLength = note.start + note.length - newStart;
-        return { ...note, start: newStart, length: newLength };
-      } else if (resizeDirection === 'right') {
-        const newLength = Math.max(1, col - note.start + 1);
-        return { ...note, length: Math.min(newLength, COLS - note.start) };
+
+        // Évite une note de longueur 0 ou négative
+        if (newLength < 1) return note;
+
+        return {
+          ...note,
+          start: newStart,
+          length: newLength,
+        };
       }
+
+      if (resizeDirection === 'right') {
+        const rawLength = col - note.start + 1;
+        const newLength = Math.max(1, Math.min(rawLength, COLS - note.start));
+
+        return {
+          ...note,
+          length: newLength,
+        };
+      }
+
       return note;
-    }));
-  }, [isResizing, selectedNoteId, resizeDirection, mode, COLS, handleSetNotes]);
+    });
+  });
+}, [isResizing, selectedNoteId, resizeDirection, mode, handleSetNotes]);
+
 
   const handleMouseUp = useCallback(() => {
     setIsResizing(false);
     setResizeDirection(null);
-  }, []);
+    if (mode === 'resize') setMode('draw'); 
+  }, [handleMouseMove,  isResizing, mode]);
 
   useEffect(() => {
     if (isResizing) {
@@ -235,7 +260,7 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
         document.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isResizing, handleMouseMove, handleMouseUp]);
+  }, [isResizing]);
 
   useEffect(() => {
     const down = () => setIsMouseDown(true);
@@ -275,59 +300,58 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
         onClose={onClose}
       />
       <div className="flex">
-  <NoteLabels
-    ROWS={ROWS}
-    noteLabels={noteLabelsRef.current}
-    handlePlaySound={handlePlaySound}
-    isBlackKey={isBlackKey}
-  />
+      <NoteLabels
+        noteLabels={noteLabelsRef.current}
+        handlePlaySound={handlePlaySound}
+        isBlackKey={isBlackKey}
+      />
 
-  <div className="relative">
-    <div className="flex border-b border-gray-600 bg-gray-800">{topBarMeasureLabels}</div>
-    <div
-      ref={gridRef}
-      className="relative cursor-crosshair select-none"
-      onClick={handleGridClick}
-      style={{ width: `${COLS * CELL_WIDTH}px`, height: `${ROWS * CELL_HEIGHT}px` }}
-    >
-      <div className="absolute bg-red-900 pointer-events-none z-10 transition-all duration-10"
-           style={{ left: `${currentStep * CELL_WIDTH}px`, width: `${CELL_WIDTH / 8}px`, height: `${ROWS * CELL_HEIGHT}px` }} />
+      <div className="relative">
+        <div className="flex border-b border-gray-600 bg-gray-800">{topBarMeasureLabels}</div>
+        <div
+          ref={gridRef}
+          className="relative cursor-crosshair select-none"
+          onClick={handleGridClick}
+          style={{ width: `${COLS * CELL_WIDTH}px`, height: `${ROWS * CELL_HEIGHT}px` }}
+        >
+          <div className="absolute bg-red-900 pointer-events-none z-10 transition-all duration-10"
+              style={{ left: `${currentStep * CELL_WIDTH}px`, width: `${CELL_WIDTH / 8}px`, height: `${ROWS * CELL_HEIGHT}px` }} />
 
-            {currentNotes.map((note) => (
-                <NoteBlock
-                  key={note.id}
-                  note={note}
-                  selected={selectedNoteId === note.id}
-                  noteLabel={noteLabelsRef.current[note.row]}
-                  onMouseDown={(e, n) => handleNoteMouseDown(e, n)}
-                  onResizeLeft={(e, n) => handleNoteMouseDown(e, n, 'left')}
-                  onResizeRight={(e, n) => handleNoteMouseDown(e, n, 'right')}
-                />
-              ))}
+                {currentNotes.map((note) => (
+                    <NoteBlock
+                      key={note.id}
+                      note={note}
+                      selected={selectedNoteId === note.id}
+                      noteLabel={noteLabelsRef.current[note.row]}
+                      onMouseDown={(e, note) => handleNoteMouseDown(e, note)}
+                      onResizeLeft={(e, note) => handleNoteMouseDown(e, note, 'left')}
+                      onResizeRight={(e, note) => handleNoteMouseDown(e, note, 'right')}
+                    />
+                  ))}
 
-              {Array.from({ length: ROWS }).map((_, row) =>
-                Array.from({ length: COLS }).map((_, col) => (
-                  <div key={`cell-${row}-${col}`} className="absolute"
-                      style={{
-                        top: `${row * CELL_HEIGHT}px`,
-                        left: `${col * CELL_WIDTH}px`,
-                        width: `${CELL_WIDTH}px`,
-                        height: `${CELL_HEIGHT}px`
-                      }}
-                      onMouseEnter={() => handlePaintCell(row, col)} />
-                ))
-              )}
+                  {Array.from({ length: ROWS }).map((_, row) =>
+                    Array.from({ length: COLS }).map((_, col) => (
+                      <div key={`cell-${row}-${col}`} className="absolute"
+                          style={{
+                            top: `${row * CELL_HEIGHT}px`,
+                            left: `${col * CELL_WIDTH}px`,
+                            width: `${CELL_WIDTH}px`,
+                            height: `${CELL_HEIGHT}px`
+                          }}
+                          onMouseEnter={() => handlePaintCell(row, col)} />
+                    ))
+                  )}
 
-                <div className="absolute inset-0 pointer-events-none">
-                  {horizontalGridLines}
-                  {verticalGridLines}
+                    <div className="absolute inset-0 pointer-events-none">
+                      {horizontalGridLines}
+                      {verticalGridLines}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-          
-            </div>
-        );
+              
+                </div>
+            );
 });
 
 
