@@ -1,5 +1,3 @@
-// utils/noteUtils.js
-
 export const ROWS = 48;
 export const CELL_WIDTH = 20;
 export const CELL_HEIGHT = 20;
