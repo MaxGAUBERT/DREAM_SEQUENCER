@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { MdDelete } from "react-icons/md";
 import { usePlayContext } from "../Contexts/PlayContext";
+import { rowToNoteName } from "./Utils/noteUtils";
 import * as Tone from "tone";
 
 const WIDTH = 30; // nombre de colonnes
@@ -14,14 +15,11 @@ const Playlist = ({selectedPatternID, patterns, instrumentList}) => {
   useEffect(() => {
   if (!isPlaying || playMode !== "Song") return;
 
-  // Set tempo
   Tone.Transport.bpm.value = bpm;
 
-  // Cancel previous scheduled events & reset Transport
   Tone.Transport.cancel();
   Tone.Transport.stop();
 
-  // On va accumuler la durée pour enchaîner les patterns
   let timeline = 0;
 
   // Parcourir la grille playlist (rows × cols)
@@ -32,11 +30,8 @@ const Playlist = ({selectedPatternID, patterns, instrumentList}) => {
 
       if (patternID && patterns[patternID]) {
         const pattern = patterns[patternID - 1];
-
-        // Ex: durée pattern = 1 mesure ("1m"), à ajuster selon ta config
         const patternDuration = Tone.Time("1m").toSeconds();
 
-        // Programmer la lecture du pattern à timeline
         Tone.Transport.scheduleOnce((time) => {
           playPattern(pattern, instrumentList, time);
         }, timeline);
@@ -46,10 +41,8 @@ const Playlist = ({selectedPatternID, patterns, instrumentList}) => {
     }
   }
 
-  // Démarrer la lecture
   Tone.Transport.start();
 
-  // Nettoyage à l'arrêt (optionnel)
   return () => {
     Tone.Transport.stop();
     Tone.Transport.cancel();
@@ -57,32 +50,47 @@ const Playlist = ({selectedPatternID, patterns, instrumentList}) => {
 
 }, [isPlaying, playMode, bpm, cells, patterns, instrumentList]);
 
-
 function playPattern(pattern, instrumentList, startTime) {
-  // Pour chaque instrument concerné dans le pattern
   Object.entries(instrumentList).forEach(([instrumentName, instrument]) => {
-    const samplerUrl = instrument?.sample?.urls?.C4;
-    if (!samplerUrl) return; 
+    // CORRECTION : Accès au sample via la bonne propriété
+    const samplerUrl = instrument?.sampleUrl || instrument?.sample?.url;
+    if (!samplerUrl) {
+      console.log(`No sample URL found for instrument: ${instrumentName}`);
+      return; 
+    }
+
+    // Vérifier que le sampler existe
+    if (!instrument.sampler) {
+      console.log(`No sampler found for instrument: ${instrumentName}`);
+      return;
+    }
 
     const gridSteps = instrument?.grids?.[pattern.id] || [];
+    const notes = instrument?.pianoData?.[pattern.id] || [];
 
     gridSteps.forEach((stepActive, stepIndex) => {
-      if (stepActive) {
+      if (stepActive && gridSteps) {
         const stepDuration = Tone.Time("16n").toSeconds();
         const noteTime = startTime + stepIndex * stepDuration;
         instrument.sampler?.triggerAttackRelease("C4", "8n", noteTime);
       }
     });
-     
-    /*
-    const noteData = instrument?.pianoData?.[pattern.id];
-    noteData.forEach((note) => {
-      const stepDuration = Tone.Time("16n").toSeconds();
-      const noteTime = startTime + note.start * stepDuration;
-      instrument.sampler?.triggerAttackRelease(note.name, note.length, noteTime);
-    });
-    */
-    // De même, tu peux jouer les notes de pianoData si nécessaire
+
+    notes.forEach((note) => {
+  if (note && instrument?.sampler) {
+    const stepDuration = Tone.Time("16n").toSeconds();
+    const noteTime = startTime + note.start * stepDuration;
+    const duration = Tone.Time(note.length * stepDuration).toNotation();
+    const velocity = note.velocity ?? 1;
+    const noteName = rowToNoteName(note.row);
+
+    instrument.sampler.triggerAttackRelease(noteName, duration, noteTime, velocity);
+  }
+});
+
+
+    
+
   });
 }
 
@@ -102,10 +110,6 @@ const placePattern = (index) => {
     return newCells;
   });
 };
-
-
-
-
 
   return (
     <div
