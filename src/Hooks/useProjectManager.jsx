@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { stringify, parse } from "flatted";
 import { useSoundBank } from "./useSoundBank";
+import * as Tone from "tone";
 
 function getColorByIndex(i) {
   const colors = [
@@ -10,13 +11,18 @@ function getColorByIndex(i) {
   return colors[i % colors.length];
 }
 
+const WIDTH = 30; // nombre de colonnes
+const HEIGHT = 30; // nombre de lignes
+const CELL_SIZE = 50;
+
 export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
+  const [cells, setCells] = useState(Array(WIDTH * HEIGHT).fill(0));
   const [numSteps, setNumSteps] = useState(16);
   const [notes, setNotes] = useState([]);
   const [projects, setProjects] = useState([]);
   const [currentProjectId, setCurrentProjectId] = useState(0);
-  const [selectedSoundId, setSelectedSoundId] = useState("acoustic_kick");
+  const [selectedSoundId, setSelectedSoundId] = useState("");
   const {
     audioObjects,
     setAudioObjects
@@ -85,7 +91,8 @@ export function useProjectManager() {
           urls: { C4: sample.url },
           name: sample.name
         }, 
-        sampler
+        sampler: null,
+        sampleUrl: sample.urls
       }
     }));
   }, []);
@@ -175,42 +182,58 @@ const saveAsProject = (name) => {
   console.log("Project saved as:", updated);
 };
 
-  const loadProject = (projectId, fromProjects = projects) => {
-    const project = fromProjects.find(p => p.id === projectId);
-    if (!project) return;
+const loadProject = async (projectId, fromProjects = projects) => {
+  const project = fromProjects.find(p => p.id === projectId);
+  if (!project) return;
 
-    console.log("Chargement du projet:", project);
+  console.log("Chargement du projet:", project);
 
-    setCurrentProjectId(projectId);
-    setPatterns(project.patterns || []);
+  setCurrentProjectId(projectId);
+  setPatterns(project.patterns || []);
 
-    const loadedInstrumentList = project.instrumentList || {};
-    const normalizedInstrumentList = Object.fromEntries(
-      Object.entries(loadedInstrumentList).map(([name, data]) => [
+  const loadedInstrumentList = project.instrumentList || {};
+
+  const instrumentEntries = await Promise.all(
+    Object.entries(loadedInstrumentList).map(async ([name, data]) => {
+      const sampleUrl = data.sample?.url || data.sampleUrl;
+      
+      let sampler = null;
+      if (sampleUrl) {
+        try {
+          sampler = new Tone.Sampler({
+            urls: { C4: sampleUrl },
+            onload: () => console.log(`Sample loaded for ${name}`),
+          }).toDestination();
+        } catch (e) {
+          console.error(`Erreur de création du sampler pour ${name}`, e);
+        }
+      }
+
+      return [
         name,
         {
           ...data,
-          sample: data.sample || {
-            id: null,
-            url: null,
-            name: null
-          },
-          sampler: data?.sampler,
-          sampleUrl: data.sampleUrl,
-          fileName: data.sample?.name || data.fileName
+          sampler,
+          sampleUrl,
+          fileName: data.sample?.name || data.fileName,
         }
-      ])
-    );
+      ];
+    })
+  );
 
-    setInstrumentList(normalizedInstrumentList);
-    setSelectedSoundId(project.selectedSoundId || "acoustic_kick");
-    setNumSteps(project.numSteps || 16);
-    setSelectedPatternID(
-      typeof project.selectedPatternID === "number" ? project.selectedPatternID : 0
-    );
-    setNotes(project.notes || []);
-    console.log("Projet chargé avec instrumentList:", normalizedInstrumentList);
-  };
+  const normalizedInstrumentList = Object.fromEntries(instrumentEntries);
+
+  setInstrumentList(normalizedInstrumentList);
+  setSelectedSoundId(project.selectedSoundId || "acoustic_kick");
+  setNumSteps(project.numSteps || 16);
+  setSelectedPatternID(
+    typeof project.selectedPatternID === "number" ? project.selectedPatternID : 0
+  );
+  setNotes(project.notes || []);
+
+  console.log("Projet chargé avec instrumentList:", normalizedInstrumentList);
+};
+
 
   const deleteProject = (projectId) => {
     const updated = projects.filter(p => p.id !== projectId);
@@ -239,6 +262,8 @@ const saveAsProject = (name) => {
     setInstrumentList,
     initializeInstrumentList,
     DEFAULT_INSTRUMENTS,
+    WIDTH, HEIGHT, CELL_SIZE,
+    cells, setCells,
     notes,
     setNotes,
     currentProjectId,
