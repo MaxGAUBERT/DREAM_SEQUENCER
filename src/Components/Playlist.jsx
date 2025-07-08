@@ -6,20 +6,28 @@ import * as Tone from "tone";
 import { useProjectManager } from "../Hooks/useProjectManager";
 
 const Playlist = ({selectedPatternID, patterns, instrumentList, cells, setCells}) => {
-  const {isPlaying, playMode, bpm} = usePlayContext();
+  const {isPlaying, setIsPlaying, playMode, bpm} = usePlayContext();
   const {WIDTH, HEIGHT, CELL_SIZE} = useProjectManager();
 
   useEffect(() => {
-  if (!isPlaying || playMode !== "Song") return;
+  // Nettoyage systématique
+
+  // Ne rien faire si on ne joue pas ou si on n'est pas en mode Song
+  if (!isPlaying || playMode !== "Song" || !instrumentList) return;
+
+  const cleanup = () => {
+    if (Tone.Transport.state === 'started') {
+      Tone.Transport.stop();
+    }
+    Tone.Transport.cancel();
+  };
+
+  cleanup();
 
   Tone.Transport.bpm.value = bpm;
 
-  Tone.Transport.cancel();
-  Tone.Transport.stop();
-
   let timeline = 0;
 
-  // Parcourir la grille playlist (rows × cols)
   for (let row = 0; row < HEIGHT; row++) {
     for (let col = 0; col < WIDTH; col++) {
       const index = row * WIDTH + col;
@@ -40,12 +48,10 @@ const Playlist = ({selectedPatternID, patterns, instrumentList, cells, setCells}
 
   Tone.Transport.start();
 
-  return () => {
-    Tone.Transport.stop();
-    Tone.Transport.cancel();
-  };
+  return cleanup;
 
 }, [isPlaying, playMode, bpm, cells, patterns, instrumentList]);
+
 
 function playPattern(pattern, instrumentList, startTime) {
   Object.entries(instrumentList).forEach(([instrumentName, instrument]) => {
@@ -57,10 +63,11 @@ function playPattern(pattern, instrumentList, startTime) {
     }
 
     // Vérifier que le sampler existe
-    if (!instrument.sampler) {
-      console.log(`No sampler found for instrument: ${instrumentName}`);
+    if (!instrument.sampler || !instrument.sampler.loaded) {
+      console.warn(`Sampler for ${instrumentName} is not loaded yet or missing.`);
       return;
     }
+
 
     const gridSteps = instrument?.grids?.[pattern.id] || [];
     const notes = instrument?.pianoData?.[pattern.id] || [];
