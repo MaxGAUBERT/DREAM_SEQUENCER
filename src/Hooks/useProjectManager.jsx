@@ -59,7 +59,7 @@ export function useProjectManager() {
             name: null
           },
           sampler: null,
-          slot: 0
+          slot: 0,
         }
       ])
     );
@@ -121,10 +121,12 @@ export function useProjectManager() {
       notes,
       numSteps: 16,
       selectedPatternID: newPatterns.length - 1,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      cells: Array(WIDTH * HEIGHT).fill(0)
     };
 
     const updated = [...projects, newProject];
+    setCells(Array(WIDTH * HEIGHT).fill(0));
     setProjects(updated);
     setCurrentProjectId(newId);
     saveToLocalStorage(updated);
@@ -143,7 +145,8 @@ export function useProjectManager() {
           notes,
           numSteps,
           selectedPatternID,
-          lastSaved: new Date().toISOString()
+          lastSaved: new Date().toISOString(),
+          cells
         };
       }
       return p;
@@ -165,7 +168,8 @@ const saveAsProject = (name) => {
     notes,
     numSteps,
     selectedPatternID,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    cells
   };
 
   const updated = [...projects, newProject];
@@ -230,6 +234,7 @@ const loadProject = async (projectId, fromProjects = projects) => {
     typeof project.selectedPatternID === "number" ? project.selectedPatternID : 0
   );
   setNotes(project.notes || []);
+  setCells(project.cells || Array(WIDTH * HEIGHT).fill(0));
 
   console.log("Projet chargé avec instrumentList:", normalizedInstrumentList);
 };
