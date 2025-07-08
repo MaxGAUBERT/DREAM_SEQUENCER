@@ -1,16 +1,13 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { MdDelete } from "react-icons/md";
 import { usePlayContext } from "../Contexts/PlayContext";
 import { rowToNoteName } from "./Utils/noteUtils";
 import * as Tone from "tone";
+import { useProjectManager } from "../Hooks/useProjectManager";
 
-const WIDTH = 30; // nombre de colonnes
-const HEIGHT = 30; // nombre de lignes
-const CELL_SIZE = 50; // taille en pixels
-
-const Playlist = ({selectedPatternID, patterns, instrumentList}) => {
-  const [cells, setCells] = useState(Array(WIDTH * HEIGHT).fill(0));
+const Playlist = ({selectedPatternID, patterns, instrumentList, cells, setCells}) => {
   const {isPlaying, playMode, bpm} = usePlayContext();
+  const {WIDTH, HEIGHT, CELL_SIZE} = useProjectManager();
 
   useEffect(() => {
   if (!isPlaying || playMode !== "Song") return;
@@ -152,4 +149,4 @@ const placePattern = (index) => {
     );
 };
 
-export default Playlist;
+export default React.memo(Playlist); 
