@@ -1,7 +1,7 @@
 import {useState, useEffect, useCallback, useMemo} from "react";
 import { stringify, parse } from "flatted";
 import StripMenu from "./UI/StripMenu";
-import DrumRack from "./Components/DrumRack";
+import DrumRack from "./Components/DrumRack/DrumRack";
 import PatternSelector from "./Components/PatternSelector";
 import NewProjectModal from "./UI/Modals/NewProjectModal";
 import LoadProjectModal from "./UI/Modals/LoadProjectModal";
@@ -11,7 +11,7 @@ import PlayContext from "./Contexts/PlayContext";
 import { MdGraphicEq } from "react-icons/md";
 import GlobalColorContextProvider from "./Contexts/GlobalColorContext";
 import TransportBar from "./Components/TransportBar";
-import PianoRoll from "./Components/PianoRoll";
+import PianoRoll from "./Components/PianoRoll/PianoRoll";
 import Playlist from "./Components/Playlist";
 
 
@@ -66,6 +66,10 @@ export default function App() {
     setInstrumentList,
     initializeInstrumentList,
     DEFAULT_INSTRUMENTS,
+    WIDTH, 
+    HEIGHT,
+    CELL_SIZE,
+    cells, setCells,
     currentProjectId,
     currentProject,
     initLength,
@@ -254,8 +258,11 @@ export default function App() {
 
           {openComponents["Playlist"] && (
             <Playlist 
-              onSelectPattern={handleSelectPattern}
               selectedPatternID={selectedPatternID}
+              patterns={patterns}
+              instrumentList={instrumentList}
+              cells={cells}
+              setCells={setCells}
             />
           )}
 
