@@ -1,0 +1,36 @@
+import { useGlobalColorContext } from "../../Contexts/GlobalColorContext";
+
+
+
+export default function DeleteAllPatterns ({patterns, setPatterns, setInstrumentList, onSelect}) {
+    const {colorsComponent} = useGlobalColorContext();
+
+    const handleDeleteAllPatterns = () => {
+        setPatterns([]);
+        onSelect(null);
+        setInstrumentList(prev => {
+        const newList = { ...prev };
+        Object.keys(newList).forEach(inst => {
+            newList[inst].grids = {};
+        });
+        return newList;
+        });
+    };
+
+
+    return (
+        <div className="flex items-center">
+         {patterns.length > 1 && (
+            <button 
+            onClick={handleDeleteAllPatterns}
+            className="w-20 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
+            style={{ backgroundColor: "black" }}        
+            >
+            Delete All
+            </button>
+        )}
+      </div>
+
+    )
+    
+}
