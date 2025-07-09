@@ -13,6 +13,7 @@ import GlobalColorContextProvider from "./Contexts/GlobalColorContext";
 import TransportBar from "./Components/TransportBar";
 import PianoRoll from "./Components/PianoRoll/PianoRoll";
 import Playlist from "./Components/Playlist";
+import SampleProvider from "./Contexts/SampleProvider";
 
 
 const getColorByIndex = (() => {
@@ -23,6 +24,7 @@ const getColorByIndex = (() => {
   
   return (i) => colors[i % colors.length];
 })();
+
 
 const ModalManager = ({
   modals,
@@ -65,24 +67,23 @@ export default function App() {
     instrumentList,
     setInstrumentList,
     initializeInstrumentList,
+    assignSampleToInstrument,
     DEFAULT_INSTRUMENTS,
-    WIDTH, 
-    HEIGHT,
-    CELL_SIZE,
     cells, setCells,
+    CELL_SIZE, WIDTH, HEIGHT,
     currentProjectId,
     currentProject,
     initLength,
     patterns,
     setPatterns,
-    numSteps,
-    setNumSteps,
     selectedPatternID,
     setSelectedPatternID,
     createProject,
     saveCurrentProject,
     saveAsProject,
     loadProject,
+    numSteps,
+    setNumSteps,
     deleteAllProjects
   } = useProjectManager();
 
@@ -216,6 +217,7 @@ export default function App() {
       </span>
      
       <GlobalColorContextProvider>
+        <SampleProvider>
         <StripMenu onAction={handleRunAction} />
         
         <ModalManager 
@@ -279,6 +281,7 @@ export default function App() {
 
           <TransportBar />
         </PlayContext>
+        </SampleProvider>
       </GlobalColorContextProvider>
     </div>
   );
