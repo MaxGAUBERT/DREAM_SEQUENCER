@@ -2,6 +2,7 @@
 import { useCallback } from "react";
 import * as Tone from "tone";
 import { useProjectManager } from "./useProjectManager";
+import { useSampleContext } from "../Contexts/SampleProvider";
 
 export default function useDrumRackHandlers({
   instrumentName,
@@ -12,6 +13,7 @@ export default function useDrumRackHandlers({
   selectedPatternID
 }) {
   const { assignSampleToInstrument } = useProjectManager();
+  const {getSampler, loadSample} = useSampleContext();
 
   const toggleStep = useCallback((name, index) => {
     setInstrumentList((prev) => {
@@ -63,31 +65,16 @@ export default function useDrumRackHandlers({
     name: cleanName,
     urls: { C4: url },
   };
-
-  const sampler = new Tone.Sampler({
-    urls: { C4: url },
-    release: 1,
-    onload: () => {
-      console.log(`✓ Sample loaded for ${name}`);
-      
-      // Appeler la fonction de sauvegarde projet (si besoin)
-      assignSampleToInstrument(name, sample);
-
-      // Mettre à jour l'état avec le sampler chargé
-      setInstrumentList((prev) => ({
-        ...prev,
-        [name]: {
-          ...prev[name],
-          sampler,
-          sample,
-          sampleUrl: url,
-        },
-      }));
+   // Mettre à jour l'état avec le sampler chargé
+  setInstrumentList((prev) => ({
+    ...prev,
+    [name]: {
+      ...prev[name],
+      sampler: loadSample(name, sample.urls.C4) || getSampler(name),
+      sample,
+      sampleUrl: url,
     },
-    onerror: (err) => {
-      console.error(`✗ Failed to load sample for ${name}:`, err);
-    }
-  }).toDestination();
+  }));
 
   // Important : remettre input à zéro pour recharger un fichier identique plus tard
   e.target.value = "";
@@ -149,18 +136,24 @@ export default function useDrumRackHandlers({
 
   const handleSelectSample = useCallback((sample, name) => {
     const url = sample.url;
-    const sampler = new Tone.Sampler({ urls: { C4: url }, release: 1 }).toDestination();
+
+    // Assigne dans instrumentList
     assignSampleToInstrument(name, sample);
+
+    // Charge réellement le sample (dans Tone)
+    loadSample(name, url); // ou true si besoin
+
+    // Met à jour instrumentList avec sampler visible localement (optionnel mais pas requis ici)
     setInstrumentList((prev) => ({
       ...prev,
       [name]: {
         ...prev[name],
-        sampler,
+        sampler: getSampler(name),
         sample,
         sampleUrl: url,
       },
     }));
-  }, []);
+}, [instrumentList, assignSampleToInstrument, loadSample, getSampler]);
 
   return {
     toggleStep,

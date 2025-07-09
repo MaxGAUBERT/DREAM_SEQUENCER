@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { stringify, parse } from "flatted";
 import { useSoundBank } from "./useSoundBank";
 import * as Tone from "tone";
-
+//import { useSampleContext } from "../Contexts/SampleProvider";
 function getColorByIndex(i) {
   const colors = [
     "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
@@ -36,6 +36,7 @@ export function useProjectManager() {
     pianoData: []
   }]);
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
+  //const {getSampler, loadSample} = useSampleContext();
 
   const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
 
@@ -59,6 +60,8 @@ export function useProjectManager() {
             name: null
           },
           sampler: null,
+          sampleUrl: null,
+          fileName: null,
           slot: 0,
         }
       ])
@@ -201,23 +204,11 @@ const loadProject = async (projectId, fromProjects = projects) => {
     Object.entries(loadedInstrumentList).map(async ([name, data]) => {
       const sampleUrl = data.sample?.url || data.sampleUrl;
       
-      let sampler = null;
-      if (sampleUrl) {
-        try {
-          sampler = new Tone.Sampler({
-            urls: { C4: sampleUrl },
-            onload: () => console.log(`Sample loaded for ${name}`),
-          }).toDestination();
-        } catch (e) {
-          console.error(`Erreur de création du sampler pour ${name}`, e);
-        }
-      }
-
       return [
         name,
         {
           ...data,
-          sampler,
+          sampler: null,
           sampleUrl,
           fileName: data.sample?.name || data.fileName,
         }
@@ -263,18 +254,15 @@ const loadProject = async (projectId, fromProjects = projects) => {
   return {
     projects,
     instrumentList,
-    audioObjects,
     setInstrumentList,
     initializeInstrumentList,
+    assignSampleToInstrument,
     DEFAULT_INSTRUMENTS,
-    WIDTH, HEIGHT, CELL_SIZE,
     cells, setCells,
-    notes,
-    setNotes,
+    CELL_SIZE, WIDTH, HEIGHT,
     currentProjectId,
     currentProject: projects.find(p => p.id === currentProjectId),
     initLength,
-    INITIAL_PATTERN_ID,
     patterns,
     setPatterns,
     selectedPatternID,
@@ -283,12 +271,8 @@ const loadProject = async (projectId, fromProjects = projects) => {
     saveCurrentProject,
     saveAsProject,
     loadProject,
-    deleteProject,
     numSteps,
     setNumSteps,
-    assignSampleToInstrument,
-    selectedSoundId,
-    setSelectedSoundId,
     deleteAllProjects: () => {
       setProjects([]);
       localStorage.removeItem("projects");
