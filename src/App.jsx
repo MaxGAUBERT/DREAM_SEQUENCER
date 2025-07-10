@@ -2,7 +2,7 @@ import {useState, useEffect, useCallback, useMemo} from "react";
 import { stringify, parse } from "flatted";
 import StripMenu from "./UI/StripMenu";
 import DrumRack from "./Components/DrumRack/DrumRack";
-import PatternSelector from "./Components/PatternSelector";
+import PatternSelector from "./Components/PatternSelector/PatternSelector";
 import NewProjectModal from "./UI/Modals/NewProjectModal";
 import LoadProjectModal from "./UI/Modals/LoadProjectModal";
 import SaveAsProjectModal from "./UI/Modals/SaveAsProjectModal";
@@ -67,10 +67,8 @@ export default function App() {
     instrumentList,
     setInstrumentList,
     initializeInstrumentList,
-    assignSampleToInstrument,
     DEFAULT_INSTRUMENTS,
     cells, setCells,
-    CELL_SIZE, WIDTH, HEIGHT,
     currentProjectId,
     currentProject,
     initLength,
@@ -114,7 +112,7 @@ export default function App() {
 
   const openPianoRollForInstrument = useCallback((instrumentName) => {
     setPianoRollInstrument(instrumentName);
-    setIsPianoRollOpen(prev => !prev);
+    setIsPianoRollOpen(!isPianoRollOpen);
   }, []);
 
   const openModal = useCallback((name) => {
@@ -261,6 +259,7 @@ export default function App() {
           {openComponents["Playlist"] && (
             <Playlist 
               selectedPatternID={selectedPatternID}
+              colorByIndex={getColorByIndex}
               patterns={patterns}
               instrumentList={instrumentList}
               cells={cells}
