@@ -11,13 +11,13 @@ function getColorByIndex(i) {
   return colors[i % colors.length];
 }
 
-const WIDTH = 30; // nombre de colonnes
-const HEIGHT = 30; // nombre de lignes
-const CELL_SIZE = 50;
 
 export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
-  const [cells, setCells] = useState(Array(WIDTH * HEIGHT).fill(0));
+  const [width, setWidth] = useState(50); // nombre de colonnes
+  const [height, setHeight] = useState(50); // nombre de lignes
+  const CELL_SIZE = 50;
+  const [cells, setCells] = useState(Array(width * height).fill(0));
   const [numSteps, setNumSteps] = useState(16);
   const [notes, setNotes] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -125,11 +125,11 @@ export function useProjectManager() {
       numSteps: 16,
       selectedPatternID: newPatterns.length - 1,
       createdAt: new Date().toISOString(),
-      cells: Array(WIDTH * HEIGHT).fill(0)
+      cells: Array(width * height).fill(0)
     };
 
     const updated = [...projects, newProject];
-    setCells(Array(WIDTH * HEIGHT).fill(0));
+    setCells(Array(width * height).fill(0));
     setProjects(updated);
     setCurrentProjectId(newId);
     saveToLocalStorage(updated);
@@ -259,7 +259,7 @@ const loadProject = async (projectId, fromProjects = projects) => {
     assignSampleToInstrument,
     DEFAULT_INSTRUMENTS,
     cells, setCells,
-    CELL_SIZE, WIDTH, HEIGHT,
+    CELL_SIZE, width, height, setWidth, setHeight,
     currentProjectId,
     currentProject: projects.find(p => p.id === currentProjectId),
     initLength,
@@ -271,6 +271,7 @@ const loadProject = async (projectId, fromProjects = projects) => {
     saveCurrentProject,
     saveAsProject,
     loadProject,
+    deleteProject,
     numSteps,
     setNumSteps,
     deleteAllProjects: () => {
