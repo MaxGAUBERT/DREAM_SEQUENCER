@@ -7,7 +7,22 @@ import * as Tone from "tone";
 import Timer from "./Timer";
 
 const TransportBar = () => {
-    const {bpm, setBpm, metronome, setMetronome, isPlaying, setIsPlaying, playMode, setPlayMode} = usePlayContext();
+    const {bpm, setBpm, metronome, metronomeSampler, setMetronome, isPlaying, setIsPlaying, playMode, setPlayMode, sequencesRef} = usePlayContext();
+
+    useEffect(() => {
+        if (metronome && metronomeSampler && metronomeSampler.loaded) {
+          const metroLoop = new Tone.Loop((time) => {
+            metronomeSampler.triggerAttackRelease("C4", "8n", time);
+          }, "4n"); // "4n" = chaque temps (1 battement)
+          
+          metroLoop.start(0); // commence dès le début
+          Tone.Transport.start();
+    
+          return () => {
+            metroLoop.dispose(); // nettoyer à l'arrêt ou démontage
+          };
+        }
+      }, [metronome, metronomeSampler, isPlaying]);
 
 
     useEffect(() => {
@@ -16,9 +31,14 @@ const TransportBar = () => {
 
     useEffect(() => {
     const handleKeyDown = (e) => {
-        if (e.code === "Space") {
+        if (e.code === "KeyP") {
         e.preventDefault(); // empêche le scroll de la page
         setIsPlaying(!isPlaying); // toggle play/pause
+        }
+
+        if (e.code === "KeyM") {
+        e.preventDefault(); // empêche le scroll de la page
+        setMetronome(!metronome); // toggle metronome
         }
 
         if (e.ctrlKey && e.code === "Space") {
@@ -31,10 +51,25 @@ const TransportBar = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
+    const stopPlayback = () => {
+        console.log("🛑 Stopping playback");
+        setIsPlaying(false); // si applicable
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
+        if (sequencesRef.current) {
+            sequencesRef.current.forEach(seq => {
+            if (seq.state !== 'stopped') seq.stop();
+            seq.dispose();
+            });
+            sequencesRef.current = [];
+        }
+    };
+
+
     return (
-        <div className="flex flex-row absolute top-2 right-100">
+        <div className="flex flex-row absolute top-2 right-1/3">
             <div className="flex flex-row gap-1">
-                <div className="px-2 py-1 border-white border-2 text-sm italic"> <Timer isPlaying={isPlaying}/></div>
+                <div className="px-2 py-1 border-gray-500 border-2 text-sm italic"> <Timer isPlaying={isPlaying}/></div>
                 <div className="flex flex-row items-center border-1 border-gray-500 rounded">
                     <button
                         onClick={() => {
@@ -56,18 +91,15 @@ const TransportBar = () => {
                         }
                     }}
                     className="bg-gray-500 rounded hover:bg-green-600"
-                    title="Play Song [SPACE]"
+                    title="Play Song [P]"
                 >
                     <FaRegCirclePlay size={20} />
                 </button>
                 <button 
                     className="bg-gray-500 rounded hover:bg-red-600"
-                    title="Stop Song"
+                    title="Stop Song [SPACE]"
                     onClick={() => {
-                        // Logic to stop the song
-                        console.log("Stopping pattern");
-                        setIsPlaying(false);
-                        //Tone.Transport().cancel();
+                        stopPlayback();
                     }}
                 >
                     <FaRegStopCircle size={20} />
