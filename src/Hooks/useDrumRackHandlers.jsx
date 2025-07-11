@@ -60,17 +60,19 @@ export default function useDrumRackHandlers({
 
   const url = URL.createObjectURL(file);
   const cleanName = file.name.replace(/\.[^/.]+$/, "");
-
+   
   const sample = {
     name: cleanName,
     urls: { C4: url },
   };
+
+  loadSample(name, url);
    // Mettre à jour l'état avec le sampler chargé
   setInstrumentList((prev) => ({
     ...prev,
     [name]: {
       ...prev[name],
-      sampler: loadSample(name, sample.urls.C4) || getSampler(name),
+      sampler: getSampler(name),
       sample,
       sampleUrl: url,
     },
