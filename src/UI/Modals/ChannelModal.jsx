@@ -60,7 +60,7 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
       onSelectSample(sampleData, instrumentName);
     }
 
-    //onClose();
+    onClose?.();
   };
 
   const handleCancel = () => {
