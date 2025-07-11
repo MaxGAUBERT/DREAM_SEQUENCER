@@ -1,6 +1,5 @@
 import { useContext, createContext, useRef, useState, useMemo, useEffect } from "react";
 import * as Tone from "tone";
-import { useProjectManager } from "../Hooks/useProjectManager";
 
 const CreatePlayContext = createContext(null);
 export const usePlayContext = () => useContext(CreatePlayContext);
@@ -12,7 +11,6 @@ const PlayContext = ({ children }) => {
     const [bpm, setBpm] = useState(140);
     const [volume, setVolume] = useState(0);
     const [metronome, setMetronome] = useState(false);
-    const { instrumentList, selectedPatternID } = useProjectManager();
     
     // ✅ Créer le sampler une seule fois avec useMemo
     const metronomeSampler = useMemo(() => {

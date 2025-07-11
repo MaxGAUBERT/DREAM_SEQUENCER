@@ -12,7 +12,7 @@ export const SampleProvider = ({ children }) => {
   const samplersRef = useRef({}); // Contiendra : { instrumentName: Tone.Sampler }
 
   const loadSample = async (instrumentName, sampleUrl) => {
-    if (!sampleUrl || samplersRef.current[instrumentName]) return;
+    if (!sampleUrl || samplersRef.current[instrumentName]) console.log(`Error for ${instrumentName}`);
 
     const sampler = new Tone.Sampler({
       urls: { C4: sampleUrl },
