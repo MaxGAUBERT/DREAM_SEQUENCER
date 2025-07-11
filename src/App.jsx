@@ -94,7 +94,6 @@ export default function App() {
   const [openComponents, setOpenComponents] = useState(() => ({
     "Drum Rack": true,
     "Pattern Selector": true,
-    "Sound Browser": false,
     "Piano Roll": false,
     "Playlist": false
   }));
@@ -146,7 +145,6 @@ export default function App() {
 
   const actionHandlers = useMemo(() => ({
     "Drum Rack": () => setOpenComponents(prev => ({ ...prev, "Drum Rack": !prev["Drum Rack"] })),
-    "Sound Browser": () => setOpenComponents(prev => ({ ...prev, "Sound Browser": !prev["Sound Browser"] })),
     "Pattern Selector": () => setOpenComponents(prev => ({ ...prev, "Pattern Selector": !prev["Pattern Selector"] })),
     "Piano Roll": () => setOpenComponents(prev => ({ ...prev, "Piano Roll": !prev["Piano Roll"] })),
     "Playlist": () => setOpenComponents(prev => ({ ...prev, "Playlist": !prev["Playlist"] })),
