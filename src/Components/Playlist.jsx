@@ -38,7 +38,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
       console.log(`Zone de préservation: ${minRows} lignes x ${minCols} colonnes`);
       
       // Copier les patterns qui rentrent dans les nouvelles dimensions
-      let patternsPreserved = 0;
+      let patternsPreserved = 10;
       
       for (let row = 0; row < minRows; row++) {
         for (let col = 0; col < minCols; col++) {
@@ -204,7 +204,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
 
         Tone.Transport.scheduleOnce((time) => {
           playPattern(pattern, instrumentList, time);
-        }, timeline);
+        }, col * patternDuration);
 
         timeline += patternDuration;
       }
@@ -235,7 +235,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
 
   return (
     <div
-      className="gap- border-2 max-w-200 max-h-100 bg-gray-800 overflow-auto absolute top-[50px]"
+      className="gap-5 border-2 min-w-100 min-h-140 max-w-232.5 w-232.5 max-h-100 resize bg-gray-800 overflow-auto absolute top-[50px]"
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${width}, ${CELL_SIZE}px)`,
@@ -258,14 +258,14 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
         <MdDelete size={20}/>
       </button>
 
-      <div className="absolute top-[10px] ml-15 left-[10px]">
+      <div className="absolute flex flex-col top-[0px] ml-15 left-[10px]">
         <label>Width ({width})</label>
         <input
           type="range"
           min={5}
           max={50}
           value={width}
-          onChange={handleWidthChange} // Utiliser le handler personnalisé
+          onChange={handleWidthChange} 
         />
         <label>Height ({height})</label>
         <input
@@ -273,14 +273,13 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
           min={5}
           max={50}
           value={height}
-          onChange={handleHeightChange} // Utiliser le handler personnalisé
+          onChange={handleHeightChange} 
         />
       </div>
 
       <div
-        className="mt-5 bg-gray-800 relative top-[50px] left-[10px]"
+        className="mt-15 bg-gray-800 relative top-[50px] left-[10px]"
         style={{
-          display: "grid",
           gridTemplateColumns: `repeat(${width}, ${CELL_SIZE}px)`,
           gridTemplateRows: `repeat(${height}, ${CELL_SIZE}px)`,
           gap: "3px",
