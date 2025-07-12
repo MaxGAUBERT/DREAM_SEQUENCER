@@ -13,6 +13,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
   
   // SOLUTION 1: Stocker les dimensions précédentes
   const [prevDimensions, setPrevDimensions] = useState({width, height});
+  const [currentColumn, setCurrentColumn] = useState(null);
 
   // Effect pour préserver les patterns lors du redimensionnement
   useEffect(() => {
@@ -204,6 +205,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
 
         Tone.Transport.scheduleOnce((time) => {
           playPattern(pattern, instrumentList, time);
+          setCurrentColumn(col);
         }, col * patternDuration);
 
         timeline += patternDuration;
@@ -245,6 +247,10 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
         height: `${height * CELL_SIZE}px`,
       }}
     >
+    <label className="absolute top-[5px] left-[300px] text-white">
+      {isPlaying && currentColumn !== null ? `Col: ${currentColumn + 1} / ${width}` : "Stopped"}
+    </label>
+
 
       <button 
         onClick={() => setCells(Array(width * height).fill(null))}
@@ -287,6 +293,18 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
           height: `${height * CELL_SIZE}px`,
         }}
       >
+
+        {currentColumn !== null && (
+        <div
+          className="absolute top-0 bg-red-400 bg-opacity-30 pointer-events-none z-10 transition-all duration-100"
+          style={{
+            left: `${currentColumn * CELL_SIZE}px`,
+            width: `${CELL_SIZE / 10}px`,
+            height: `${height * CELL_SIZE}px`,
+          }}
+        />
+      )}
+
         {cells.map((cell, index) => (
           <button
             key={index}
