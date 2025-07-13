@@ -6,17 +6,14 @@ import { NoteBlock } from './NoteBlock';
 import { NoteLabels } from './NoteLabels';
 import { useChordGenerator } from '../../Hooks/useChordGenerator';
 import { rowToNoteName } from '../Utils/noteUtils';
-
-
-
+import { useSampleContext } from '../../Contexts/ChannelProvider';
 
 export const ROWS = 48;
 export const CELL_WIDTH = 20;
 export const CELL_HEIGHT = 20;
 export const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-
-const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumentList, setInstrumentList, onOpen, onClose }) => {
+const PianoRoll = ({ selectedPatternID, selectedInstrument, instrumentList, setInstrumentList, onOpen, onClose }) => {
   const [mode, setMode] = useState('draw');
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedNoteId, setSelectedNoteId] = useState(null);
@@ -35,12 +32,8 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
     ROWS,
     selectedChordType,
     noteLabelsRef,
-    //handlePlaySound
   });
-
-
-
-
+  const {getSampler, getSynth} = useSampleContext();
   const { isPlaying, playMode } = usePlayContext();
   const playModeRef = useRef(playMode);
   const COLS = cols;
@@ -80,7 +73,6 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
     return labels;
   }, []);
 
-
   const isBlackKey = useCallback((row) => [1, 3, 6, 8, 10].includes((ROWS - 1 - row) % 12), []);
 
   useEffect(() => { instrumentListRef.current = instrumentList; }, [instrumentList]);
@@ -98,17 +90,25 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
       const currentPatternID = selectedPatternIDRef.current;
       const currentPlayMode = playModeRef.current;
 
-      Object.values(currentInstrumentList).forEach(instrument => {
-        const sampler = instrument?.sampler;
-        const pianoData = instrument?.pianoData?.[currentPatternID] || [];
-        if (!sampler || currentPlayMode !== 'Pattern') return;
+      Object.entries(currentInstrumentList).forEach(([instrumentName, instrument]) => {
+      const sampler = getSampler(instrumentName);
+      const synth = getSynth(instrumentName);
+      const pianoData = instrument?.pianoData?.[currentPatternID] || [];
+
+        if (!sampler && !synth) return;
+        if (instrument.muted || currentPlayMode !== 'Pattern') return;
 
         pianoData.filter(n => n.start === step).forEach(n => {
           const noteName = noteLabelsRef.current[n.row];
-          const duration = new Tone.Time("16n").toSeconds() * n.length;
-          sampler.triggerAttack(noteName, time);
-          sampler.triggerRelease(duration, time + 1);
-          console.log(`Playing note: ${noteName} at time: ${time}`);
+          const duration = new Tone.Time("4n").toSeconds() * n.length;
+
+          if (sampler?.loaded !== false) {
+            sampler.triggerAttackRelease(noteName, duration, time);
+          } else if (synth) {
+            synth.triggerAttackRelease(noteName, duration, time);
+          }
+
+          console.log(`Playing ${noteName} on ${instrumentName} at time: ${time}`);
         });
       });
 
@@ -153,8 +153,19 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
     await Tone.start();
     //const noteLabel = noteLabelsRef.current[row];
     const noteLabel = rowToNoteName(row);
-    const instrument = instrumentList[selectedInstrument];
-    instrument?.sampler?.triggerAttackRelease(noteLabel, "4n");
+    const sampler = getSampler(selectedInstrument);
+    const synth = getSynth(selectedInstrument);
+     if (sampler?.loaded !== false) {
+    sampler.triggerAttackRelease(noteLabel, "8n");
+  } else if (synth && typeof synth.triggerAttackRelease === 'function') {
+    try {
+      synth.triggerAttackRelease(noteLabel, "8n");
+    } catch (err) {
+      console.error(`Synth playback error for ${instrumentName}:`, err);
+    }
+  } else {
+    console.warn(`No instrument found for ${selectedInstrument}}`);
+  }
   };
 
   const handleGridClick = useCallback((e) => {
@@ -323,7 +334,7 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
                       note={note}
                       selected={selectedNoteId === note.id}
                       noteLabel={noteLabelsRef.current[note.row]}
-                      onMouseDown={(e, note) => handleNoteMouseDown(e, note)}
+                      onMouseDown={(e, note) => handleNoteMouseDown(e, note, null)}
                       onResizeLeft={(e, note) => handleNoteMouseDown(e, note, 'left')}
                       onResizeRight={(e, note) => handleNoteMouseDown(e, note, 'right')}
                     />
@@ -352,7 +363,7 @@ const PianoRoll = React.memo(({ selectedPatternID, selectedInstrument, instrumen
               
                 </div>
             );
-});
+};
 
 
 
