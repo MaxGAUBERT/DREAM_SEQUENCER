@@ -8,6 +8,7 @@ import InstrumentInput from "../DrumRack/InstrumentInput";
 import ChannelModal from "../../UI/Modals/ChannelModal";
 import { usePlayContext } from "../../Contexts/PlayContext";
 import * as Tone from "tone";
+import { useSampleContext } from "../../Contexts/ChannelProvider";
 
 const DrumRack = ({
   numSteps,
@@ -32,112 +33,118 @@ const DrumRack = ({
     selectedPatternID
   });
   const {isPlaying, playMode, bpm, sequencesRef} = usePlayContext();
+  const {getSynth, createSynth, synthRef} = useSampleContext();
 
-    useEffect(() => {
-        // Nettoyage systématique à chaque changement
-        const cleanup = () => {
-          if (Tone.Transport.state === 'started') {
-            Tone.Transport.stop();
-          }
-          Tone.Transport.cancel();
-          sequencesRef.current.forEach(seq => {
-            if (seq.state !== 'stopped') {
-              seq.stop();
-            }
-            seq.dispose();
-          });
-          sequencesRef.current = [];
-        };
-    
-        cleanup();
-    
-        // Si pas de lecture demandée, on s'arrête là
-        if (!isPlaying || playMode !== 'Pattern' || !instrumentList) {
-          return;
+  useEffect(() => {
+    // Nettoyage systématique à chaque changement
+    const cleanup = () => {
+      if (Tone.Transport.state === 'started') {
+        Tone.Transport.stop();
+      }
+      Tone.Transport.cancel();
+      sequencesRef.current.forEach(seq => {
+        if (seq.state !== 'stopped') {
+          seq.stop();
         }
-        
-        let hasValidSequences = false;
+        seq.dispose();
+      });
+      sequencesRef.current = [];
+    };
+
+    cleanup();
+
+    // Si pas de lecture demandée, on s'arrête là
+    if (!isPlaying || playMode !== 'Pattern' || !instrumentList) {
+      return;
+    }
     
-        Object.entries(instrumentList).forEach(([instrumentName, instrumentData]) => {
-          const pattern = instrumentData.grids?.[selectedPatternID];
-          const sampler = instrumentData.sampler;
-    
-          console.log(`Checking ${instrumentName}:`, {
-            hasPattern: !!pattern,
-            hasSampler: !!sampler,
-            samplerLoaded: sampler?.loaded,
-            patternLength: pattern?.length,
-            pattern: pattern
-          });
-    
-          // Vérifications de base
-          if (!pattern || !Array.isArray(pattern)) {
-            console.log(`Skip ${instrumentName}: no valid pattern`);
-            return;
-          }
-    
-          if (!sampler) {
-            console.log(`Skip ${instrumentName}: no sampler`);
-            return;
-          }
-    
-          if (instrumentData.muted || playMode !== 'Pattern') {
-            console.log(`Skip ${instrumentName}: instrument is muted`);
-            return;
-          }
-    
-    
-          // Vérifier si le pattern a au moins un step actif
-          const hasActiveSteps = pattern.some(step => step === true);
-          if (!hasActiveSteps) {
-            console.log(`Skip ${instrumentName}: no active steps`);
-            return;
-          }
-    
-          try {
-            const seq = new Tone.Sequence((time, stepIndex) => {
-              if (pattern[stepIndex] === true) {
-                // Vérifier que le sampler est valide avant de jouer
-                if (sampler && (sampler.loaded !== false)) {
-                  try {
-                    sampler.triggerAttackRelease("C4", "8n", time);
-                  } catch (playError) {
-                    console.error(`Error playing sample for ${instrumentName}:`, playError);
-                  }
-                }
+    let hasValidSequences = false;
+
+    Object.entries(instrumentList).forEach(([instrumentName, instrumentData]) => {
+      const pattern = instrumentData.grids?.[selectedPatternID];
+      const sampler = instrumentData.sampler;
+      const synth = getSynth(instrumentName);
+
+      console.log(`Checking ${instrumentName}:`, {
+        hasPattern: !!pattern,
+        hasSampler: !!sampler,
+        hasSynth: !!synth,
+        samplerLoaded: sampler?.loaded,
+        patternLength: pattern?.length,
+        pattern: pattern
+      });
+
+      // Vérifications de base
+      if (!pattern || !Array.isArray(pattern)) {
+        console.log(`Skip ${instrumentName}: no valid pattern`);
+        return;
+      }
+
+      if (!sampler && !synth) {
+        console.log(`Skip ${instrumentName}: no sampler`);
+        return;
+      }
+
+      if (instrumentData.muted || playMode !== 'Pattern') {
+        console.log(`Skip ${instrumentName}: instrument is muted`);
+        return;
+      }
+
+
+      // Vérifier si le pattern a au moins un step actif
+      const hasActiveSteps = pattern.some(step => step === true);
+      if (!hasActiveSteps) {
+        console.log(`Skip ${instrumentName}: no active steps`);
+        return;
+      }
+
+      try {
+        const seq = new Tone.Sequence((time, stepIndex) => {
+          if (pattern[stepIndex] === true) {
+            // Vérifier que le sampler est valide avant de jouer
+            if (sampler && (sampler.loaded !== false)) {
+              try {
+                sampler.triggerAttackRelease("C4", "4n", time);
+              } catch (playError) {
+                console.error(`Error playing sample for ${instrumentName}:`, playError);
               }
-            }, Array.from({ length: numSteps }, (_, i) => i), "16n");
-    
-            seq.start(0);
-            sequencesRef.current.push(seq);
-            hasValidSequences = true;
-            console.log(`✓ Sequence created for ${instrumentName} with ${pattern.filter(s => s).length} active steps`);
-          } catch (error) {
-            console.error(`Error creating sequence for ${instrumentName}:`, error);
+            }
+            else if (synth) {
+              synth.triggerAttackRelease("C4", "4n", time);
+            }
           }
-        });
-    
-        // Démarrer le transport seulement s'il y a des séquences valides
-        if (hasValidSequences) {
-          try {
-            Tone.Transport.start();
-            console.log(`✓ Transport started for pattern ${selectedPatternID + 1} with ${sequencesRef.current.length} sequences`);
-          } catch (error) {
-            console.error('Error starting transport:', error);
-          }
-        } else {
-          console.log(`⚠ No valid sequences to play for pattern ${selectedPatternID + 1}`);
-          console.log('Debug info:', {
-            totalInstruments: Object.keys(instrumentList).length,
-            selectedPattern: selectedPatternID,
-            isPlaying,
-            playMode
-          });
-        }
-    
-        // Cleanup au démontage
-        return cleanup;
-      }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
+        }, Array.from({ length: numSteps }, (_, i) => i), "16n");
+
+        seq.start(0);
+        sequencesRef.current.push(seq);
+        hasValidSequences = true;
+        console.log(`✓ Sequence created for ${instrumentName} with ${pattern.filter(s => s).length} active steps`);
+      } catch (error) {
+        console.error(`Error creating sequence for ${instrumentName}:`, error);
+      }
+    });
+
+    // Démarrer le transport seulement s'il y a des séquences valides
+    if (hasValidSequences) {
+      try {
+        Tone.Transport.start();
+        console.log(`✓ Transport started for pattern ${selectedPatternID + 1} with ${sequencesRef.current.length} sequences`);
+      } catch (error) {
+        console.error('Error starting transport:', error);
+      }
+    } else {
+      console.log(`⚠ No valid sequences to play for pattern ${selectedPatternID + 1}`);
+      console.log('Debug info:', {
+        totalInstruments: Object.keys(instrumentList).length,
+        selectedPattern: selectedPatternID,
+        isPlaying,
+        playMode
+      });
+    }
+
+    // Cleanup au démontage
+    return cleanup;
+    }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
 
   return (
     <div className="absolute top-[50px] right-0 border-2 overflow-auto resize-y flex flex-col w-full sm:w-[400px] md:w-[500px] lg:w-[600px] max-h-[80vh] shadow-lg" 
@@ -173,6 +180,7 @@ const DrumRack = ({
           instrumentName={instrumentName}
           setInstrumentName={setInstrumentName}
           onConfirm={handlers.onAddInstrument}
+          onAddSynth={handlers.onAddSynth}
           onCancel={() => {
             setInput(false);
             setInstrumentName('');
