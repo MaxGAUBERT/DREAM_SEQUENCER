@@ -2,7 +2,7 @@
 import { useCallback } from "react";
 import * as Tone from "tone";
 import { useProjectManager } from "./useProjectManager";
-import { useSampleContext } from "../Contexts/SampleProvider";
+import { useSampleContext } from "../Contexts/ChannelProvider";
 
 export default function useDrumRackHandlers({
   instrumentName,
@@ -56,7 +56,7 @@ export default function useDrumRackHandlers({
 
   const handleSampleLoad = useCallback((name, e) => {
   const file = e.target.files[0];
-  if (!file || !file.type.startsWith("audio/")) return;
+  if (!file || !file.type.startsWith("audio/") || instrumentList[name].synthType) return;
 
   const url = URL.createObjectURL(file);
   const cleanName = file.name.replace(/\.[^/.]+$/, "");

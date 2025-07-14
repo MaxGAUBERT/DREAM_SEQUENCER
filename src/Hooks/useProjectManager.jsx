@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { stringify, parse } from "flatted";
 import { useSoundBank } from "./useSoundBank";
 import * as Tone from "tone";
-//import { useSampleContext } from "../Contexts/SampleProvider";
+import { useSynth } from "./useSynth";
 function getColorByIndex(i) {
   const colors = [
     "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
@@ -14,8 +14,8 @@ function getColorByIndex(i) {
 
 export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
-  const [width, setWidth] = useState(50); // nombre de colonnes
-  const [height, setHeight] = useState(50); // nombre de lignes
+  const [width, setWidth] = useState(5); // nombre de colonnes
+  const [height, setHeight] = useState(5); // nombre de lignes
   const CELL_SIZE = 50;
   const [cells, setCells] = useState(Array(width * height).fill(0));
   const [numSteps, setNumSteps] = useState(16);
@@ -27,6 +27,7 @@ export function useProjectManager() {
     audioObjects,
     setAudioObjects
   } = useSoundBank();
+  const {state, dispatch} = useSynth();
   const initLength = 8;
   const [patterns, setPatterns] = useState([{
     id: 1,
@@ -36,8 +37,6 @@ export function useProjectManager() {
     pianoData: []
   }]);
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
-  //const {getSampler, loadSample} = useSampleContext();
-
   const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
 
   const initializeInstrumentList = useCallback(() => {
@@ -63,6 +62,7 @@ export function useProjectManager() {
           sampleUrl: null,
           fileName: null,
           slot: 0,
+          synth: null
         }
       ])
     );
@@ -94,7 +94,7 @@ export function useProjectManager() {
           urls: { C4: sample.url },
           name: sample.name
         }, 
-        sampler: null,
+        sampler: instrumentList[instrumentName].sampler,
         sampleUrl: sample.urls
       }
     }));
@@ -225,7 +225,7 @@ const loadProject = async (projectId, fromProjects = projects) => {
     typeof project.selectedPatternID === "number" ? project.selectedPatternID : 0
   );
   setNotes(project.notes || []);
-  setCells(project.cells || Array(WIDTH * HEIGHT).fill(0));
+  setCells(project.cells || Array(width * height).fill(0));
 
   console.log("Projet chargé avec instrumentList:", normalizedInstrumentList);
 };
