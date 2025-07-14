@@ -104,7 +104,7 @@ const PianoRoll = ({ selectedPatternID, selectedInstrument, instrumentList, setI
           if (!sampler?.loaded && !synth) return;
 
           sampler?.triggerAttackRelease(noteName, duration, time);
-          synth.triggerAttackRelease(noteName, duration, time);
+          synth?.triggerAttackRelease(noteName, duration, time);
 
           console.log(`Playing ${noteName} on ${instrumentName} at time: ${time}`);
         });
