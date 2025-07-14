@@ -9,6 +9,7 @@ import ChannelModal from "../../UI/Modals/ChannelModal";
 import { usePlayContext } from "../../Contexts/PlayContext";
 import * as Tone from "tone";
 import { useSampleContext } from "../../Contexts/ChannelProvider";
+import {useSynth} from "../../Hooks/useSynth";
 
 const DrumRack = ({
   numSteps,
@@ -32,8 +33,9 @@ const DrumRack = ({
     numSteps,
     selectedPatternID
   });
+  const {state} = useSynth();
   const {isPlaying, playMode, bpm, sequencesRef} = usePlayContext();
-  const {getSynth, createSynth, synthRef} = useSampleContext();
+  const {getSynth, createSynth} = useSampleContext();
 
   useEffect(() => {
     // Nettoyage systématique à chaque changement
@@ -49,6 +51,7 @@ const DrumRack = ({
         seq.dispose();
       });
       sequencesRef.current = [];
+      state.synthType = "";
     };
 
     cleanup();
@@ -63,7 +66,8 @@ const DrumRack = ({
     Object.entries(instrumentList).forEach(([instrumentName, instrumentData]) => {
       const pattern = instrumentData.grids?.[selectedPatternID];
       const sampler = instrumentData.sampler;
-      const synth = getSynth(instrumentName);
+      const synth = createSynth(instrumentName, state);
+      const currentSynth = getSynth(instrumentName);
 
       console.log(`Checking ${instrumentName}:`, {
         hasPattern: !!pattern,
@@ -80,8 +84,8 @@ const DrumRack = ({
         return;
       }
 
-      if (!sampler && !synth) {
-        console.log(`Skip ${instrumentName}: no sampler`);
+      if (sampler && currentSynth) {
+        console.log(`Skip ${instrumentName}: sampler and synth both exist`);
         return;
       }
 
@@ -109,8 +113,8 @@ const DrumRack = ({
                 console.error(`Error playing sample for ${instrumentName}:`, playError);
               }
             }
-            else if (synth) {
-              synth.triggerAttackRelease("C4", "4n", time);
+            if (currentSynth) {
+              currentSynth.triggerAttackRelease("C4", "16n", time);
             }
           }
         }, Array.from({ length: numSteps }, (_, i) => i), "16n");
