@@ -1,5 +1,3 @@
-import React from 'react';
-
 const CELL_WIDTH = 20;
 const CELL_HEIGHT = 20;
 

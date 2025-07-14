@@ -3,7 +3,7 @@ import React from 'react';
 
 const CELL_HEIGHT = 20;
 
-export const NoteLabels = ({ ROWS, noteLabels, handlePlaySound, isBlackKey }) => {
+export const NoteLabels = ({ noteLabels, handlePlaySound, isBlackKey }) => {
   return (
     <div className="flex flex-col flex-shrink-0 mt-6">
       {noteLabels.map((label, i) => (
@@ -21,3 +21,5 @@ export const NoteLabels = ({ ROWS, noteLabels, handlePlaySound, isBlackKey }) =>
     </div>
   );
 };
+
+export default NoteLabels;

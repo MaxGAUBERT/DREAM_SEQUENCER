@@ -1,5 +1,5 @@
 // components/PianoRoll/TopBar.jsx
-import React from "react";
+import React, { useEffect } from "react";
 import { ImPencil } from "react-icons/im";
 import { HiPaintBrush } from "react-icons/hi2";
 import { RxWidth } from "react-icons/rx";
@@ -29,6 +29,7 @@ export const TopBar = ({
   setCols,
   onClose,
 }) => {
+
   return (
     <div className="flex gap-2 mb-2 items-center ml-20">
       <label className="absolute left-0 px-4 py-2 bg-gray-800 rounded">{selectedInstrument}</label>
@@ -64,4 +65,18 @@ export const TopBar = ({
   );
 };
 
-export default TopBar;
+function areEqual(prev, next) {
+  return (
+    prev.COLS === next.COLS &&
+    prev.selectedChordType === next.selectedChordType &&
+    prev.toggleMode === next.toggleMode &&
+    prev.setCols === next.setCols &&
+    prev.setSelectedChordType === next.setSelectedChordType 
+  );
+}
+
+
+export default React.memo(TopBar, areEqual); 
+
+
+
