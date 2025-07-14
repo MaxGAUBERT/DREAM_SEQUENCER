@@ -4,7 +4,7 @@ import { usePlayContext } from "../Contexts/PlayContext";
 import { rowToNoteName } from "./Utils/noteUtils";
 import * as Tone from "tone";
 import { useProjectManager } from "../Hooks/useProjectManager";
-import { useSampleContext } from "../Contexts/SampleProvider";
+import { useSampleContext } from "../Contexts/ChannelProvider";
 
 const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, cells, setCells}) => {
   const {isPlaying, playMode, bpm} = usePlayContext();
@@ -314,7 +314,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
               height: `${CELL_SIZE}px`,
               border: "1px solid #ccc",
             }}
-            className={`${cell !== null ? colorByIndex(cell - 1) : "bg-gray-400"}`}
+            className={`${cell !== null ? colorByIndex(cell - 1) : "bg-gray-800"}`}
           >
             {cell ? cell : null}
           </button>
