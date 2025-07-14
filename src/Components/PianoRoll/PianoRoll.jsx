@@ -95,18 +95,16 @@ const PianoRoll = ({ selectedPatternID, selectedInstrument, instrumentList, setI
       const synth = getSynth(instrumentName);
       const pianoData = instrument?.pianoData?.[currentPatternID] || [];
 
-        if (!sampler && !synth) return;
         if (instrument.muted || currentPlayMode !== 'Pattern') return;
 
         pianoData.filter(n => n.start === step).forEach(n => {
           const noteName = noteLabelsRef.current[n.row];
           const duration = new Tone.Time("4n").toSeconds() * n.length;
+          
+          if (!sampler?.loaded && !synth) return;
 
-          if (sampler?.loaded !== false) {
-            sampler.triggerAttackRelease(noteName, duration, time);
-          } else if (synth) {
-            synth.triggerAttackRelease(noteName, duration, time);
-          }
+          sampler?.triggerAttackRelease(noteName, duration, time);
+          synth.triggerAttackRelease(noteName, duration, time);
 
           console.log(`Playing ${noteName} on ${instrumentName} at time: ${time}`);
         });
@@ -155,9 +153,10 @@ const PianoRoll = ({ selectedPatternID, selectedInstrument, instrumentList, setI
     const noteLabel = rowToNoteName(row);
     const sampler = getSampler(selectedInstrument);
     const synth = getSynth(selectedInstrument);
-     if (sampler?.loaded !== false) {
+    if (sampler?.loaded) {
     sampler.triggerAttackRelease(noteLabel, "8n");
-  } else if (synth && typeof synth.triggerAttackRelease === 'function') {
+  } 
+  if (synth /*&& typeof synth.triggerAttackRelease === 'function'*/) {
     try {
       synth.triggerAttackRelease(noteLabel, "8n");
     } catch (err) {
