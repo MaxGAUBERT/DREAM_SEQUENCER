@@ -56,7 +56,7 @@ export default function useDrumRackHandlers({
 
   const handleSampleLoad = useCallback((name, e) => {
   const file = e.target.files[0];
-  if (!file || !file.type.startsWith("audio/") || instrumentList[name].synthType) return;
+  if (!file || !file.type.startsWith("audio/")) return;
 
   const url = URL.createObjectURL(file);
   const cleanName = file.name.replace(/\.[^/.]+$/, "");
@@ -120,21 +120,44 @@ export default function useDrumRackHandlers({
   }, [instrumentName, instrumentList]);
 
   const handleAddInstrument = useCallback((e) => {
-    e?.preventDefault?.();
-    if (!instrumentName.trim()) return;
-    setInstrumentList((prev) => {
-      const newInst = { value: null, grids: {} };
-      const patternIds = Object.keys(prev)[0] ? Object.keys(Object.values(prev)[0].grids || {}) : [selectedPatternID];
-      patternIds.forEach((id) => {
-        newInst.grids[id] = Array(numSteps).fill(false);
-      });
-      return {
-        ...prev,
-        [instrumentName.trim()]: newInst,
-      };
-    });
-    setInstrumentName("");
-  }, [instrumentName, selectedPatternID, numSteps]);
+  e?.preventDefault?.();
+  const trimmedName = instrumentName.trim();
+  if (!trimmedName) return;
+
+  setInstrumentList((prev) => {
+    const patternIds = Object.keys(prev)[0]
+      ? Object.keys(Object.values(prev)[0].grids || {})
+      : [selectedPatternID];
+
+    const newInstrument = {
+      value: null,
+      grids: Object.fromEntries(
+        patternIds.map((id) => [id, Array(numSteps).fill(false)])
+      ),
+      pianoData: {
+        [selectedPatternID]: []
+      },
+      muted: false,
+      sample: {
+        id: null,
+        urls: { C4: null },
+        name: null
+      },
+      sampler: null,
+      sampleUrl: null,
+      fileName: null,
+      slot: 0
+    };
+
+    return {
+      ...prev,
+      [trimmedName]: newInstrument
+    };
+  });
+
+  setInstrumentName("");
+}, [instrumentName, selectedPatternID, numSteps]);
+
 
   const handleSelectSample = useCallback((sample, name) => {
     const url = sample.url;
