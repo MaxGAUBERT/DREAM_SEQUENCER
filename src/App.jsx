@@ -13,7 +13,7 @@ import GlobalColorContextProvider from "./Contexts/GlobalColorContext";
 import TransportBar from "./Components/TransportBar";
 import PianoRoll from "./Components/PianoRoll/PianoRoll";
 import Playlist from "./Components/Playlist";
-import SampleProvider from "./Contexts/SampleProvider";
+import ChannelProvider from "./Contexts/ChannelProvider";
 
 
 const getColorByIndex = (() => {
@@ -213,7 +213,7 @@ export default function App() {
       </span>
      
       <GlobalColorContextProvider>
-        <SampleProvider>
+        <ChannelProvider>
         <StripMenu onAction={handleRunAction} />
         
         <ModalManager 
@@ -278,7 +278,7 @@ export default function App() {
 
           <TransportBar />
         </PlayContext>
-        </SampleProvider>
+        </ChannelProvider> 
       </GlobalColorContextProvider>
     </div>
   );
