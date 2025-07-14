@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import { useSoundBank } from '../../Hooks/useSoundBank';
+import { useSampleContext } from '../../Contexts/ChannelProvider';
+import { useSynth } from '../../Hooks/useSynth';
 
 const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentName, setInstrumentName, onRename, onSelectSample, channelUrl, onOpenPianoRoll}) => {
   const [activeTab, setActiveTab] = useState("General");
@@ -11,32 +13,41 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
     soundBank: bank
   } = useSoundBank();
 
+  const {createSynth, getSynth} = useSampleContext();
+  const {availableSynthTypes, state, dispatch} = useSynth();
+  
   // Synchroniser avec le nom de l'instrument quand il change
   useEffect(() => {
     setLocalName(instrumentName);
   }, [instrumentName]);
 
+  useEffect(() => {
+   setInstrumentList((prev) => {
+     return {
+       ...prev,
+       [instrumentName]: {
+         ...prev[instrumentName],
+         synth: state.synthType,
+       },
+     };
+   })
+  }, [state]);
+
+
   function cleanSampleName(filePath, maxLength) {
     if (!filePath) return "";
 
-    // Étape 1 : extraire le nom du fichier (sans dossier)
     const fileName = filePath.split("/").pop() || filePath;
-
-    // Étape 2 : retirer l'extension
     const noExtension = fileName.replace(/\.[^/.]+$/, "");
-
-    // Étape 3 : remplacer les underscores ou tirets par des espaces
     const readable = noExtension.replace(/[_\-]+/g, " ");
 
-    // Étape 4 : tronquer si trop long
     return readable.length > maxLength
       ? readable.slice(0, maxLength).trim() + "..."
       : readable;
   }
 
-  // CORRECTION : Fonction handleSave corrigée
+
   const handleSave = () => {
-    // Renommer le canal
     if (onRename) {
       onRename(localName);
     } else if (setInstrumentName) {
@@ -45,6 +56,7 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
 
     // Attribuer un sample si sélectionné
     if (onSelectSample && selectedSoundId && audioObjects[selectedSoundId]) {
+      //if (!synthType) return console.warn("No synth type selected");
       const soundObject = audioObjects[selectedSoundId];
       const rawPath = soundObject.soundData.url;
       const displayName = cleanSampleName(rawPath, 20);
@@ -60,8 +72,31 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
       onSelectSample(sampleData, instrumentName);
     }
 
-    onClose?.();
+    //if (!state.synthType || !getSynth(instrumentName)) return console.warn("No synth type selected");
+   // createSynth(instrumentName, state);
+    //console.log(`Synth created for ${instrumentName}`);
+
+    onClose();
   };
+
+  const handleReset = () => {
+    // Remettre les valeurs par defaut
+    setLocalName(instrumentName);
+    handleSetFxSlot(instrumentName, 0);
+    onSelectSample("", instrumentName);
+    setInstrumentList(prev => ({
+      ...prev,
+      [instrumentName]: {
+        ...prev[instrumentName],
+        sampleUrl: null,
+        sampler: null,
+        synth: null
+      },
+    }))
+    const synth = getSynth(instrumentName);
+    if (synth) { synth.dispose();}
+    dispatch({ type: "RESET_ALL" });
+  }
 
   const handleCancel = () => {
     // Remettre la valeur originale
@@ -97,6 +132,10 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
     });
     console.log(`Slot ${slotNumber} selected for instrument ${instrumentName}`);
   }
+
+  useEffect(() => {
+    console.log("🧠 Synth type set to:", state.synthType);
+  }, [state.synthType]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -145,11 +184,65 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
             >
               PianoRoll
             </button>
-            
-
             </div>
           </div>
         );
+
+        case "Synth":
+          return (
+            <div className='text-white'>
+              <p>Add synth to current channel</p>
+              <select
+              className="w-full px-4 py-2 text-white bg-gray-500 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={state.synthType || ""}
+              onChange={(e) =>
+                dispatch({
+                  type: "SET_SYNTH_TYPE",
+                  payload: e.target.value,
+                })
+              } 
+            >
+              <option value="">{state.synthType ? state.synthType : "-- Select --"} </option>
+              {Object.entries(availableSynthTypes).map(([type, label], index) => (
+                <option key={index} value={type}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <div className='mt-5'>
+            <label> Oscillator type: </label>
+              {["Synth", "MonoSynth", "FMSynth", "AMSynth", "DuoSynth"].includes(state.synthType) && (
+              <select
+                value={state.osc["type"]}
+                onChange={(e) =>
+                  dispatch({ type: "SET_OSC_TYPE", payload: e.target.value })
+                }
+              >
+                <option value="sine">sine</option>
+                <option value="square">square</option>
+                <option value="triangle">triangle</option>
+                <option value="sawtooth">sawtooth</option>
+              </select>
+            )}
+            </div>
+            <br />
+            <div>
+
+            </div>
+              <label className='flex flex-col'> Detune </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step={5}
+              value={state.detune}
+              onChange={(e) =>
+                dispatch({ type: "SET_DETUNE", payload: Number(e.target.value) })
+              }
+            />
+            </div>
+
+          )
       case "Effects":
         return (
           <div className="text-white">
@@ -182,7 +275,7 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
 
         {/* Tabs */}
         <div className="flex space-x-4 mb-4 border-b border-gray-700">
-          {["General", "Effects", "Advanced"].map((tab) => (
+          {["General", "Effects", "Synth", "Advanced"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -207,6 +300,13 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
             onClick={handleSave}
           >
             Save
+          </button>
+
+          <button
+            className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700'
+            onClick={handleReset}
+          >
+            Reset
           </button>
           <button
             onClick={onClose}
