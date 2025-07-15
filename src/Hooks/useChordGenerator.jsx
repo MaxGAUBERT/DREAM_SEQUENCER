@@ -4,7 +4,7 @@ import { CHORD_TYPES } from '../Components/PianoRoll/TopBar';
 
 export const useChordGenerator = ({ ROWS, selectedChordType, noteLabelsRef, handlePlaySound }) => {
   const generateChordNotes = useCallback((row, col) => {
-    const chordIntervals = CHORD_TYPES[selectedChordType] || [0, 4, 7];
+    const chordIntervals = CHORD_TYPES[selectedChordType];
 
     return chordIntervals
       .map(interval => {
