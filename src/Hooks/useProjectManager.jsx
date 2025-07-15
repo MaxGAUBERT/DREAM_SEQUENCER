@@ -94,7 +94,7 @@ export function useProjectManager() {
           urls: { C4: sample.url },
           name: sample.name
         }, 
-        sampler: instrumentList[instrumentName].sampler,
+        sampler: null,
         sampleUrl: sample.urls
       }
     }));
