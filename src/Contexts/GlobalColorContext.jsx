@@ -9,9 +9,11 @@ export const useGlobalColorContext = () => useContext(GlobalColorContext);
 const GlobalColorContextProvider = ({ children }) => {
     const [colorsComponent, setColorsComponent] = useState({
         "Text": "white",
+        "TextIO": "black",
         "Button": "white",
         "Background": "gray.900",
-        "Border": "#ffffff"
+        "BackgroundIO": "gray.500",
+        "Border": "gray.700",
     });
 
     return (
