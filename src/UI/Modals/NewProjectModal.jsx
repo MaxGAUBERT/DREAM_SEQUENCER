@@ -24,7 +24,7 @@ export default function NewProjectModal({onClose, onCreate}) {
           <button
             type="button"
             onClick={handleCreateProject}
-            className="px-4 py-2 rounded hover:bg-blue-700"
+            className="px-4 py-2 rounded hover:bg-gray-400"
           >
             Create
           </button>
