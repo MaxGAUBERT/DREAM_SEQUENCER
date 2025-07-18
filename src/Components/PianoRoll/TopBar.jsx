@@ -1,10 +1,11 @@
-// components/PianoRoll/TopBar.jsx
-import React, { useEffect } from "react";
+import React, { useCallback, useMemo } from "react";
 import { ImPencil } from "react-icons/im";
 import { HiPaintBrush } from "react-icons/hi2";
 import { RxWidth } from "react-icons/rx";
 import { IoMusicalNotesSharp } from "react-icons/io5";
 import { MdOutlineDeleteOutline } from "react-icons/md";
+import { IoClose } from "react-icons/io5";
+
 
 export const CHORD_TYPES = {
   major: [0, 4, 7],
@@ -18,7 +19,74 @@ export const CHORD_TYPES = {
   dom7: [0, 4, 7, 10],
 };
 
-export const TopBar = ({
+// Composant Button mémorisé pour éviter les re-renders
+const ModeButton = React.memo(({ mode, currentMode, onClick, icon: Icon, title }) => {
+  const isActive = mode === currentMode;
+  const buttonClass = `px-4 py-2 rounded transition-colors ${
+    isActive 
+      ? 'bg-green-600 hover:bg-green-700' 
+      : 'bg-gray-800 hover:bg-gray-700'
+  }`;
+
+  return (
+    <button 
+      onClick={onClick} 
+      className={buttonClass}
+      title={title}
+      aria-label={title}
+      aria-pressed={isActive}
+    >
+      <Icon size={20} />
+    </button>
+  );
+});
+
+// Composant ChordSelector mémorisé
+const ChordSelector = React.memo(({ selectedChordType, onChordTypeChange, disabled }) => {
+  const chordOptions = useMemo(() => 
+    Object.keys(CHORD_TYPES).map((chordName) => (
+      <option key={chordName} value={chordName}>
+        {chordName}
+      </option>
+    )), []
+  );
+
+  return (
+    <select
+      value={selectedChordType}
+      onChange={onChordTypeChange}
+      className="p-2 ml-2 bg-gray-800 rounded transition-colors hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      disabled={disabled}
+      aria-label="Chord type selector"
+    >
+      {chordOptions}
+    </select>
+  );
+});
+
+// Composant ColsSlider mémorisé
+const ColsSlider = React.memo(({ cols, onColsChange }) => {
+  return (
+    <div className="flex items-center gap-2 ml-4">
+      <label htmlFor="cols-slider" className="text-sm text-gray-300">
+        Cols: {cols}
+      </label>
+      <input
+        id="cols-slider"
+        type="range"
+        min={8}
+        max={128}
+        value={cols}
+        step={4}
+        onChange={onColsChange}
+        className="w-20 accent-green-600"
+        aria-label={`Grid columns: ${cols}`}
+      />
+    </div>
+  );
+});
+
+export const TopBar = React.memo(({
   selectedInstrument,
   mode,
   toggleMode,
@@ -29,54 +97,112 @@ export const TopBar = ({
   setCols,
   onClose,
 }) => {
+  // Handlers optimisés avec useCallback
+  const handleDrawMode = useCallback(() => toggleMode('draw'), [toggleMode]);
+  const handlePaintMode = useCallback(() => toggleMode('paint'), [toggleMode]);
+  const handleResizeMode = useCallback(() => toggleMode('resize'), [toggleMode]);
+  const handleChordsMode = useCallback(() => toggleMode('chords'), [toggleMode]);
+  
+  const handleChordTypeChange = useCallback((e) => {
+    setSelectedChordType(e.target.value);
+  }, [setSelectedChordType]);
+
+  const handleColsChange = useCallback((e) => {
+    setCols(Number(e.target.value));
+  }, [setCols]);
+
+  // Configuration des boutons de mode
+  const modeButtons = useMemo(() => [
+    {
+      mode: 'draw',
+      onClick: handleDrawMode,
+      icon: ImPencil,
+      title: 'Draw Mode'
+    },
+    {
+      mode: 'paint',
+      onClick: handlePaintMode,
+      icon: HiPaintBrush,
+      title: 'Paint Mode'
+    },
+    {
+      mode: 'resize',
+      onClick: handleResizeMode,
+      icon: RxWidth,
+      title: 'Resize Mode'
+    },
+    {
+      mode: 'chords',
+      onClick: handleChordsMode,
+      icon: IoMusicalNotesSharp,
+      title: 'Chords Mode'
+    }
+  ], [handleDrawMode, handlePaintMode, handleResizeMode, handleChordsMode]);
+
+  const isChordSelectorDisabled = mode !== "chords";
 
   return (
     <div className="flex gap-2 mb-2 items-center ml-20">
-      <label className="absolute left-0 px-4 py-2 bg-gray-800 rounded">{selectedInstrument}</label>
-      <button onClick={onClose} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded ml-4">X</button>
-      <button onClick={() => toggleMode('draw')} className={`px-4 py-2 rounded ${mode === 'draw' ? 'bg-green-600' : 'bg-gray-800 hover:bg-gray-700'}`}><ImPencil size={20} /></button>
-      <button onClick={() => toggleMode('paint')} className={`px-4 py-2 rounded ${mode === 'paint' ? 'bg-green-600' : 'bg-gray-800 hover:bg-gray-700'}`}><HiPaintBrush size={20} /></button>
-      <button onClick={() => toggleMode('resize')} className={`px-4 py-2 rounded ${mode === 'resize' ? 'bg-green-600' : 'bg-gray-800 hover:bg-gray-700'}`}><RxWidth size={20} /></button>
-      <button onClick={() => toggleMode('chords')} className={`px-4 py-2 rounded ${mode === 'chords' ? 'bg-green-600' : 'bg-gray-800 hover:bg-gray-700'}`}><IoMusicalNotesSharp size={20} /></button>
-      <button onClick={clearAll} className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded"><MdOutlineDeleteOutline size={20} /></button>
+      {/* Instrument Label */}
+      <label className="absolute left-0 px-4 py-2 bg-gray-800 rounded text-sm font-medium">
+        {selectedInstrument}
+      </label>
 
-      {mode === "chords" && (
-        <select
-          value={selectedChordType}
-          onChange={(e) => setSelectedChordType(e.target.value)}
-          className="p-2 ml-2 bg-gray-800 rounded"
-        >
-          {Object.keys(CHORD_TYPES).map((chordName) => (
-            <option key={chordName} value={chordName}>{chordName}</option>
-          ))}
-        </select>
-      )}
+      {/* Close Button */}
+      <button 
+        onClick={onClose} 
+        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors"
+        title="Close Piano Roll"
+        aria-label="Close Piano Roll"
+      >
+        <IoClose size={20} />
+      </button>
 
-      <input
-        type="range"
-        min={8}
-        max={128}
-        value={COLS}
-        step={4}
-        onChange={(e) => setCols(Number(e.target.value))}
-        className="w-20 ml-4"
+      {/* Mode Buttons */}
+      {modeButtons.map(({ mode: buttonMode, onClick, icon, title }) => (
+        <ModeButton
+          key={buttonMode}
+          mode={buttonMode}
+          currentMode={mode}
+          onClick={onClick}
+          icon={icon}
+          title={title}
+        />
+      ))}
+
+      {/* Clear All Button */}
+      <button 
+        onClick={clearAll} 
+        className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded transition-colors"
+        title="Clear All Notes"
+        aria-label="Clear All Notes"
+      >
+        <MdOutlineDeleteOutline size={20} />
+      </button>
+
+      {/* Chord Type Selector */}
+      <ChordSelector
+        selectedChordType={selectedChordType}
+        onChordTypeChange={handleChordTypeChange}
+        disabled={isChordSelectorDisabled}
+      />
+
+      {/* Columns Slider */}
+      <ColsSlider
+        cols={COLS}
+        onColsChange={handleColsChange}
       />
     </div>
   );
-};
+});
 
-function areEqual(prev, next) {
-  return (
-    prev.COLS === next.COLS &&
-    prev.selectedChordType === next.selectedChordType &&
-    prev.toggleMode === next.toggleMode &&
-    prev.setCols === next.setCols &&
-    prev.setSelectedChordType === next.setSelectedChordType 
-  );
-}
+// Définir displayName pour le debugging
+TopBar.displayName = 'TopBar';
+ModeButton.displayName = 'ModeButton';
+ChordSelector.displayName = 'ChordSelector';
+ColsSlider.displayName = 'ColsSlider';
 
-
-export default React.memo(TopBar, areEqual); 
+export default TopBar;
 
 
 
