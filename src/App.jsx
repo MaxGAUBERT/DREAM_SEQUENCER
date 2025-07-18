@@ -262,6 +262,7 @@ export default function App() {
               instrumentList={instrumentList}
               cells={cells}
               setCells={setCells}
+              numSteps={numSteps}
             />
           )}
 
