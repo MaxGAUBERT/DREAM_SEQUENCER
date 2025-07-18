@@ -6,7 +6,7 @@ import * as Tone from "tone";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import { useSampleContext } from "../Contexts/ChannelProvider";
 
-const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, cells, setCells}) => {
+const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, cells, setCells, numSteps}) => {
   const {isPlaying, playMode, bpm} = usePlayContext();
   const {width, setWidth, height, setHeight, CELL_SIZE} = useProjectManager();
   const {getSampler} = useSampleContext();
@@ -69,45 +69,46 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
     
   }, [width, height]);
 
-  function playPattern(pattern, instrumentList, startTime) {
-  Object.entries(instrumentList).forEach(([instrumentName, instrument]) => {
-    const samplerUrl = getSampler(instrumentName) || instrument?.sample?.url;
-    if (!samplerUrl) {
-      console.log(`No sample URL found for instrument: ${instrumentName}`);
-      return; 
-    }
+  function playPattern(pattern, instrumentList, startTime, numSteps) {
+  const stepDuration = Tone.Time("16n").toSeconds(); // à adapter selon ta grille
 
-    // Vérifier que le sampler existe
-    if (!samplerUrl || !samplerUrl.loaded) {
-      console.warn(`Sampler for ${instrumentName} is not loaded yet or missing.`);
+  Object.entries(instrumentList).forEach(([instrumentName, instrument]) => {
+    const sampler = getSampler(instrumentName) || instrument?.sample?.url;
+    if (!sampler) {
+      console.warn(`No sample found for instrument: ${instrumentName}`);
+      return;
+    }
+    if (!sampler.loaded) {
+      console.warn(`Sampler for ${instrumentName} not loaded yet.`);
       return;
     }
 
+    const rawSteps = instrument?.grids?.[pattern.id] || [];
+    const paddedSteps = [...rawSteps];
+    while (paddedSteps.length < numSteps) paddedSteps.push(false);
 
-    const gridSteps = instrument?.grids?.[pattern.id] || [];
-    const notes = instrument?.pianoData?.[pattern.id] || [];
-
-    gridSteps.forEach((stepActive, stepIndex) => {
-      if (stepActive && gridSteps) {
-        const stepDuration = Tone.Time("16n").toSeconds();
+    // Jouer les steps binaires (drums / samples)
+    for (let stepIndex = 0; stepIndex < numSteps; stepIndex++) {
+      if (paddedSteps[stepIndex]) {
         const noteTime = startTime + stepIndex * stepDuration;
-        samplerUrl?.triggerAttackRelease("C4", "8n", noteTime);
+        sampler.triggerAttackRelease("C4", "4n", noteTime);
+      }
+    }
+
+    // Jouer les notes piano roll (polyphonie / pitch / durée)
+    const notes = instrument?.pianoData?.[pattern.id] || [];
+    notes.forEach(note => {
+      if (note) {
+        const noteTime = startTime + note.start * stepDuration;
+        const duration = Tone.Time(note.length * stepDuration).toNotation();
+        const velocity = note.velocity ?? 1;
+        const noteName = rowToNoteName(note.row);
+        sampler.triggerAttackRelease(noteName, duration, noteTime, velocity);
       }
     });
-
-    notes.forEach((note) => {
-  if (note && samplerUrl) {
-    const stepDuration = Tone.Time("16n").toSeconds();
-    const noteTime = startTime + note.start * stepDuration;
-    const duration = Tone.Time(note.length * stepDuration).toNotation();
-    const velocity = note.velocity ?? 1;
-    const noteName = rowToNoteName(note.row);
-
-    samplerUrl?.triggerAttackRelease(noteName, duration, noteTime, velocity);
-  }
-  });
   });
 }
+
 
   const handleWidthChange = (e) => {
     const newWidth = Number(e.target.value);
@@ -176,13 +177,10 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
   };
 
   useEffect(() => {
-  // Nettoyage systématique
-
-  // Ne rien faire si on ne joue pas ou si on n'est pas en mode Song
   if (!isPlaying || playMode !== "Song" || !instrumentList) return;
 
   const cleanup = () => {
-    if (Tone.Transport.state === 'started') {
+    if (Tone.Transport.state === "started") {
       Tone.Transport.stop();
     }
     Tone.Transport.cancel();
@@ -192,23 +190,25 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
 
   Tone.Transport.bpm.value = bpm;
 
-  let timeline = 0;
+  const stepDuration = Tone.Time("16n").toSeconds(); 
+  const patternDuration = stepDuration * numSteps; 
+  let currentTime = 0;
 
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
       const index = row * width + col;
       const patternID = cells[index];
 
-      if (patternID && patterns[patternID]) {
+      if (patternID && patterns[patternID - 1]) {
         const pattern = patterns[patternID - 1];
-        const patternDuration = Tone.Time("1m").toSeconds();
+        const patternDuration = stepDuration * numSteps;
 
         Tone.Transport.scheduleOnce((time) => {
-          playPattern(pattern, instrumentList, time);
+          playPattern(pattern, instrumentList, time, numSteps);
           setCurrentColumn(col);
         }, col * patternDuration);
 
-        timeline += patternDuration;
+        currentTime += patternDuration;
       }
     }
   }
@@ -216,8 +216,9 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
   Tone.Transport.start();
 
   return cleanup;
+}, [isPlaying, playMode, bpm, instrumentList, cells, patterns, numSteps]);
 
-}, [isPlaying, playMode, bpm, instrumentList]);
+
 
   const placePattern = (index) => {
     setCells(prev => {
