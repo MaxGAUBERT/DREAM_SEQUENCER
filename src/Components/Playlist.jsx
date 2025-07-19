@@ -191,7 +191,6 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
   Tone.Transport.bpm.value = bpm;
 
   const stepDuration = Tone.Time("16n").toSeconds(); 
-  const patternDuration = stepDuration * numSteps; 
   let currentTime = 0;
 
   for (let row = 0; row < height; row++) {
@@ -297,7 +296,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
 
         {currentColumn !== null && (
         <div
-          className="absolute top-0 bg-red-400 bg-opacity-30 pointer-events-none z-10 transition-all duration-100"
+          className="absolute top-0 bg-red-400 bg-opacity-30 pointer-events-none z-0 transition-all duration-100"
           style={{
             left: `${currentColumn * CELL_SIZE}px`,
             width: `${CELL_SIZE / 10}px`,
