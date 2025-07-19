@@ -1,3 +1,5 @@
+import React from 'react';
+
 const CELL_WIDTH = 20;
 const CELL_HEIGHT = 20;
 
@@ -40,4 +42,27 @@ export const NoteBlock = ({
   );
 };
 
-export default NoteBlock;
+function areEqual(prevProps, nextProps) {
+  if (prevProps.noteLabel !== nextProps.noteLabel) return false;
+
+  // Compare les propriétés de note
+  const prevNote = prevProps.note;
+  const nextNote = nextProps.note;
+  if (
+    prevNote.start !== nextNote.start ||
+    prevNote.row !== nextNote.row ||
+    prevNote.length !== nextNote.length ||
+    prevNote.height !== nextNote.height
+  ) {
+    return false;
+  }
+
+  // Compare les références des handlers (supposés stables)
+  if (prevProps.onMouseDown !== nextProps.onMouseDown) return false;
+  if (prevProps.onResizeLeft !== nextProps.onResizeLeft) return false;
+  if (prevProps.onResizeRight !== nextProps.onResizeRight) return false;
+
+  return true;
+}
+
+export default React.memo(NoteBlock, areEqual);

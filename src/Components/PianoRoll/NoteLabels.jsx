@@ -1,4 +1,3 @@
-// components/PianoRoll/NoteLabels.jsx
 import React from 'react';
 
 const CELL_HEIGHT = 20;
@@ -22,4 +21,12 @@ export const NoteLabels = ({ noteLabels, handlePlaySound, isBlackKey }) => {
   );
 };
 
-export default NoteLabels;
+function areEqual(prevProps, nextProps) {
+  if (prevProps.noteLabels !== nextProps.noteLabels) return false;
+  if (prevProps.handlePlaySound !== nextProps.handlePlaySound) return false;
+  if (prevProps.isBlackKey !== nextProps.isBlackKey) return false;
+  return true;
+}
+export default React.memo(NoteLabels, areEqual);
+
+

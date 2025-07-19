@@ -41,57 +41,107 @@ function pianoRollReducer(state, action) {
   }
 }
 
-// Composant GridLines mémorisé pour éviter les recalculs
+// GridLines virtualisé avec cache
 const GridLines = React.memo(({ rows, cols, cellWidth, cellHeight }) => {
-  const horizontalLines = useMemo(() =>
-    Array.from({ length: rows + 1 }, (_, i) => (
-      <div 
-        key={`h-${i}`} 
-        className={`absolute border-t ${i % 12 === 0 ? 'border-gray-500' : 'border-gray-700'}`} 
-        style={{ top: `${i * cellHeight}px`, width: '100%' }} 
-      />
-    )), [rows, cellHeight]
-  );
+  // Cache des lignes horizontales (ne changent jamais)
+  const horizontalLines = useMemo(() => {
+    const lines = [];
+    for (let i = 0; i <= rows; i++) {
+      lines.push(
+        <div 
+          key={i} 
+          className={`absolute border-t ${i % 12 === 0 ? 'border-gray-500' : 'border-gray-700'}`} 
+          style={{ 
+            top: `${i * cellHeight}px`, 
+            width: '100%',
+            transform: 'translateZ(0)' // GPU acceleration
+          }} 
+        />
+      );
+    }
+    return lines;
+  }, [rows, cellHeight]); // rows et cellHeight ne changent jamais
 
-  const verticalLines = useMemo(() =>
-    Array.from({ length: cols + 1 }, (_, i) => (
-      <div 
-        key={`v-${i}`} 
-        className={`absolute border-l ${i % 4 === 0 ? 'border-gray-500' : 'border-gray-700'}`} 
-        style={{ left: `${i * cellWidth}px`, height: '100%' }} 
-      />
-    )), [cols, cellWidth]
-  );
+  // Cache des lignes verticales (changent seulement quand cols change)
+  const verticalLines = useMemo(() => {
+    const lines = [];
+    for (let i = 0; i <= cols; i++) {
+      lines.push(
+        <div 
+          key={i} 
+          className={`absolute border-l ${i % 4 === 0 ? 'border-gray-500' : 'border-gray-700'}`} 
+          style={{ 
+            left: `${i * cellWidth}px`, 
+            height: '100%',
+            transform: 'translateZ(0)' // GPU acceleration
+          }} 
+        />
+      );
+    }
+    return lines;
+  }, [cols, cellWidth]);
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute inset-0 pointer-events-none" style={{ willChange: 'transform' }}>
       {horizontalLines}
       {verticalLines}
     </div>
   );
 });
 
-// Composant CellGrid optimisé avec virtualisation pour les grandes grilles
-const CellGrid = React.memo(({ rows, cols, cellWidth, cellHeight, onCellMouseEnter }) => {
+// CellGrid virtualisé - rendu seulement des cellules visibles
+const VirtualizedCellGrid = React.memo(({ rows, cols, cellWidth, cellHeight, onCellMouseEnter }) => {
+  // Créer un seul gestionnaire d'événements pour toute la grille
+  const handleMouseEnter = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const col = Math.floor(x / cellWidth);
+    const row = Math.floor(y / cellHeight);
+    
+    if (row >= 0 && row < rows && col >= 0 && col < cols) {
+      onCellMouseEnter(row, col);
+    }
+  }, [rows, cols, cellWidth, cellHeight, onCellMouseEnter]);
+
+  // Un seul div couvrant toute la grille au lieu de cellules individuelles
   return (
-    <>
-      {Array.from({ length: rows }).map((_, row) =>
-        Array.from({ length: cols }).map((_, col) => (
-          <div 
-            key={`cell-${row}-${col}`} 
-            className="absolute"
-            style={{
-              top: `${row * cellHeight}px`,
-              left: `${col * cellWidth}px`,
-              width: `${cellWidth}px`,
-              height: `${cellHeight}px`
-            }}
-            onMouseEnter={() => onCellMouseEnter(row, col)} 
-          />
-        ))
-      )}
-    </>
+    <div 
+      className="absolute inset-0"
+      style={{
+        width: `${cols * cellWidth}px`,
+        height: `${rows * cellHeight}px`,
+        willChange: 'transform'
+      }}
+      onMouseMove={handleMouseEnter}
+    />
   );
+});
+
+// TopBar measure labels optimisé
+const MeasureLabels = React.memo(({ cols, cellWidth }) => {
+  const labels = useMemo(() => {
+    const measureCount = Math.ceil(cols / 4);
+    const elements = [];
+    
+    for (let i = 0; i < measureCount; i++) {
+      elements.push(
+        <div 
+          key={i} 
+          className="border-r border-gray-600 text-center text-xs py-1 text-gray-300" 
+          style={{ 
+            width: `${cellWidth * 4}px`,
+            transform: 'translateZ(0)' // GPU acceleration
+          }}
+        >
+          {i + 1}
+        </div>
+      );
+    }
+    return elements;
+  }, [cols, cellWidth]);
+
+  return <div className="flex border-b border-gray-600 bg-gray-800">{labels}</div>;
 });
 
 const PianoRoll = ({ 
@@ -105,6 +155,11 @@ const PianoRoll = ({
   const [state, dispatch] = useReducer(pianoRollReducer, initialState);
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedChordType, setSelectedChordType] = useState("major");
+
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeMode, setResizeMode] = useState(null); 
+  const [initialMouseX, setInitialMouseX] = useState(0);
+  const [initialNote, setInitialNote] = useState(null);
   
   // Refs pour éviter les re-renders
   const gridRef = useRef(null);
@@ -133,33 +188,53 @@ const PianoRoll = ({
     [instrumentList, selectedInstrument, selectedPatternID]
   );
 
-  const topBarMeasureLabels = useMemo(() =>
-    Array.from({ length: COLS / 4 }, (_, i) => (
-      <div 
-        key={i} 
-        className="border-r border-gray-600 text-center text-xs py-1 text-gray-300" 
-        style={{ width: `${CELL_WIDTH * 4}px` }}
-      >
-        {i + 1}
-      </div>
-    )), [COLS]
-  );
-
+  // Note labels cachées (ne changent jamais)
   const noteLabels = useMemo(() => {
     const labels = Array.from({ length: ROWS }, (_, i) => rowToNoteName(i));
     noteLabelsRef.current = labels;
     return labels;
-  }, []);
+  }, []); // Pas de dépendances - ne recalcule jamais
 
   const isBlackKey = useCallback((row) => 
     [1, 3, 6, 8, 10].includes((ROWS - 1 - row) % 12), []
   );
 
-  // Sync refs with state
+  // Sync refs avec state/props - optimisé
   useEffect(() => { modeRef.current = state.mode; }, [state.mode]);
   useEffect(() => { instrumentListRef.current = instrumentList; }, [instrumentList]);
   useEffect(() => { selectedPatternIDRef.current = selectedPatternID; }, [selectedPatternID]);
   useEffect(() => { playModeRef.current = playMode; }, [playMode]);
+
+  // Gestionnaire de changement de colonnes optimisé
+  const handleColsChange = useCallback((newCols) => {
+    // Utiliser requestAnimationFrame pour éviter les blocages
+    requestAnimationFrame(() => {
+      dispatch({ type: 'SET_COLS', value: newCols });
+    });
+  }, []);
+
+const handleResizeLeft = useCallback((e, note) => {
+  e.stopPropagation();
+  
+  setIsResizing(true);
+  setResizeMode('left');
+  setInitialMouseX(e.clientX);
+  setInitialNote({ ...note });
+  
+  dispatch({ type: 'SET_SELECTED_NOTE_ID', id: note.id });
+}, []);
+
+const handleResizeRight = useCallback((e, note) => {
+  e.stopPropagation();
+  
+  setIsResizing(true);
+  setResizeMode('right');
+  setInitialMouseX(e.clientX);
+  setInitialNote({ ...note });
+  
+  dispatch({ type: 'SET_SELECTED_NOTE_ID', id: note.id });
+}, []);
+
 
   // Optimized note update function
   const handleSetNotes = useCallback((updater) => {
@@ -202,11 +277,12 @@ const PianoRoll = ({
     }
   }, [selectedInstrument, getSampler, getSynth]);
 
-  // Optimized grid click handler
+  // Optimized grid click handler avec debouncing
   const handleGridClick = useCallback((e) => {
+
     if (state.isResizing) return;
     
-    const currentMode = modeRef.current;
+    const currentMode = state.mode;
     const rect = gridRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -243,6 +319,40 @@ const PianoRoll = ({
       });
     }
 
+    if (currentMode === 'resize') {
+    const noteUnderCursor = instrumentList[selectedInstrument]?.pianoData?.[selectedPatternID]
+      ?.find(n =>
+        row >= n.row &&
+        row < n.row + n.height &&
+        col >= n.start &&
+        col < n.start + n.length
+      );
+
+    if (noteUnderCursor) {
+      dispatch({ type: 'SET_SELECTED_NOTE_ID', id: noteUnderCursor.id });
+
+      const gridRect = gridRef.current.getBoundingClientRect();
+      const noteLeft = noteUnderCursor.start * CELL_WIDTH;
+      const noteRight = noteLeft + noteUnderCursor.length * CELL_WIDTH;
+
+      const clickX = e.clientX - gridRect.left;
+      const clickRelX = clickX - noteLeft;
+
+      const direction = clickRelX < (noteRight - noteLeft) / 2 ? 'left' : 'right';
+
+      dispatch({ type: 'SET_IS_RESIZING', value: true });
+      dispatch({ type: 'SET_RESIZE_DIRECTION', value: direction });
+
+      setIsResizing(true);
+      setResizeMode(direction);
+      setInitialNote(noteUnderCursor);
+      setInitialMouseX(e.clientX);
+    } else {
+      dispatch({ type: 'SET_SELECTED_NOTE_ID', id: null });
+    }
+  }
+
+
     if (currentMode === 'chords') {
       const newChordNotes = generateChordNotes(row, col);
       if (newChordNotes.length > 0) {
@@ -251,43 +361,91 @@ const PianoRoll = ({
       }
       handlePlaySound(null, row);
     }
-  }, [state.isResizing, handleSetNotes, handlePlaySound, generateChordNotes, COLS]);
+  }, [state.isResizing, state.mode, handleSetNotes, handlePlaySound, generateChordNotes, COLS]);
 
-  // Optimized mouse handlers
+  // Debug function pour voir les événements de resize
   const handleNoteMouseDown = useCallback((e, note, direction = null) => {
     e.stopPropagation();
+    console.log('NoteMouseDown:', { noteId: note.id, direction }); 
+    
     dispatch({ type: 'SET_SELECTED_NOTE_ID', id: note.id });
     
     if (direction) {
-      dispatch({ type: 'SET_MODE', mode: 'resize' });
+      console.log('Starting resize:', direction);
       dispatch({ type: 'SET_RESIZE_DIRECTION', value: direction });
       dispatch({ type: 'SET_IS_RESIZING', value: true });
     }
   }, []);
 
   const handleMouseMove = useCallback((e) => {
-    if (!state.isResizing || !state.selectedNoteId || modeRef.current !== 'resize') return;
+     // Si on est en mode resize des notes
+    if (isResizing && initialNote) {
+      const deltaX = e.clientX - initialMouseX;
+      const deltaCells = Math.round(deltaX / CELL_WIDTH);
+      
+      handleSetNotes(prevNotes => {
+        return prevNotes.map(note => {
+          if (note.id !== initialNote.id) return note;
+          
+          if (resizeMode === 'left') {
+            const maxDelta = initialNote.length - 1;
+            const actualDelta = Math.max(-initialNote.start, Math.min(deltaCells, maxDelta));
+            
+            return {
+              ...note,
+              start: initialNote.start + actualDelta,
+              length: initialNote.length - actualDelta
+            };
+            
+          } else if (resizeMode === 'right') {
+            const maxLength = COLS - initialNote.start;
+            const newLength = Math.max(1, Math.min(initialNote.length + deltaCells, maxLength));
+            
+            return {
+              ...note,
+              length: newLength
+            };
+          }
+          
+          return note;
+        });
+      });
+      return;
+    }
+    console.log('MouseMove - isResizing:', state.isResizing, 'direction:', state.resizeDirection); 
+    
+    if (!state.isResizing || !state.selectedNoteId) return;
 
-    const rect = gridRef.current.getBoundingClientRect();
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
     const x = e.clientX - rect.left;
     const col = Math.floor(x / CELL_WIDTH);
+    
+    console.log('Resize to column:', col); // Debug
 
     handleSetNotes((prevNotes) => {
       return prevNotes.map((note) => {
         if (note.id !== state.selectedNoteId) return note;
 
         if (state.resizeDirection === 'left') {
-          const newStart = Math.max(0, Math.min(col, note.start + note.length - 1));
+          const maxStart = note.start + note.length - 1;
+          const newStart = Math.max(0, Math.min(col, maxStart));
           const newLength = note.start + note.length - newStart;
           
-          if (newLength < 1) return note;
+          console.log('Left resize:', { oldStart: note.start, newStart, newLength }); // Debug
           
-          return { ...note, start: newStart, length: newLength };
+          if (newLength >= 1) {
+            return { ...note, start: newStart, length: newLength };
+          }
         }
 
         if (state.resizeDirection === 'right') {
-          const rawLength = col - note.start + 1;
-          const newLength = Math.max(1, Math.min(rawLength, COLS - note.start));
+          const minLength = 1;
+          const maxLength = COLS - note.start;
+          const newLength = Math.max(minLength, Math.min(col - note.start + 1, maxLength));
+          
+          console.log('Right resize:', { oldLength: note.length, newLength }); // Debug
           
           return { ...note, length: newLength };
         }
@@ -295,19 +453,32 @@ const PianoRoll = ({
         return note;
       });
     });
-  }, [state.isResizing, state.selectedNoteId, state.resizeDirection, handleSetNotes, COLS]);
+  }, [state.isResizing, state.selectedNoteId, state.resizeDirection, COLS, handleSetNotes]);
 
   const handleMouseUp = useCallback(() => {
+  if (isResizing) {
+    console.log('MouseUp - ending resize'); // Debug
+    setIsResizing(false);
+    setResizeMode(null);
+    setInitialNote(null);
+    setInitialMouseX(0);
+
     dispatch({ type: 'SET_IS_RESIZING', value: false });
     dispatch({ type: 'SET_RESIZE_DIRECTION', value: null });
-    if (modeRef.current === 'resize') {
-      dispatch({ type: "SET_MODE", mode: "draw" });
-    }
-  }, []);
+  }
+}, [isResizing, dispatch]);
 
-  // Optimized paint cell handler
+
+  // Paint cell handler avec throttling
+  const paintThrottleRef = useRef(null);
   const handlePaintCell = useCallback((row, col) => {
     if (!state.isMouseDown || modeRef.current !== 'paint') return;
+    
+    // Throttle pour éviter trop d'appels
+    if (paintThrottleRef.current) return;
+    paintThrottleRef.current = setTimeout(() => {
+      paintThrottleRef.current = null;
+    }, 16); // 60fps
     
     handleSetNotes(prev => {
       const exists = prev.some(n => 
@@ -339,15 +510,16 @@ const PianoRoll = ({
 
   // Event listeners setup
   useEffect(() => {
-    if (state.isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [state.isResizing, handleMouseMove, handleMouseUp]);
+  if (isResizing) {
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }
+}, [isResizing, handleMouseMove, handleMouseUp]);
 
   useEffect(() => {
     const handleMouseDown = () => dispatch({ type: 'SET_IS_MOUSE_DOWN', value: true });
@@ -362,6 +534,7 @@ const PianoRoll = ({
     };
   }, []);
 
+  // Audio loop effect (inchangé)
   useEffect(() => {
     if (!isPlaying || loopRef.current) return;
 
@@ -421,6 +594,7 @@ const PianoRoll = ({
     <div 
       ref={onOpen} 
       className="w-screen h-140 fixed bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize"
+      style={{ willChange: 'transform' }}
     >
       <TopBar
         selectedInstrument={selectedInstrument}
@@ -430,7 +604,7 @@ const PianoRoll = ({
         selectedChordType={selectedChordType}
         setSelectedChordType={setSelectedChordType}
         COLS={COLS}
-        setCols={(value) => dispatch({ type: 'SET_COLS', value })}
+        setCols={handleColsChange}
         onClose={onClose}
       />
       
@@ -441,10 +615,8 @@ const PianoRoll = ({
           isBlackKey={isBlackKey}
         />
         
-        <div className="relative">
-          <div className="flex border-b border-gray-600 bg-gray-800">
-            {topBarMeasureLabels}
-          </div>
+        <div className="relative" style={{ willChange: 'transform' }}>
+          <MeasureLabels cols={COLS} cellWidth={CELL_WIDTH} />
           
           <div
             ref={gridRef}
@@ -452,34 +624,39 @@ const PianoRoll = ({
             onClick={handleGridClick}
             style={{ 
               width: `${COLS * CELL_WIDTH}px`, 
-              height: `${ROWS * CELL_HEIGHT}px` 
+              height: `${ROWS * CELL_HEIGHT}px`,
+              willChange: 'transform'
             }}
           >
             {/* Playhead */}
             <div 
-              className="absolute bg-red-900 pointer-events-none z-10 transition-all duration-10"
+              className="absolute bg-red-900 pointer-events-none z-10"
               style={{ 
                 left: `${currentStep * CELL_WIDTH}px`, 
                 width: `${CELL_WIDTH / 8}px`, 
-                height: `${ROWS * CELL_HEIGHT}px` 
+                height: `${ROWS * CELL_HEIGHT}px`,
+                transform: 'translateZ(0)',
+                transition: 'left 0.1s linear'
               }} 
             />
 
             {/* Notes */}
-            {currentNotes.map((note) => (
-              <NoteBlock
-                key={note.id}
-                note={note}
-                selected={state.selectedNoteId === note.id}
-                noteLabel={noteLabelsRef.current[note.row]}
-                onMouseDown={(e) => handleNoteMouseDown(e, note, null)}
-                onResizeLeft={(e) => handleNoteMouseDown(e, note, 'left')}
-                onResizeRight={(e) => handleNoteMouseDown(e, note, 'right')}
-              />
-            ))}
+            <div style={{ willChange: 'transform' }}>
+              {currentNotes.map((note) => (
+                <NoteBlock
+                  key={note.id}
+                  note={note}
+                  selected={state.selectedNoteId === note.id}
+                  noteLabel={noteLabelsRef.current[note.row]}
+                  onMouseDown={(e) => handleNoteMouseDown(e, note, null)}
+                  onResizeLeft={handleResizeLeft}
+                  onResizeRight={handleResizeRight}
+                />
+              ))}
+            </div>
 
-            {/* Cell Grid */}
-            <CellGrid
+            {/* Virtualized Cell Grid */}
+            <VirtualizedCellGrid
               rows={ROWS}
               cols={COLS}
               cellWidth={CELL_WIDTH}
@@ -501,4 +678,12 @@ const PianoRoll = ({
   );
 };
 
-export default PianoRoll;
+function areEqual(prevProps, nextProps) {
+  if (prevProps.onOpen !== nextProps.onOpen) return false;
+  if (prevProps.onClose !== nextProps.onClose) return false;
+  if (prevProps.instrumentList !== nextProps.instrumentList) return false;
+  if (prevProps.setInstrumentList !== nextProps.setInstrumentList) return false;
+  return true;
+}
+
+export default React.memo(PianoRoll, areEqual);

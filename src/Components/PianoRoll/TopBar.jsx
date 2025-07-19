@@ -19,7 +19,6 @@ export const CHORD_TYPES = {
   dom7: [0, 4, 7, 10],
 };
 
-// Composant Button mémorisé pour éviter les re-renders
 const ModeButton = React.memo(({ mode, currentMode, onClick, icon: Icon, title }) => {
   const isActive = mode === currentMode;
   const buttonClass = `px-4 py-2 rounded transition-colors ${
@@ -86,7 +85,7 @@ const ColsSlider = React.memo(({ cols, onColsChange }) => {
   );
 });
 
-export const TopBar = React.memo(({
+export const TopBar = ({
   selectedInstrument,
   mode,
   toggleMode,
@@ -109,7 +108,7 @@ export const TopBar = React.memo(({
 
   const handleColsChange = useCallback((e) => {
     setCols(Number(e.target.value));
-  }, [setCols]);
+  }, []);
 
   // Configuration des boutons de mode
   const modeButtons = useMemo(() => [
@@ -194,7 +193,7 @@ export const TopBar = React.memo(({
       />
     </div>
   );
-});
+};
 
 // Définir displayName pour le debugging
 TopBar.displayName = 'TopBar';
@@ -202,7 +201,18 @@ ModeButton.displayName = 'ModeButton';
 ChordSelector.displayName = 'ChordSelector';
 ColsSlider.displayName = 'ColsSlider';
 
-export default TopBar;
+
+function areEqual (prevProps, nextProps) {
+  if (prevProps.selectedInstrument !== nextProps.selectedInstrument) return false;
+  if (prevProps.mode !== nextProps.mode) return false;
+  if (prevProps.toggleMode !== nextProps.toggleMode) return false;
+  if (prevProps.clearAll !== nextProps.clearAll) return false;
+  if (prevProps.selectedChordType !== nextProps.selectedChordType) return false;
+  if (prevProps.setSelectedChordType !== nextProps.setSelectedChordType) return false;
+  if (prevProps.onClose !== nextProps.onClose) return false;
+  return true;
+}
+export default React.memo(TopBar, areEqual);
 
 
 
