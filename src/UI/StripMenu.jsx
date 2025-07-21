@@ -14,7 +14,7 @@ const MENU = [
   {
     id: "view",
     label: "View",
-    items: ["Drum Rack", "Pattern Selector", "FX Chain", "Playlist", "Sound Browser"],
+    items: ["Drum Rack", "Pattern Selector", "FX Chain", "Playlist"],
   },
 ];
 
