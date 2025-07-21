@@ -10,8 +10,6 @@ export const useSampleContext = () => useContext(SampleContext);
 // Provider
 export const ChannelProvider = ({ children }) => {
   const samplersRef = useRef({}); 
-  const synthRef = useRef({});
-  const {state} = useSynth();
 
   const loadSample = async (instrumentName, sampleUrl) => {
     if (!sampleUrl || samplersRef.current[instrumentName]) console.log(`Error for ${instrumentName}`);
@@ -26,53 +24,14 @@ export const ChannelProvider = ({ children }) => {
     samplersRef.current[instrumentName] = sampler;
   };
 
-  const createSynth = async (instrumentName, state) => {
-
-    switch (state.synthType) {
-      case "Synth": 
-        synthRef.current[instrumentName] = new Tone.Synth().toDestination();
-        break;
-      case "FMSynth":
-        synthRef.current[instrumentName] = new Tone.FMSynth().toDestination();
-        break;
-      case "AMSynth":
-        synthRef.current[instrumentName] = new Tone.AMSynth().toDestination();
-        break;
-      case "DuoSynth":
-        synthRef.current[instrumentName] = new Tone.DuoSynth().toDestination();
-        break;
-      case "MonoSynth":
-        synthRef.current[instrumentName] = new Tone.MonoSynth().toDestination();
-        break;
-      case "MembraneSynth":
-        synthRef.current[instrumentName] = new Tone.MembraneSynth().toDestination();
-        break;
-      default:
-        break;
-    }
-
-    console.log(`Synth ${state.synthType} created for ${instrumentName}`);
-
-    
-};
-
-
-
   const getSampler = (instrumentName) => {
     console.log(samplersRef);
     return samplersRef?.current[instrumentName] || null;
   };
 
-  const getSynth = (instrumentName) => {
-    console.log(synthRef);
-    return synthRef?.current[instrumentName] || null;
-  };
-
   const contextValue = {
     loadSample,
-    getSampler,
-    createSynth,
-    getSynth
+    getSampler
   };
 
   return (
