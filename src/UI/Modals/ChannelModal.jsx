@@ -134,7 +134,7 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
               <option value="">-- Select --</option>
               {Object.entries(audioObjects).map(([soundId, soundObj]) => (
                 <option key={soundId} value={soundId}>
-                  {soundObj.name}
+                  {soundObj.url ? soundObj.name : soundObj.soundData.name}
                 </option>
               ))}
             </select>
