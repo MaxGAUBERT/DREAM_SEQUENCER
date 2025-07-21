@@ -8,9 +8,6 @@ export const soundBank = {
       "description": "Kit de sons électroniques",
       "bpm": 120,
       "sounds": {
-        "Drums":{
-          "name": "-> Drums <-",
-        },
         "kick": {
           "name": "Kick Drum",
           "url": "/Audio/Drums/Progressive_Kick.wav",
@@ -53,7 +50,6 @@ export const soundBank = {
           "volume": 0.6,
           "tags": ["cymbal", "high", "crash"]
         },
-        "-> Leads <-":{"name": "-> Leads <-"},
         "Super Lead":{
           "name": "Super Lead",
           "url": "./Audio/Leads/Pattern_11_2.wav",
@@ -68,7 +64,6 @@ export const soundBank = {
           "volume": 0.8,
           "tags": ["lead", "epic", "punch"]
         },
-        "-> FX <-":{"name": "-> FX <-"},
         "Impact": {
           "name": "Impact",
           "url": "./Audio/FX/VES2_FX_Impact_48.wav",
