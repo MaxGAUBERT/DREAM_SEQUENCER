@@ -207,11 +207,32 @@ const PianoRoll = ({
 
   // Gestionnaire de changement de colonnes optimisé
   const handleColsChange = useCallback((newCols) => {
-    // Utiliser requestAnimationFrame pour éviter les blocages
     requestAnimationFrame(() => {
       dispatch({ type: 'SET_COLS', value: newCols });
+
+      // Nettoyage des notes hors limites
+      setInstrumentList(prev => {
+        const instrument = prev[selectedInstrument];
+        if (!instrument) return prev;
+
+        const pianoData = instrument.pianoData?.[selectedPatternID] || [];
+
+        const filteredNotes = pianoData.filter(note => note.start < newCols);
+
+        return {
+          ...prev,
+          [selectedInstrument]: {
+            ...instrument,
+            pianoData: {
+              ...instrument.pianoData,
+              [selectedPatternID]: filteredNotes
+            }
+          }
+        };
+      });
     });
-  }, []);
+}, [selectedInstrument, selectedPatternID, setInstrumentList]);
+
 
 const handleResizeLeft = useCallback((e, note) => {
   e.stopPropagation();
@@ -263,19 +284,35 @@ const handleResizeRight = useCallback((e, note) => {
     await Tone.start();
     const noteLabel = rowToNoteName(row);
     const sampler = getSampler(selectedInstrument);
-    const synth = getSynth(selectedInstrument);
     
     try {
       if (sampler?.loaded) {
         sampler.triggerAttackRelease(noteLabel, "8n");
       }
-      if (synth) {
-        synth.triggerAttackRelease(noteLabel, "8n");
-      }
     } catch (err) {
       console.error(`Audio playback error for ${selectedInstrument}:`, err);
     }
   }, [selectedInstrument, getSampler, getSynth]);
+
+  const handleDeleteCell = useCallback((row, col) => {
+  if (!state.isMouseDown || modeRef.current !== 'delete') return;
+
+  handleSetNotes((prev) => {
+    const existingIndex = prev.findIndex(n =>
+      row >= n.row && row < n.row + n.height &&
+      col >= n.start && col < n.start + n.length
+    );
+
+    if (existingIndex !== -1) {
+      const updated = [...prev];
+      updated.splice(existingIndex, 1);
+      dispatch({ type: 'SET_SELECTED_NOTE_ID', id: null });
+      return updated;
+    } else {
+      return prev;
+    }
+  });
+  }, [state.isMouseDown, handleSetNotes]);
 
   // Optimized grid click handler avec debouncing
   const handleGridClick = useCallback((e) => {
@@ -328,30 +365,29 @@ const handleResizeRight = useCallback((e, note) => {
         col < n.start + n.length
       );
 
-    if (noteUnderCursor) {
-      dispatch({ type: 'SET_SELECTED_NOTE_ID', id: noteUnderCursor.id });
+      if (noteUnderCursor) {
+        dispatch({ type: 'SET_SELECTED_NOTE_ID', id: noteUnderCursor.id });
 
-      const gridRect = gridRef.current.getBoundingClientRect();
-      const noteLeft = noteUnderCursor.start * CELL_WIDTH;
-      const noteRight = noteLeft + noteUnderCursor.length * CELL_WIDTH;
+        const gridRect = gridRef.current.getBoundingClientRect();
+        const noteLeft = noteUnderCursor.start * CELL_WIDTH;
+        const noteRight = noteLeft + noteUnderCursor.length * CELL_WIDTH;
 
-      const clickX = e.clientX - gridRect.left;
-      const clickRelX = clickX - noteLeft;
+        const clickX = e.clientX - gridRect.left;
+        const clickRelX = clickX - noteLeft;
 
-      const direction = clickRelX < (noteRight - noteLeft) / 2 ? 'left' : 'right';
+        const direction = clickRelX < (noteRight - noteLeft) / 2 ? 'left' : 'right';
 
-      dispatch({ type: 'SET_IS_RESIZING', value: true });
-      dispatch({ type: 'SET_RESIZE_DIRECTION', value: direction });
+        dispatch({ type: 'SET_IS_RESIZING', value: true });
+        dispatch({ type: 'SET_RESIZE_DIRECTION', value: direction });
 
-      setIsResizing(true);
-      setResizeMode(direction);
-      setInitialNote(noteUnderCursor);
-      setInitialMouseX(e.clientX);
-    } else {
-      dispatch({ type: 'SET_SELECTED_NOTE_ID', id: null });
+        setIsResizing(true);
+        setResizeMode(direction);
+        setInitialNote(noteUnderCursor);
+        setInitialMouseX(e.clientX);
+      } else {
+        dispatch({ type: 'SET_SELECTED_NOTE_ID', id: null });
+      }
     }
-  }
-
 
     if (currentMode === 'chords') {
       const newChordNotes = generateChordNotes(row, col);
@@ -563,9 +599,6 @@ const handleResizeRight = useCallback((e, note) => {
               if (sampler?.loaded) {
                 sampler.triggerAttackRelease(noteName, duration, time);
               }
-              if (synth) {
-                synth.triggerAttackRelease(noteName, duration, time);
-              }
             } catch (err) {
               console.error(`Playback error for ${instrumentName}:`, err);
             }
@@ -661,7 +694,7 @@ const handleResizeRight = useCallback((e, note) => {
               cols={COLS}
               cellWidth={CELL_WIDTH}
               cellHeight={CELL_HEIGHT}
-              onCellMouseEnter={handlePaintCell}
+              onCellMouseEnter={(row, col) => {handlePaintCell(row, col); handleDeleteCell(row, col)}}
             />
 
             {/* Grid Lines */}

@@ -5,6 +5,7 @@ import { RxWidth } from "react-icons/rx";
 import { IoMusicalNotesSharp } from "react-icons/io5";
 import { MdOutlineDeleteOutline } from "react-icons/md";
 import { IoClose } from "react-icons/io5";
+import { GrClear } from "react-icons/gr";
 
 
 export const CHORD_TYPES = {
@@ -101,6 +102,7 @@ export const TopBar = ({
   const handlePaintMode = useCallback(() => toggleMode('paint'), [toggleMode]);
   const handleResizeMode = useCallback(() => toggleMode('resize'), [toggleMode]);
   const handleChordsMode = useCallback(() => toggleMode('chords'), [toggleMode]);
+  const deleteSelectedNotes = useCallback(() => toggleMode('delete'), [toggleMode]);
   
   const handleChordTypeChange = useCallback((e) => {
     setSelectedChordType(e.target.value);
@@ -116,27 +118,33 @@ export const TopBar = ({
       mode: 'draw',
       onClick: handleDrawMode,
       icon: ImPencil,
-      title: 'Draw Mode'
+      title: 'Draw in piano roll'
     },
     {
       mode: 'paint',
       onClick: handlePaintMode,
       icon: HiPaintBrush,
-      title: 'Paint Mode'
+      title: 'Paint in piano roll'
     },
     {
       mode: 'resize',
       onClick: handleResizeMode,
       icon: RxWidth,
-      title: 'Resize Mode'
+      title: 'Resize notes'
+    },
+    {
+      mode: 'delete',
+      onClick: deleteSelectedNotes,
+      icon: GrClear,
+      title: 'Delete selected notes'
     },
     {
       mode: 'chords',
       onClick: handleChordsMode,
       icon: IoMusicalNotesSharp,
-      title: 'Chords Mode'
+      title: 'Add notes from chords'
     }
-  ], [handleDrawMode, handlePaintMode, handleResizeMode, handleChordsMode]);
+  ], [handleDrawMode, handlePaintMode, handleResizeMode, handleChordsMode, deleteSelectedNotes]);
 
   const isChordSelectorDisabled = mode !== "chords";
 
