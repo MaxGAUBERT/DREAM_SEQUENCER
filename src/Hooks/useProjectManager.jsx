@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { stringify, parse } from "flatted";
 import { useSoundBank } from "./useSoundBank";
-import * as Tone from "tone";
-import { useSynth } from "./useSynth";
 function getColorByIndex(i) {
   const colors = [
     "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
@@ -16,7 +14,7 @@ export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
   const [width, setWidth] = useState(5); // nombre de colonnes
   const [height, setHeight] = useState(5); // nombre de lignes
-  const CELL_SIZE = 50;
+  const CELL_SIZE = 100;
   const [cells, setCells] = useState(Array(width * height).fill(0));
   const [numSteps, setNumSteps] = useState(16);
   const [notes, setNotes] = useState([]);
@@ -27,7 +25,6 @@ export function useProjectManager() {
     audioObjects,
     setAudioObjects
   } = useSoundBank();
-  const {state, dispatch} = useSynth();
   const initLength = 8;
   const [patterns, setPatterns] = useState([{
     id: 1,
@@ -61,8 +58,7 @@ export function useProjectManager() {
           sampler: null,
           sampleUrl: null,
           fileName: null,
-          slot: 0,
-          synth: null
+          slot: 0
         }
       ])
     );
@@ -208,7 +204,7 @@ const loadProject = async (projectId, fromProjects = projects) => {
         name,
         {
           ...data,
-          sampler: null,
+          sampler: instrumentList[name]?.sampler,
           sampleUrl,
           fileName: data.sample?.name || data.fileName,
         }
