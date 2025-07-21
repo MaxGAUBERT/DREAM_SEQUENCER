@@ -8,6 +8,9 @@ export const soundBank = {
       "description": "Kit de sons électroniques",
       "bpm": 120,
       "sounds": {
+        "Drums":{
+          "name": "-> Drums <-",
+        },
         "kick": {
           "name": "Kick Drum",
           "url": "/Audio/Drums/Progressive_Kick.wav",
@@ -50,10 +53,40 @@ export const soundBank = {
           "volume": 0.6,
           "tags": ["cymbal", "high", "crash"]
         },
+        "-> Leads <-":{"name": "-> Leads <-"},
         "Super Lead":{
           "name": "Super Lead",
           "url": "./Audio/Leads/Pattern_11_2.wav",
           "key": "C1",
+          "volume": 0.8,
+          "tags": ["lead", "epic", "punch"]
+        },
+        "Future Shot": {
+          "name": "Future Shot",
+          "url": "./Audio/Leads/Future_Shot.wav",
+          "key": "C1",
+          "volume": 0.8,
+          "tags": ["lead", "epic", "punch"]
+        },
+        "-> FX <-":{"name": "-> FX <-"},
+        "Impact": {
+          "name": "Impact",
+          "url": "./Audio/FX/VES2_FX_Impact_48.wav",
+          "key": "C1",
+          "volume": 0.8,
+          "tags": ["lead", "epic", "punch"]
+        },
+        "Short Impact": {
+          "name": "Short Impact",
+          "url": "./Audio/FX/VEH3_Fill_Ins_128BPM_030.wav",
+          "key": "C4",
+          "volume": 0.8,
+          "tags": ["lead", "epic", "punch"]
+        },
+        "Xplode": {
+          "name": "Xplode",
+          "url": "./Audio/FX/Xplode.wav",
+          "key": "C4",
           "volume": 0.8,
           "tags": ["lead", "epic", "punch"]
         }
@@ -110,14 +143,10 @@ export const useSoundBank = (bank = soundBank) => {
   const playersRef = useRef(new Map());
 
   useEffect(() => {
-    const loadSounds = async () => {
-      console.log('🔄 Début du chargement des sons...');
-      console.log('Bank reçu:', bank);
-      
+    const loadSounds = async () => {      
       try {
         // Démarre le contexte audio Tone.js
         if (Tone.context.state !== 'running') {
-          console.log('🎵 Démarrage du contexte Tone.js...');
           await Tone.start();
         }
 
@@ -130,17 +159,11 @@ export const useSoundBank = (bank = soundBank) => {
         for (const [kitKey, kit] of Object.entries(bank.drumKits)) {
           totalSounds += Object.keys(kit.sounds).length;
         }
-        
-        console.log(`📊 Total de sons à charger: ${totalSounds}`);
-        
+            
         // Parcourt tous les kits et leurs sons
         for (const [kitKey, kit] of Object.entries(bank.drumKits)) {
-          console.log(`🎹 Chargement du kit: ${kitKey} (${kit.name})`);
-          
           for (const [soundKey, sound] of Object.entries(kit.sounds)) {
             const soundId = `${kitKey}_${soundKey}`;
-            console.log(`🔊 Chargement du son: ${soundId} - ${sound.name} (${sound.url})`);
-            
             try {
               // Crée un player Tone.js pour chaque son
               const player = new Tone.Player().toDestination();
@@ -188,13 +211,11 @@ export const useSoundBank = (bank = soundBank) => {
 
               // Charge le fichier audio de manière asynchrone
               player.load(sound.url).then(() => {
-                console.log(`✅ Fichier chargé: ${sound.name}`);
                 sounds[soundId].loaded = true;
                 loadedSounds++;
                 
                 // Met à jour l'état si tous les sons sont chargés
                 if (loadedSounds + errorSounds === totalSounds) {
-                  console.log(`🎉 Tous les sons traités! Chargés: ${loadedSounds}, Erreurs: ${errorSounds}`);
                   setAudioObjects({...sounds});
                   setLoading(false);
                 }
@@ -206,7 +227,6 @@ export const useSoundBank = (bank = soundBank) => {
                 
                 // Met à jour l'état même en cas d'erreur
                 if (loadedSounds + errorSounds === totalSounds) {
-                  console.log(`🎉 Tous les sons traités! Chargés: ${loadedSounds}, Erreurs: ${errorSounds}`);
                   setAudioObjects({...sounds});
                   setLoading(false);
                 }
@@ -234,7 +254,7 @@ export const useSoundBank = (bank = soundBank) => {
         }
         
         // Met à jour immédiatement l'état avec les objets créés (même s'ils ne sont pas encore chargés)
-        console.log('📦 Mise à jour initiale des audioObjects:', Object.keys(sounds));
+        //console.log('📦 Mise à jour initiale des audioObjects:', Object.keys(sounds));
         setAudioObjects({...sounds});
         
         // Si aucun son à charger, arrête le loading
