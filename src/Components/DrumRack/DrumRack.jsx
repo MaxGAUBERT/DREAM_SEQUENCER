@@ -8,8 +8,6 @@ import InstrumentInput from "../DrumRack/InstrumentInput";
 import ChannelModal from "../../UI/Modals/ChannelModal";
 import { usePlayContext } from "../../Contexts/PlayContext";
 import * as Tone from "tone";
-import {useSynth} from "../../Hooks/useSynth";
-import PatternSelector from "../PatternSelector/PatternSelector";
 
 const DrumRack = ({
   numSteps,
@@ -34,7 +32,7 @@ const DrumRack = ({
     numSteps,
     selectedPatternID
   });
-  const {state} = useSynth();
+
   const {isPlaying, playMode, bpm, sequencesRef} = usePlayContext();
 
   function padPattern(pattern, numSteps) {
@@ -60,7 +58,6 @@ const DrumRack = ({
         seq.dispose();
       });
       sequencesRef.current = [];
-      state.synthType = "";
     };
 
     cleanup();
@@ -87,7 +84,7 @@ const DrumRack = ({
     const seq = new Tone.Sequence((time, stepIndex) => {
       if (pattern[stepIndex]) {
         if (sampler && sampler.loaded !== false) {
-          sampler.triggerAttackRelease("C4", "4n", time);
+          sampler.triggerAttackRelease("C4", "8n", time);
         }
       }
     }, Array.from({ length: numSteps }, (_, i) => i), "16n");
@@ -157,7 +154,6 @@ const DrumRack = ({
           instrumentName={instrumentName}
           setInstrumentName={setInstrumentName}
           onConfirm={handlers.onAddInstrument}
-          onAddSynth={handlers.onAddSynth}
           onCancel={() => {
             setInput(false);
             setInstrumentName('');
