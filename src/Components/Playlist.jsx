@@ -255,8 +255,8 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
       <button 
         onClick={() => setCells(Array(width * height).fill(null))}
         style={{
-          width: `${CELL_SIZE + 5}px`,
-          height: `${CELL_SIZE}px`,
+          width: `${50}px`,
+          height: `${50}px`,
           border: "2px solid #ccc",
           backgroundColor: "red"
         }}
@@ -293,17 +293,16 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
           height: `${height * CELL_SIZE}px`,
         }}
       >
-
-        {currentColumn !== null && (
-        <div
-          className="absolute top-0 bg-red-400 bg-opacity-30 pointer-events-none z-0 transition-all duration-100"
-          style={{
-            left: `${currentColumn * CELL_SIZE}px`,
-            width: `${CELL_SIZE / 10}px`,
-            height: `${height * CELL_SIZE}px`,
-          }}
-        />
-      )}
+        {isPlaying && currentColumn !== null && (
+          <div
+            className="absolute top-0 bg-red-400 bg-opacity-30 pointer-events-none z-0 transition-normal duration-1000 ease-out"
+            style={{
+              transform: `translateX(${currentColumn * CELL_SIZE}px)`,
+              width: `${CELL_SIZE / 20}px`,
+              height: `${(height * CELL_SIZE) / 2}px`,
+            }}
+          />
+        )}
 
         {cells.map((cell, index) => (
           <button
@@ -311,12 +310,12 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
             onClick={() => placePattern(index)}
             style={{
               width: `${CELL_SIZE}px`,
-              height: `${CELL_SIZE}px`,
+              height: `${CELL_SIZE / 2}px`,
               border: "1px solid #ccc",
             }}
-            className={`${cell !== null ? colorByIndex(cell - 1) : "bg-gray-800"}`}
+            className={`${cell !== null ? colorByIndex(cell - 1) : "bg-gray-800"} hover:bg-gray-700`}
           >
-            {cell ? cell : null}
+            {cell ? patterns[cell - 1].name : null}
           </button>
         ))}
       </div>
