@@ -8,12 +8,13 @@ import InstrumentInput from "../DrumRack/InstrumentInput";
 import ChannelModal from "../../UI/Modals/ChannelModal";
 import { usePlayContext } from "../../Contexts/PlayContext";
 import * as Tone from "tone";
-import { useSampleContext } from "../../Contexts/ChannelProvider";
 import {useSynth} from "../../Hooks/useSynth";
+import PatternSelector from "../PatternSelector/PatternSelector";
 
 const DrumRack = ({
   numSteps,
   setNumSteps,
+  patterns,
   instrumentList,
   setInstrumentList,
   selectedPatternID,
@@ -35,7 +36,15 @@ const DrumRack = ({
   });
   const {state} = useSynth();
   const {isPlaying, playMode, bpm, sequencesRef} = usePlayContext();
-  const {getSynth, createSynth} = useSampleContext();
+
+  function padPattern(pattern, numSteps) {
+  const padded = [...pattern];
+  while (padded.length < numSteps) {
+    padded.push(false);
+  }
+  return padded;
+}
+
 
   useEffect(() => {
     // Nettoyage systématique à chaque changement
@@ -64,69 +73,33 @@ const DrumRack = ({
     let hasValidSequences = false;
 
     Object.entries(instrumentList).forEach(([instrumentName, instrumentData]) => {
-      const pattern = instrumentData.grids?.[selectedPatternID];
-      const sampler = instrumentData.sampler;
-      const synth = createSynth(instrumentName, state);
-      const currentSynth = getSynth(instrumentName);
+  const rawPattern = instrumentData.grids?.[selectedPatternID];
+  const sampler = instrumentData.sampler;
 
-      console.log(`Checking ${instrumentName}:`, {
-        hasPattern: !!pattern,
-        hasSampler: !!sampler,
-        hasSynth: !!synth,
-        samplerLoaded: sampler?.loaded,
-        patternLength: pattern?.length,
-        pattern: pattern
-      });
+  if (!Array.isArray(rawPattern)) return;
+  if (instrumentData.muted || playMode !== 'Pattern') return;
 
-      // Vérifications de base
-      if (!pattern || !Array.isArray(pattern)) {
-        console.log(`Skip ${instrumentName}: no valid pattern`);
-        return;
+  const pattern = padPattern(rawPattern, numSteps);
+  const hasActiveSteps = pattern.some(step => step === true);
+  if (!hasActiveSteps) return;
+
+  try {
+    const seq = new Tone.Sequence((time, stepIndex) => {
+      if (pattern[stepIndex]) {
+        if (sampler && sampler.loaded !== false) {
+          sampler.triggerAttackRelease("C4", "4n", time);
+        }
       }
+    }, Array.from({ length: numSteps }, (_, i) => i), "16n");
 
-      if (sampler && currentSynth) {
-        console.log(`Skip ${instrumentName}: sampler and synth both exist`);
-        return;
-      }
+    seq.start(0);
+    sequencesRef.current.push(seq);
+    hasValidSequences = true;
+  } catch (error) {
+    console.error(`Error creating sequence for ${instrumentName}:`, error);
+  }
+});
 
-      if (instrumentData.muted || playMode !== 'Pattern') {
-        console.log(`Skip ${instrumentName}: instrument is muted`);
-        return;
-      }
-
-
-      // Vérifier si le pattern a au moins un step actif
-      const hasActiveSteps = pattern.some(step => step === true);
-      if (!hasActiveSteps) {
-        console.log(`Skip ${instrumentName}: no active steps`);
-        return;
-      }
-
-      try {
-        const seq = new Tone.Sequence((time, stepIndex) => {
-          if (pattern[stepIndex] === true) {
-            // Vérifier que le sampler est valide avant de jouer
-            if (sampler && (sampler.loaded !== false)) {
-              try {
-                sampler.triggerAttackRelease("C4", "4n", time);
-              } catch (playError) {
-                console.error(`Error playing sample for ${instrumentName}:`, playError);
-              }
-            }
-            if (currentSynth) {
-              currentSynth.triggerAttackRelease("C4", "16n", time);
-            }
-          }
-        }, Array.from({ length: numSteps }, (_, i) => i), "16n");
-
-        seq.start(0);
-        sequencesRef.current.push(seq);
-        hasValidSequences = true;
-        console.log(`✓ Sequence created for ${instrumentName} with ${pattern.filter(s => s).length} active steps`);
-      } catch (error) {
-        console.error(`Error creating sequence for ${instrumentName}:`, error);
-      }
-    });
 
     // Démarrer le transport seulement s'il y a des séquences valides
     if (hasValidSequences) {
@@ -155,7 +128,7 @@ const DrumRack = ({
       style={{ backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: colorsComponent.Border }}>
 
       <div className="text-xs border-b p-2 pb-2">
-        Current Pattern: {selectedPatternID + 1} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
+        Current Pattern: {patterns.find(p => p.id === selectedPatternID)?.name} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
       </div>
 
       <InstrumentList
