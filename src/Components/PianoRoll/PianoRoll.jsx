@@ -586,7 +586,6 @@ const handleResizeRight = useCallback((e, note) => {
         if (instrument.muted || currentPlayMode !== 'Pattern') return;
 
         const sampler = getSampler(instrumentName);
-        const synth = getSynth(instrumentName);
         const pianoData = instrument?.pianoData?.[currentPatternID] || [];
 
         pianoData
