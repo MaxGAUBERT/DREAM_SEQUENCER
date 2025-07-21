@@ -14,6 +14,7 @@ import TransportBar from "./Components/TransportBar";
 import PianoRoll from "./Components/PianoRoll/PianoRoll";
 import Playlist from "./Components/Playlist";
 import ChannelProvider from "./Contexts/ChannelProvider";
+import { HistoryProvider, useHistoryContext } from "./Contexts/HistoryProvider";
 
 
 const getColorByIndex = (() => {
@@ -90,6 +91,8 @@ export default function App() {
   const [instrumentName, setInstrumentName] = useState("");
   const [channelModalOpen, setChannelModalOpen] = useState(false);
 
+  const {undo, redo} = useHistoryContext();
+
   // Mémoiser openComponents pour éviter les re-renders
   const [openComponents, setOpenComponents] = useState(() => ({
     "Drum Rack": true,
@@ -111,7 +114,7 @@ export default function App() {
 
   const openPianoRollForInstrument = useCallback((instrumentName) => {
     setPianoRollInstrument(instrumentName);
-    setIsPianoRollOpen(!isPianoRollOpen);
+    setIsPianoRollOpen(true);
   }, []);
 
   const openModal = useCallback((name) => {
@@ -152,7 +155,9 @@ export default function App() {
     "Load Project": () => openModal("load"),
     "Save As": () => openModal("saveAs"),
     "Save": saveCurrentProject,
-  }), [openModal, saveCurrentProject]);
+    "Undo": undo,
+    "Redo": redo,
+  }), [openModal, saveCurrentProject, undo, redo]);
 
   const handleRunAction = useCallback((action) => {
     const handler = actionHandlers[action];
@@ -213,6 +218,7 @@ export default function App() {
       </span>
      
       <GlobalColorContextProvider>
+        <HistoryProvider>
         <ChannelProvider>
         <StripMenu onAction={handleRunAction} />
         
@@ -225,12 +231,12 @@ export default function App() {
           deleteAllProjects={deleteAllProjects}
           saveAsProject={saveAsProject}
         />
-
         <PlayContext>
           {openComponents["Drum Rack"] && (
             <DrumRack 
               numSteps={numSteps} 
               setNumSteps={setNumSteps} 
+              patterns={patterns}
               instrumentList={instrumentList} 
               setInstrumentList={setInstrumentList}
               selectedPatternID={selectedPatternID}
@@ -280,6 +286,7 @@ export default function App() {
           <TransportBar />
         </PlayContext>
         </ChannelProvider> 
+        </HistoryProvider>
       </GlobalColorContextProvider>
     </div>
   );
