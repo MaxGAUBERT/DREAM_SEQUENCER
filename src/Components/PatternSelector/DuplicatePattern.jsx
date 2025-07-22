@@ -7,7 +7,7 @@ export default function DuplicatePattern({ onSelect, patterns, setPatterns, sele
   const handleDuplicatePattern = () => {
   if (!selectedPatternID) return;
 
-  const patternToDuplicate = patterns.find(p => p.id === selectedPatternID + 1);
+  const patternToDuplicate = patterns.find(p => p.id === selectedPatternID);
   if (!patternToDuplicate) console.log("Pattern to duplicate not found", patternToDuplicate);
   console.log(patternToDuplicate);
 
