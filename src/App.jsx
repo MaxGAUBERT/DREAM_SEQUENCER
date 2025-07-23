@@ -14,7 +14,7 @@ import TransportBar from "./Components/TransportBar";
 import PianoRoll from "./Components/PianoRoll/PianoRoll";
 import Playlist from "./Components/Playlist";
 import ChannelProvider from "./Contexts/ChannelProvider";
-import { HistoryProvider, useHistoryContext } from "./Contexts/HistoryProvider";
+import { useHistoryContext } from "./Contexts/HistoryProvider";
 
 
 const getColorByIndex = (() => {
@@ -127,6 +127,7 @@ export default function App() {
 
   const handleSelectPattern = useCallback((id) => {
     setSelectedPatternID(id);
+    console.log("Selected pattern",  id + 1);
 
     setInstrumentList(prev => {
       const updated = { ...prev };
@@ -145,6 +146,24 @@ export default function App() {
       return updated;
     });
   }, [setSelectedPatternID, setInstrumentList]);
+
+  const handleKeyDown = (e) => {
+    if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+    } else if (e.ctrlKey && (e.key === "y" || (e.key === "z" && e.shiftKey))) {
+        e.preventDefault();
+        redo();
+    }
+};
+
+useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+}, [undo, redo]); // ✅ Inclure les deux fonctions
 
   const actionHandlers = useMemo(() => ({
     "Drum Rack": () => setOpenComponents(prev => ({ ...prev, "Drum Rack": !prev["Drum Rack"] })),
@@ -218,7 +237,6 @@ export default function App() {
       </span>
      
       <GlobalColorContextProvider>
-        <HistoryProvider>
         <ChannelProvider>
         <StripMenu onAction={handleRunAction} />
         
@@ -282,11 +300,9 @@ export default function App() {
               onClose={() => setIsPianoRollOpen(false)}
             />
           )}
-
           <TransportBar />
         </PlayContext>
         </ChannelProvider> 
-        </HistoryProvider>
       </GlobalColorContextProvider>
     </div>
   );
