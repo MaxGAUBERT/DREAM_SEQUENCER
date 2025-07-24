@@ -97,7 +97,7 @@ const DrumRack = ({
         const seq = new Tone.Sequence((time, stepIndex) => {
           if (pattern[stepIndex]) {
             if (sampler && sampler.loaded !== false) {
-              sampler.triggerAttackRelease("C4", "0n", time);
+              sampler.triggerAttackRelease("C4", "4n", time);
             }
           }
         }, Array.from({ length: numSteps }, (_, i) => i), "16n");
