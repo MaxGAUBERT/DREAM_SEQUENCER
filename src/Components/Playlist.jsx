@@ -6,68 +6,50 @@ import * as Tone from "tone";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import { useSampleContext } from "../Contexts/ChannelProvider";
 
+function resizeCells(prevCells, oldWidth, oldHeight, newWidth, newHeight) {
+  const newCells = Array(newWidth * newHeight).fill(null);
+  const minRows = Math.min(oldHeight, newHeight);
+  const minCols = Math.min(oldWidth, newWidth);
+
+  for (let row = 0; row < minRows; row++) {
+    for (let col = 0; col < minCols; col++) {
+      const oldIndex = row * oldWidth + col;
+      const newIndex = row * newWidth + col;
+      if (
+        oldIndex < prevCells.length &&
+        prevCells[oldIndex] !== null &&
+        prevCells[oldIndex] !== 0
+      ) {
+        newCells[newIndex] = prevCells[oldIndex];
+      }
+    }
+  }
+
+  return newCells;
+}
+
+
 const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, cells, setCells, numSteps}) => {
   const {isPlaying, playMode, bpm} = usePlayContext();
   const {width, setWidth, height, setHeight, CELL_SIZE} = useProjectManager();
   const {getSampler} = useSampleContext();
-  
-  // SOLUTION 1: Stocker les dimensions précédentes
+
   const [prevDimensions, setPrevDimensions] = useState({width, height});
   const [currentColumn, setCurrentColumn] = useState(null);
 
-  // Effect pour préserver les patterns lors du redimensionnement
   useEffect(() => {
-    // Vérifier si les dimensions ont vraiment changé
-    if (prevDimensions.width === width && prevDimensions.height === height) {
-      return; // Pas de changement, ne rien faire
-    }
+  if (prevDimensions.width === width && prevDimensions.height === height) return;
 
-    console.log(`Redimensionnement: ${prevDimensions.width}x${prevDimensions.height} -> ${width}x${height}`);
+  const oldWidth = prevDimensions.width;
+  const oldHeight = prevDimensions.height;
 
-    setCells(prevCells => {
-      const newSize = width * height;
-      const newCells = Array(newSize).fill(null);
-      
-      // Utiliser les vraies dimensions précédentes
-      const oldWidth = prevDimensions.width;
-      const oldHeight = prevDimensions.height;
-      
-      // Déterminer la zone de chevauchement
-      const minRows = Math.min(oldHeight, height);
-      const minCols = Math.min(oldWidth, width);
-      
-      console.log(`Zone de préservation: ${minRows} lignes x ${minCols} colonnes`);
-      
-      // Copier les patterns qui rentrent dans les nouvelles dimensions
-      let patternsPreserved = 10;
-      
-      for (let row = 0; row < minRows; row++) {
-        for (let col = 0; col < minCols; col++) {
-          const oldIndex = row * oldWidth + col;
-          const newIndex = row * width + col;
-          
-          // Vérifier que l'ancien index est valide et contient un pattern
-          if (oldIndex < prevCells.length && 
-              prevCells[oldIndex] !== null && 
-              prevCells[oldIndex] !== 0) {
-            
-            newCells[newIndex] = prevCells[oldIndex];
-            patternsPreserved++;
-            
-            console.log(`Pattern préservé: ligne ${row}, col ${col}, pattern ${prevCells[oldIndex]}`);
-          }
-        }
-      }
-      
-      console.log(`${patternsPreserved} patterns préservés sur ${newSize} cellules`);
-      
-      return newCells;
-    });
-    
-    // Mettre à jour les dimensions précédentes
-    setPrevDimensions({width, height});
-    
-  }, [width, height]);
+  setCells(prevCells => {
+    const resized = resizeCells(prevCells, oldWidth, oldHeight, width, height);
+    return resized;
+  });
+
+  setPrevDimensions({ width, height });
+}, [width, height]);
 
   function playPattern(pattern, instrumentList, startTime, numSteps) {
   const stepDuration = Tone.Time("16n").toSeconds(); // à adapter selon ta grille
@@ -111,70 +93,22 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
 
 
   const handleWidthChange = (e) => {
-    const newWidth = Number(e.target.value);
-    console.log(`Changement de largeur: ${width} -> ${newWidth}`);
-    
-    setCells(prevCells => {
-      const newCells = Array(newWidth * height).fill(null);
-      
-      // Copier les patterns existants
-      const minCols = Math.min(width, newWidth);
-      let patternsPreserved = 0;
-      
-      for (let row = 0; row < height; row++) {
-        for (let col = 0; col < minCols; col++) {
-          const oldIndex = row * width + col;
-          const newIndex = row * newWidth + col;
-          
-          if (oldIndex < prevCells.length && 
-              prevCells[oldIndex] !== null && 
-              prevCells[oldIndex] !== 0) {
-            
-            newCells[newIndex] = prevCells[oldIndex];
-            patternsPreserved++;
-          }
-        }
-      }
-      
-      console.log(`Largeur: ${patternsPreserved} patterns préservés`);
-      return newCells;
-    });
-    
-    setWidth(newWidth);
-  };
+  const newWidth = Number(e.target.value);
+  console.log(`Changement de largeur: ${width} -> ${newWidth}`);
+
+  setCells(prevCells => resizeCells(prevCells, width, height, newWidth, height));
+  setWidth(newWidth);
+};
+
 
   const handleHeightChange = (e) => {
-    const newHeight = Number(e.target.value);
-    console.log(`Changement de hauteur: ${height} -> ${newHeight}`);
-    
-    setCells(prevCells => {
-      const newCells = Array(width * newHeight).fill(null);
-      
-      // Copier les patterns existants
-      const minRows = Math.min(height, newHeight);
-      let patternsPreserved = 0;
-      
-      for (let row = 0; row < minRows; row++) {
-        for (let col = 0; col < width; col++) {
-          const oldIndex = row * width + col;
-          const newIndex = row * width + col;
-          
-          if (oldIndex < prevCells.length && 
-              prevCells[oldIndex] !== null && 
-              prevCells[oldIndex] !== 0) {
-            
-            newCells[newIndex] = prevCells[oldIndex];
-            patternsPreserved++;
-          }
-        }
-      }
-      
-      console.log(`Hauteur: ${patternsPreserved} patterns préservés`);
-      return newCells;
-    });
-    
-    setHeight(newHeight);
-  };
+  const newHeight = Number(e.target.value);
+  console.log(`Changement de hauteur: ${height} -> ${newHeight}`);
+
+  setCells(prevCells => resizeCells(prevCells, width, height, width, newHeight));
+  setHeight(newHeight);
+};
+
 
   useEffect(() => {
   if (!isPlaying || playMode !== "Song" || !instrumentList) return;
@@ -247,7 +181,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
         height: `${height * CELL_SIZE}px`,
       }}
     >
-    <label className="absolute top-[5px] left-[300px] text-white">
+    <label className="sticky top-[30px] left-[800px] text-white">
       {isPlaying && currentColumn !== null ? `Col: ${currentColumn + 1} / ${width}` : "Stopped"}
     </label>
 
@@ -260,11 +194,12 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
           border: "2px solid #ccc",
           backgroundColor: "red"
         }}
+        className="sticky left-5"
       >
         <MdDelete size={20}/>
       </button>
 
-      <div className="absolute flex flex-col top-[0px] ml-15 left-[10px]">
+      <div className="sticky top-[0px] left-30">
         <label>Width ({width})</label>
         <input
           type="range"
