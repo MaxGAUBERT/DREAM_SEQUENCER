@@ -69,7 +69,6 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
     const paddedSteps = [...rawSteps];
     while (paddedSteps.length < numSteps) paddedSteps.push(false);
 
-    // Jouer les steps binaires (drums / samples)
     for (let stepIndex = 0; stepIndex < numSteps; stepIndex++) {
       if (paddedSteps[stepIndex]) {
         const noteTime = startTime + stepIndex * stepDuration;
@@ -109,8 +108,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
   setHeight(newHeight);
 };
 
-
-  useEffect(() => {
+useEffect(() => {
   if (!isPlaying || playMode !== "Song" || !instrumentList) return;
 
   const cleanup = () => {
@@ -125,31 +123,32 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
   Tone.Transport.bpm.value = bpm;
 
   const stepDuration = Tone.Time("16n").toSeconds(); 
-  let currentTime = 0;
+  const patternDuration = stepDuration * numSteps;
+  let currentColumn = 0;
 
-  for (let row = 0; row < height; row++) {
-    for (let col = 0; col < width; col++) {
-      const index = row * width + col;
+  const repeatId = Tone.Transport.scheduleRepeat((time) => {
+    setCurrentColumn(currentColumn); // met à jour l'UI
+
+    for (let row = 0; row < height; row++) {
+      const index = row * width + currentColumn;
       const patternID = cells[index];
-
       if (patternID && patterns[patternID - 1]) {
         const pattern = patterns[patternID - 1];
-        const patternDuration = stepDuration * numSteps;
-
-        Tone.Transport.scheduleOnce((time) => {
-          playPattern(pattern, instrumentList, time, numSteps);
-          setCurrentColumn(col);
-        }, col * patternDuration);
-
-        currentTime += patternDuration;
+        playPattern(pattern, instrumentList, time, numSteps);
       }
     }
-  }
+
+    currentColumn = (currentColumn + 1) % width;
+  }, patternDuration); 
 
   Tone.Transport.start();
 
-  return cleanup;
+  return () => {
+    cleanup();
+    Tone.Transport.clear(repeatId);
+  };
 }, [isPlaying, playMode, bpm, instrumentList, cells, patterns, numSteps]);
+
 
 
 
@@ -171,7 +170,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
 
   return (
     <div
-      className="gap-5 border-2 min-w-100 min-h-140 max-w-232.5 w-232.5 max-h-100 resize bg-gray-800 overflow-auto absolute top-[50px]"
+      className="border-2 min-w-100 min-h-140 max-w-232.5 w-232.5 max-h-100 resize bg-gray-800 overflow-auto absolute top-[50px]"
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${width}, ${CELL_SIZE}px)`,
