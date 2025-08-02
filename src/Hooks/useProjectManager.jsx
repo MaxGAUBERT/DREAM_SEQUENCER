@@ -12,8 +12,8 @@ function getColorByIndex(i) {
 
 export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
-  const [width, setWidth] = useState(5); // nombre de colonnes
-  const [height, setHeight] = useState(5); // nombre de lignes
+  const [width, setWidth] = useState(5); 
+  const [height, setHeight] = useState(5); 
   const CELL_SIZE = 100;
   const [cells, setCells] = useState(Array(width * height).fill(0));
   const [numSteps, setNumSteps] = useState(16);
@@ -33,22 +33,23 @@ export function useProjectManager() {
     grid: Array(16).fill(false),
     pianoData: []
   }]);
+
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
-  const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
+  const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap", "Toms"];
 
   const initializeInstrumentList = useCallback(() => {
     return Object.fromEntries(
-      DEFAULT_INSTRUMENTS.map(inst => [
+      DEFAULT_INSTRUMENTS.map((inst, idx) => [
         inst,
         {
           grids: Object.fromEntries(
             Array.from({ length: initLength }, (_, i) => [i, Array(16).fill(false)])
           ),
-          value: null,
           pianoData: {
             [selectedPatternID]: []
           },
-
+          volume: 5,
+          fx: null,
           muted: false,
           sample: {
             id: null,
@@ -58,13 +59,60 @@ export function useProjectManager() {
           sampler: null,
           sampleUrl: null,
           fileName: null,
-          slot: 0
+          slot: idx + 1
         }
       ])
     );
   }, [initLength]);
 
   const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
+
+  const applyInstrumentChange = useCallback((updateFn) => {
+    setInstrumentList((prev) => {
+        const updated = updateFn(prev);
+        return updated;
+    });
+  }, []);
+  
+  /*
+   const updateInstrumentSlot = useCallback((channelId, newSlot) => {
+    console.log("🔧 updateInstrumentSlot called with:", { channelId, newSlot });
+    console.log("🔧 Current instrumentList before update:", instrumentList);
+    
+    if (!channelId) {
+      console.log("❌ No channelId provided, aborting update");
+      return;
+    }
+
+    setInstrumentList(prev => {
+      console.log("🔧 Previous instrumentList in setter:", prev);
+      console.log("🔧 Channel to update:", channelId, "Current slot:", prev[channelId]?.slot);
+      
+      if (!prev[channelId]) {
+        console.log("❌ Channel not found in instrumentList:", channelId);
+        return prev;
+      }
+
+      const updated = {
+        ...prev,
+        [channelId]: {
+          ...prev[channelId],
+          slot: Number(newSlot),
+        },
+      };
+      
+      console.log("✅ Updated instrumentList:", updated);
+      console.log("✅ Updated channel slot:", updated[channelId].slot);
+      return updated;
+    });
+  }, [instrumentList]);
+  */
+
+  const getInstrumentListSnapshot = useCallback(() => {
+  return structuredClone(instrumentList);
+  }, [instrumentList]);
+
+
 
   useEffect(() => {
     const saved = localStorage.getItem("projects");
@@ -253,6 +301,8 @@ const loadProject = async (projectId, fromProjects = projects) => {
     setInstrumentList,
     initializeInstrumentList,
     assignSampleToInstrument,
+    applyInstrumentChange,
+    getInstrumentListSnapshot,
     DEFAULT_INSTRUMENTS,
     cells, setCells,
     CELL_SIZE, width, height, setWidth, setHeight,
@@ -274,5 +324,6 @@ const loadProject = async (projectId, fromProjects = projects) => {
       setProjects([]);
       localStorage.removeItem("projects");
     },
+    //updateInstrumentSlot
   };
 }

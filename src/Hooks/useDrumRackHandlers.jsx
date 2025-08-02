@@ -1,8 +1,9 @@
 // useDrumRackHandlers.js
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useProjectManager } from "./useProjectManager";
 import { useSampleContext } from "../Contexts/ChannelProvider";
 import { useHistoryContext } from "../Contexts/HistoryProvider";
+import useFXChain from "./useFXChain";
 
 export default function useDrumRackHandlers({
   instrumentName,
@@ -15,6 +16,11 @@ export default function useDrumRackHandlers({
   const { assignSampleToInstrument } = useProjectManager();
   const { getSampler, loadSample } = useSampleContext();
   const { addAction, undo, redo, canUndo, canRedo } = useHistoryContext();
+  const { setSelectedSlot, selectedSlot} = useFXChain();
+
+  useEffect(() => {
+    console.log("SelectedSlot updated:", selectedSlot);
+  }, [selectedSlot]);
 
   const toggleStep = useCallback((name, index) => {
     const inst = instrumentList[name];
@@ -99,34 +105,48 @@ export default function useDrumRackHandlers({
   }, [setInstrumentList, instrumentList, addAction]);
 
   const handleSlotChange = useCallback((name, slot) => {
-    const prevSlot = instrumentList[name]?.slot;
-    
-    const action = {
-      type: "changeSlot",
-      payload: { name, slot, prevSlot },
-      apply: () => {
-        setInstrumentList(prev => ({
-          ...prev,
-          [name]: {
-            ...prev[name],
-            slot
-          }
-        }));
-      },
-      revert: () => {
-        setInstrumentList(prev => ({
-          ...prev,
-          [name]: {
-            ...prev[name],
-            slot: prevSlot
-          }
-        }));
-      }
-    };
+  const prevSlot = instrumentList[name]?.slot;
 
-    action.apply();
-    addAction(action);
-  }, [setInstrumentList, instrumentList, addAction]);
+  if (prevSlot === slot) return;
+
+  const action = {
+    type: "changeSlot",
+    payload: { name, slot, prevSlot },
+    apply: () => {
+      console.log(`Assign slot ${slot} to instrument "${name}"`);
+
+      setInstrumentList(prev => ({
+        ...prev,
+        [name]: {
+          ...prev[name],
+          slot: Number(slot)
+        }
+      }));
+
+      // ✅ mettre selectedSlot à jour **après** instrumentList
+      if (selectedSlot.channel === name) {
+        setSelectedSlot({ channel: name, slot: Number(slot) });
+      }
+    },
+    revert: () => {
+      setInstrumentList(prev => ({
+        ...prev,
+        [name]: {
+          ...prev[name],
+          slot: prevSlot
+        }
+      }));
+
+      if (selectedSlot.channel === name) {
+        setSelectedSlot({ channel: name, slot: prevSlot });
+      }
+    }
+  };
+
+  action.apply();
+  addAction(action);
+}, [setInstrumentList, instrumentList, setSelectedSlot, selectedSlot, addAction]);
+
 
   const handleSampleLoad = useCallback((name, e) => {
     const file = e.target.files[0];
@@ -182,6 +202,11 @@ export default function useDrumRackHandlers({
           delete newList[name];
           return newList;
         });
+
+        // Si l'instrument supprimé était sélectionné dans FXChain, réinitialiser la sélection
+        if (selectedSlot.channel === name) {
+          setSelectedSlot({ channel: null, slot: 0 });
+        }
       },
       revert: () => {
         setInstrumentList(prevState);
@@ -190,7 +215,7 @@ export default function useDrumRackHandlers({
 
     action.apply();
     addAction(action);
-  }, [setInstrumentList, instrumentList, addAction]);
+  }, [setInstrumentList, instrumentList, selectedSlot, setSelectedSlot, addAction]);
 
   const handleReset = useCallback(() => {
     const prevState = { ...instrumentList };
@@ -226,6 +251,8 @@ export default function useDrumRackHandlers({
       payload: { prevState },
       apply: () => {
         setInstrumentList({});
+        // Réinitialiser FXChain selection
+        setSelectedSlot({ channel: null, slot: 0 });
       },
       revert: () => {
         setInstrumentList(prevState);
@@ -234,7 +261,7 @@ export default function useDrumRackHandlers({
 
     action.apply();
     addAction(action);
-  }, [setInstrumentList, instrumentList, addAction]);
+  }, [setInstrumentList, instrumentList, setSelectedSlot, addAction]);
 
   const handleRename = useCallback((newName) => {
     const trimmed = newName.trim();
@@ -254,16 +281,26 @@ export default function useDrumRackHandlers({
           return Object.fromEntries(entries);
         });
         setInstrumentName(trimmed);
+
+        // Mettre à jour FXChain si l'instrument renommé était sélectionné
+        if (selectedSlot.channel === instrumentName) {
+          setSelectedSlot({ ...selectedSlot, channel: trimmed });
+        }
       },
       revert: () => {
         setInstrumentList(prevState);
         setInstrumentName(prevInstrumentName);
+
+        // Restaurer le nom dans FXChain
+        if (selectedSlot.channel === trimmed) {
+          setSelectedSlot({ ...selectedSlot, channel: instrumentName });
+        }
       }
     };
 
     action.apply();
     addAction(action);
-  }, [instrumentName, instrumentList, setInstrumentList, setInstrumentName, addAction]);
+  }, [instrumentName, instrumentList, setInstrumentList, setInstrumentName, selectedSlot, setSelectedSlot, addAction]);
 
   const handleAddInstrument = useCallback((e) => {
     e?.preventDefault?.();
