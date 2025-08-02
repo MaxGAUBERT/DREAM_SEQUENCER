@@ -1,10 +1,23 @@
 import React, { useState, useEffect, useReducer } from 'react';
 import { useSoundBank } from '../../Hooks/useSoundBank';
+import { useFXChain } from '../../Hooks/useFXChain';
+import InstrumentList from '../../Components/DrumRack/InstrumentList';
 
-const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentName, setInstrumentName, onRename, onSelectSample, channelUrl, onOpenPianoRoll}) => {
+const ChannelModal = ({ 
+  onClose, 
+  instrumentList, 
+  setInstrumentList, 
+  instrumentName, 
+  setInstrumentName, 
+  onRename, 
+  onSelectSample, 
+  channelUrl, 
+  onOpenPianoRoll
+}) => {
   const [activeTab, setActiveTab] = useState("General");
   const [localName, setLocalName] = useState(instrumentName);
   const [selectedSoundId, setSelectedSoundId] = useState(null);
+  const { setSelectedSlot, selectedSlot, slots } = useFXChain();
 
   const {
     audioObjects, 
@@ -15,6 +28,12 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
   useEffect(() => {
     setLocalName(instrumentName);
   }, [instrumentName]);
+
+  useEffect(() => {
+    if (selectedSlot.channel && selectedSlot.slot !== null) {
+      console.log("SelectedSlot updated:", selectedSlot);
+    }
+  }, [selectedSlot]);
 
   function cleanSampleName(filePath, maxLength) {
     if (!filePath) return "";
@@ -42,14 +61,12 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
       const rawPath = soundObject.soundData.url;
       const displayName = cleanSampleName(rawPath, 20);
 
-      // Créer l'objet sample avec les bonnes propriétés
       const sampleData = {
         id: selectedSoundId,
-        url: rawPath, // URL directe du sample
+        url: rawPath,
         name: displayName
       };
 
-      // Appeler onSelectSample avec les bons paramètres
       onSelectSample(sampleData, instrumentName);
     }
 
@@ -57,15 +74,20 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
   };
 
   const handleReset = () => {
-    // Remettre les valeurs par defaut
     setLocalName(instrumentName);
-    handleSetFxSlot(instrumentName, 0);
+    
+    if (selectedSlot) {
+      setSelectedSlot({channel: null, slot: null});
+    }
+    
+    handleSetFxSlot(instrumentList[instrumentName].slot, 5);
     onSelectSample("", instrumentName);
-    dispatch({ type: "RESET_ALL" });
-  }
+    if (typeof dispatch === 'function') {
+      dispatch({ type: "RESET_ALL" });
+    }
+  };
 
   const handleCancel = () => {
-    // Remettre la valeur originale
     setLocalName(instrumentName);
     onClose();
   };
@@ -96,17 +118,16 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
         }
       };
     });
-    console.log(`Slot ${slotNumber} selected for instrument ${instrumentName}`);
-  }
+    setSelectedSlot({channel: "Kick", slot: slotNumber});
+    console.log("SelectedSlot updated:", selectedSlot);
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "General":
         return (
            <div>
-            <p>
-              Channel properties
-            </p>
+            <p>Channel properties</p>
             <label className="block text-sm text-red-600 font-medium mb-2">
               Sample url: {channelUrl}
             </label>
@@ -126,43 +147,38 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
               <label className="block text-sm text-gray-600 font-medium mb-2">
                 Assign a sample
               </label>
-            <select
-              className="w-full px-4 py-2 text-white bg-gray-500 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={selectedSoundId || ""}
-              onChange={(e) => setSelectedSoundId(e.target.value)}
-            >
-              <option value="">-- Select --</option>
-              {Object.entries(audioObjects).map(([soundId, soundObj]) => (
-                <option key={soundId} value={soundId}>
-                  {soundObj.url ? soundObj.name : soundObj.soundData.name}
-                </option>
-              ))}
-            </select>
-            
-            <button
-              type="button"
-              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              onClick={handleOpenPianoRoll}
-            >
-              PianoRoll
-            </button>
+              <select
+                className="w-full px-4 py-2 text-white bg-gray-500 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedSoundId || ""}
+                onChange={(e) => setSelectedSoundId(e.target.value)}
+              >
+                <option value="">-- Select --</option>
+                {Object.entries(audioObjects).map(([soundId, soundObj]) => (
+                  <option key={soundId} value={soundId}>
+                    {soundObj.url ? soundObj.name : soundObj.soundData.name}
+                  </option>
+                ))}
+              </select>
+              
+              <button
+                type="button"
+                className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                onClick={handleOpenPianoRoll}
+              >
+                PianoRoll
+              </button>
             </div>
           </div>
         );
+
       case "Effects":
         return (
           <div className="text-white">
-            <p>Assign channels to FX slots</p>
-            <input
-              type='number'
-              value={instrumentList[instrumentName].slot}
-              min={0}
-              max={200}
-              onChange={(e) => handleSetFxSlot(instrumentName, Number(e.target.value))}
-              className="w-20 mt-5 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <p className="mb-4">Assign channel to FX slots</p>
+
           </div>
-        );
+        );      
+
       case "Advanced":
         return (
           <div className="text-white">
@@ -176,7 +192,7 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
   };
 
   return (
-      <div className="bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md">
+      <div className="bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto">
         <h2 className="text-2xl text-white font-bold mb-4">{instrumentName}</h2>
 
         {/* Tabs */}
@@ -209,7 +225,7 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
           </button>
 
           <button
-            className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700'
+            className='bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700'
             onClick={handleReset}
           >
             Reset
@@ -221,8 +237,6 @@ const ChannelModal = ({ onClose, instrumentList, setInstrumentList, instrumentNa
             Cancel
           </button>
         </div>
-
-        
 
         {/* Close Icon */}
         <button
