@@ -15,6 +15,8 @@ import PianoRoll from "./Components/PianoRoll/PianoRoll";
 import Playlist from "./Components/Playlist";
 import ChannelProvider from "./Contexts/ChannelProvider";
 import { useHistoryContext } from "./Contexts/HistoryProvider";
+import FXChain from "./Components/FXChain";
+import InstrumentList from "./Components/DrumRack/InstrumentList";
 
 
 const getColorByIndex = (() => {
@@ -98,7 +100,8 @@ export default function App() {
     "Drum Rack": true,
     "Pattern Selector": true,
     "Piano Roll": false,
-    "Playlist": false
+    "Playlist": false,
+    "FXChain": false
   }));
 
   const [modals, setModals] = useState(() => ({
@@ -170,6 +173,7 @@ useEffect(() => {
     "Pattern Selector": () => setOpenComponents(prev => ({ ...prev, "Pattern Selector": !prev["Pattern Selector"] })),
     "Piano Roll": () => setOpenComponents(prev => ({ ...prev, "Piano Roll": !prev["Piano Roll"] })),
     "Playlist": () => setOpenComponents(prev => ({ ...prev, "Playlist": !prev["Playlist"] })),
+    "FXChain": () => setOpenComponents(prev => ({ ...prev, "FXChain": !prev["FXChain"] })),
     "New Project": () => openModal("new"),
     "Load Project": () => openModal("load"),
     "Save As": () => openModal("saveAs"),
@@ -299,6 +303,10 @@ useEffect(() => {
               onOpen={setIsPianoRollOpen} 
               onClose={() => setIsPianoRollOpen(false)}
             />
+          )}
+
+          {openComponents["FXChain"] && (
+              <FXChain instrumentList={instrumentList}/>
           )}
           <TransportBar />
         </PlayContext>
