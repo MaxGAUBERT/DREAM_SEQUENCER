@@ -625,8 +625,8 @@ const handleResizeRight = useCallback((e, note) => {
   return (
     <div 
       ref={onOpen} 
-      className="w-screen h-140 fixed bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize"
-      style={{ willChange: 'transform' }}
+      className="w-screen h-140 fixed bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize scrollbar-custom"
+      style={{ willChange: 'transform'}}
     >
       <TopBar
         selectedInstrument={selectedInstrument}
