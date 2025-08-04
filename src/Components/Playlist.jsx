@@ -5,8 +5,6 @@ import { rowToNoteName } from "./Utils/noteUtils";
 import * as Tone from "tone";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import { useSampleContext } from "../Contexts/ChannelProvider";
-import { FaRandom } from "react-icons/fa";
-import { duration } from "@mui/material";
 
 function resizeCells(prevCells, oldWidth, oldHeight, newWidth, newHeight) {
   const newCells = Array(newWidth * newHeight).fill(null);
@@ -168,7 +166,7 @@ useEffect(() => {
 
   return (
     <div
-      className="border-2 min-w-100 min-h-140 max-w-232.5 w-232.5 max-h-100 resize bg-gray-800 overflow-auto absolute top-[50px]"
+      className="border-2 min-w-100 min-h-140 max-w-232.5 w-232.5 max-h-100 resize scrollbar-custom bg-gray-800 overflow-auto absolute top-[50px]"
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${width}, ${CELL_SIZE}px)`,
@@ -178,7 +176,7 @@ useEffect(() => {
         height: `${height * CELL_SIZE}px`,
       }}
     >
-    <label className="sticky top-[30px] left-[800px] text-white">
+    <label className="sticky top-[30px] left-[700px] text-white">
       {isPlaying && currentColumn !== null ? `Col: ${currentColumn + 1} / ${width}` : "Stopped"}
     </label>
 
@@ -189,14 +187,14 @@ useEffect(() => {
           width: `${50}px`,
           height: `${50}px`,
           border: "2px solid #ccc",
-          backgroundColor: "red"
+          backgroundColor: "red",
         }}
-        className="sticky left-5"
+        className="sticky left-5 top-0"
       >
         <MdDelete size={15}/>
       </button>
 
-      <div className="sticky top-[0px] left-30">
+      <div className="sticky top-[10px] left-0">
         <label>Width ({width})</label>
         <input
           type="range"
