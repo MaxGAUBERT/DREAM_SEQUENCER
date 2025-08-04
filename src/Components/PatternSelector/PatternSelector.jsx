@@ -9,7 +9,7 @@ const PatternSelector = ({ patterns, setPatterns, colorByIndex, initLength, onSe
   
   
   return (
-    <div className="flex gap-4 p-2 absolute bottom-0 border-4 w-screen overflow-auto border-gray-700">
+    <div className="flex gap-4 p-2 absolute bottom-0 border-4 w-screen overflow-auto border-gray-700 scrollbar-custom">
       {patterns.map((pattern) => (
         <button
           key={pattern.id}
@@ -27,7 +27,7 @@ const PatternSelector = ({ patterns, setPatterns, colorByIndex, initLength, onSe
       <DeleteAllPatterns patterns={patterns} setPatterns={setPatterns} setInstrumentList={setInstrumentList} selectedPatternID={selectedPatternID} onSelect={onSelect}/>
       <RenamePattern patterns={patterns} setPatterns={setPatterns} selectedPatternID={selectedPatternID}/>
       <DeletePattern patterns={patterns} setPatterns={setPatterns} selectedPatternID={selectedPatternID}/>
-      <DuplicatePattern onSelect={onSelect} patterns={patterns} setPatterns={setPatterns} selectedPatternID={selectedPatternID} setInstrumentList={setInstrumentList}/>
+      <DuplicatePattern onSelect={onSelect} setPatterns={setPatterns} selectedPatternID={selectedPatternID} setInstrumentList={setInstrumentList}/>
       <ResetPattern patterns={patterns} setPatterns={setPatterns} colorByIndex={colorByIndex} initLength={initLength} onSelect={onSelect} setInstrumentList={setInstrumentList}/>
     </div>
   );
