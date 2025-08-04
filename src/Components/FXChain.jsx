@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import useFXChain from "../Hooks/useFXChain";
 
-const FXChain = ({instrumentList}) => {
+const FXChain = ({instrumentList, setInstrumentList}) => {
   const slotRefs = useRef({});
   const { updateInstrumentSlot } = useProjectManager();
   const { slots, selectedSlot, setSelectedSlot } = useFXChain();
@@ -14,6 +14,18 @@ const FXChain = ({instrumentList}) => {
     );
     return entry?.[0] || null;
   };
+
+  const handleApplyFX = (FX, channel) => {
+    setInstrumentList(prev => ({
+      ...prev,
+      [channel]: {
+        ...prev[channel],
+        fx: {
+          ...prev[channel].fx,
+        }
+      }
+    }));
+  }
 
   // Pour debug : vérifier les mises à jour
   useEffect(() => {
@@ -62,6 +74,8 @@ const FXChain = ({instrumentList}) => {
               <select
                 className="w-full bg-gray-900 text-white text-sm p-1 rounded border border-gray-600 mb-2"
                 disabled={!assignedChannel}
+                value={instrumentList["Kick"].fx}
+                onChange={() => handleApplyFX(s, assignedChannel)}
               >
                 <option>-- Select an effect --</option>
                 <option>Reverberator</option>

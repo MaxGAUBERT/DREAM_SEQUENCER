@@ -5,6 +5,8 @@ import { rowToNoteName } from "./Utils/noteUtils";
 import * as Tone from "tone";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import { useSampleContext } from "../Contexts/ChannelProvider";
+import { FaRandom } from "react-icons/fa";
+import { duration } from "@mui/material";
 
 function resizeCells(prevCells, oldWidth, oldHeight, newWidth, newHeight) {
   const newCells = Array(newWidth * newHeight).fill(null);
@@ -51,20 +53,17 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
   setPrevDimensions({ width, height });
 }, [width, height]);
 
-  function playPattern(pattern, instrumentList, startTime, numSteps) {
-  const stepDuration = Tone.Time("16n").toSeconds(); // à adapter selon ta grille
+function playPattern(pattern, instrumentList, startTime, numSteps) {
+  const stepDuration = Tone.Time("16n").toSeconds();
 
   Object.entries(instrumentList).forEach(([instrumentName, instrument]) => {
-    const sampler = getSampler(instrumentName) || instrument?.sample?.url;
-    if (!sampler) {
-      console.warn(`No sample found for instrument: ${instrumentName}`);
-      return;
-    }
-    if (!sampler.loaded) {
-      console.warn(`Sampler for ${instrumentName} not loaded yet.`);
+    const sampler = getSampler(instrumentName);
+    if (!sampler || !sampler.loaded) {
+      console.warn(`Sampler for ${instrumentName} not available or not loaded.`);
       return;
     }
 
+    // Drum rack (grille)
     const rawSteps = instrument?.grids?.[pattern.id] || [];
     const paddedSteps = [...rawSteps];
     while (paddedSteps.length < numSteps) paddedSteps.push(false);
@@ -76,7 +75,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
       }
     }
 
-    // Jouer les notes piano roll (polyphonie / pitch / durée)
+    // Piano roll
     const notes = instrument?.pianoData?.[pattern.id] || [];
     notes.forEach(note => {
       if (note) {
@@ -127,7 +126,7 @@ useEffect(() => {
   let currentColumn = 0;
 
   const repeatId = Tone.Transport.scheduleRepeat((time) => {
-    setCurrentColumn(currentColumn); // met à jour l'UI
+    setCurrentColumn(currentColumn); 
 
     for (let row = 0; row < height; row++) {
       const index = row * width + currentColumn;
@@ -139,7 +138,8 @@ useEffect(() => {
     }
 
     currentColumn = (currentColumn + 1) % width;
-  }, patternDuration); 
+    console.log("Pattern duration:", patternDuration, "and numSteps: ", numSteps)
+  }, patternDuration * 2); 
 
   Tone.Transport.start();
 
@@ -148,8 +148,6 @@ useEffect(() => {
     Tone.Transport.clear(repeatId);
   };
 }, [isPlaying, playMode, bpm, instrumentList, cells, patterns, numSteps]);
-
-
 
 
   const placePattern = (index) => {
@@ -195,7 +193,7 @@ useEffect(() => {
         }}
         className="sticky left-5"
       >
-        <MdDelete size={20}/>
+        <MdDelete size={15}/>
       </button>
 
       <div className="sticky top-[0px] left-30">
