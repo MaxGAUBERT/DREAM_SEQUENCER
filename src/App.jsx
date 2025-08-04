@@ -16,7 +16,6 @@ import Playlist from "./Components/Playlist";
 import ChannelProvider from "./Contexts/ChannelProvider";
 import { useHistoryContext } from "./Contexts/HistoryProvider";
 import FXChain from "./Components/FXChain";
-import InstrumentList from "./Components/DrumRack/InstrumentList";
 
 
 const getColorByIndex = (() => {
@@ -306,7 +305,7 @@ useEffect(() => {
           )}
 
           {openComponents["FXChain"] && (
-              <FXChain instrumentList={instrumentList}/>
+              <FXChain instrumentList={instrumentList} setInstrumentlist={setInstrumentList}/>
           )}
           <TransportBar />
         </PlayContext>
