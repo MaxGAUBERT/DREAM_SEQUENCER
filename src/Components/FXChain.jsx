@@ -1,11 +1,13 @@
 import { useRef, useEffect } from "react";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import useFXChain from "../Hooks/useFXChain";
+import * as Tone from "tone";
+import Knob from 'react-knob';
 
 const FXChain = ({instrumentList, setInstrumentList}) => {
   const slotRefs = useRef({});
   const { updateInstrumentSlot } = useProjectManager();
-  const { slots, selectedSlot, setSelectedSlot } = useFXChain();
+  const { slots, selectedSlot, setSelectedSlot, fxParams, setFXParams } = useFXChain();
 
   const getChannelAtSlot = (slotNumber) => {
     const entries = Object.entries(instrumentList || {});
@@ -15,28 +17,77 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
     return entry?.[0] || null;
   };
 
-  const handleApplyFX = (FX, channel) => {
-    setInstrumentList(prev => ({
-      ...prev,
-      [channel]: {
-        ...prev[channel],
-        fx: {
-          ...prev[channel].fx,
-        }
-      }
-    }));
+  function applyFXChainToInstrument(instrument, fxName) {
+    if (!instrument.sampler) return; 
+
+    if (instrument.fx !== null) {
+      instrument.sampler.disconnect(instrument.fx);
+    }
+
+  let fxNode;
+
+  switch (fxName) {
+    case "Reverberator":
+      fxNode = new Tone.Reverb({ decay: fxParams[fxName].decay, wet: fxParams[fxName].wet }).toDestination();
+      break;
+    case "Hypno Chorus":
+      fxNode = new Tone.Chorus({rate: fxParams[fxName].rate, depth: fxParams[fxName].depth, feedback: fxParams[fxName].feedback}).toDestination().start();
+      break;
+    case "Super Delay":
+      fxNode = new Tone.FeedbackDelay({delayTime: fxParams[fxName].delayTime, feedback: fxParams[fxName].feedback}).toDestination();
+      break;
+    default:
+      fxNode = new Tone.Gain().toDestination();
+      break;
   }
 
-  // Pour debug : vérifier les mises à jour
-  useEffect(() => {
-    console.log("📦 instrumentList updated in FXChain:", instrumentList);
-  }, [instrumentList]);
+  if (instrument.slot !== 0) {
+    instrument.sampler.connect(fxNode);
+    instrument.fx = fxNode;
+  } 
+  }
+  /*
+  const updateFXParam = (fxName, param, value) => {
+    setFXParams(prev => ({
+      ...prev,
+      [fxName]: {
+        ...prev[fxName],
+        [param]: value
+      }
+    }));
+  };
+
+  */
+
+
+  const handleApplyFX = (e, assignedChannel) => {
+  const selectedFX = e.target.value;
+
+  setInstrumentList(prev => {
+    const updatedInstrument = {
+      ...prev[assignedChannel],
+      fx: selectedFX
+    };
+
+    applyFXChainToInstrument(updatedInstrument, selectedFX);
+
+    return {
+      ...prev,
+      [assignedChannel]: updatedInstrument
+    };
+  });
+  };
 
   useEffect(() => {
     if (selectedSlot.channel !== null) {
-      console.log("✅ selectedSlot mis à jour :", selectedSlot);
+      console.log("✅ selectedSlot mis à jour :", selectedSlot, instrumentList[selectedSlot.channel].fx);
     }
   }, [selectedSlot]);
+
+  useEffect(() => {
+    console.log("🎛 FX actuel :", instrumentList[selectedSlot.channel]?.fx);
+  }, [instrumentList]);
+
 
   const handleSlotClick = (slotNumber) => {
     const assignedChannel = getChannelAtSlot(slotNumber);
@@ -44,7 +95,7 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
   };
 
   return (
-    <div className="absolute bg-black text-white top-[50px] border-2 overflow-auto resize w-[800px] h-500 min-h-1/2 max-w-[935px] max-h-[80vh] shadow-lg p-4 flex flex-col gap-4">
+    <div className="absolute bg-black scrollbar-custom text-white top-[50px] border-2 overflow-auto resize w-[800px] h-500 min-h-1/2 max-w-[935px] max-h-[80vh] shadow-lg p-4 flex flex-col gap-4">
       <label className="text-sm sticky left-0 bg-gray-800 font-semibold px-2">
         {getChannelAtSlot(selectedSlot.slot) || "All Channels"}
       </label>
@@ -65,7 +116,7 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
               onClick={() => handleSlotClick(s)}
             >
               <label className="text-sm mb-2 font-semibold">
-                {assignedChannel || "All Channels"}
+                {s===0 ? "" : assignedChannel || "All Channels"}
               </label>
               <p className="text-sm mb-2 font-semibold">
                 {s === 0 ? "Master" : `Insert ${s}`}
@@ -74,9 +125,10 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
               <select
                 className="w-full bg-gray-900 text-white text-sm p-1 rounded border border-gray-600 mb-2"
                 disabled={!assignedChannel}
-                value={instrumentList["Kick"].fx}
-                onChange={() => handleApplyFX(s, assignedChannel)}
+                value={instrumentList[assignedChannel]?.fx || ""}
+                onChange={(e) => handleApplyFX(e, assignedChannel)}
               >
+
                 <option>-- Select an effect --</option>
                 <option>Reverberator</option>
                 <option>Hypno Chorus</option>
