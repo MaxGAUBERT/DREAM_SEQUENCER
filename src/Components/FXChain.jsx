@@ -2,7 +2,6 @@ import { useRef, useEffect } from "react";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import useFXChain from "../Hooks/useFXChain";
 import * as Tone from "tone";
-import Knob from 'react-knob';
 
 const FXChain = ({instrumentList, setInstrumentList}) => {
   const slotRefs = useRef({});
