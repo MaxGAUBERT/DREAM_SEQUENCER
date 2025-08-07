@@ -10,10 +10,15 @@ export const useFXChain = () => {
         channel: null,
         slot: 1
     });
+    const [fxParams, setFXParams] = useState({
+        "Reverberator": { decay: 2.5, wet: 1 },
+        "Hypno Chorus": { rate: 4, depth: 2.5, feedback: 0.5 },
+        "Super Delay": { delayTime: "8n", feedback: 0.5 },
+    });
 
 
     return (
-        {slots, selectedSlot, setSelectedSlot, numOfSlots}
+        {slots, selectedSlot, setSelectedSlot, numOfSlots, fxParams, setFXParams}
     )
 }
 

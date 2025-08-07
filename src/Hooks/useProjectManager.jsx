@@ -35,7 +35,9 @@ export function useProjectManager() {
   }]);
 
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
-  const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap", "Toms"];
+  const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
+  //const masterFXNode = useRef(new Tone.Gain().toDestination());
+
 
   const initializeInstrumentList = useCallback(() => {
     return Object.fromEntries(
@@ -73,40 +75,6 @@ export function useProjectManager() {
         return updated;
     });
   }, []);
-  
-  /*
-   const updateInstrumentSlot = useCallback((channelId, newSlot) => {
-    console.log("🔧 updateInstrumentSlot called with:", { channelId, newSlot });
-    console.log("🔧 Current instrumentList before update:", instrumentList);
-    
-    if (!channelId) {
-      console.log("❌ No channelId provided, aborting update");
-      return;
-    }
-
-    setInstrumentList(prev => {
-      console.log("🔧 Previous instrumentList in setter:", prev);
-      console.log("🔧 Channel to update:", channelId, "Current slot:", prev[channelId]?.slot);
-      
-      if (!prev[channelId]) {
-        console.log("❌ Channel not found in instrumentList:", channelId);
-        return prev;
-      }
-
-      const updated = {
-        ...prev,
-        [channelId]: {
-          ...prev[channelId],
-          slot: Number(newSlot),
-        },
-      };
-      
-      console.log("✅ Updated instrumentList:", updated);
-      console.log("✅ Updated channel slot:", updated[channelId].slot);
-      return updated;
-    });
-  }, [instrumentList]);
-  */
 
   const getInstrumentListSnapshot = useCallback(() => {
   return structuredClone(instrumentList);
@@ -324,6 +292,6 @@ const loadProject = async (projectId, fromProjects = projects) => {
       setProjects([]);
       localStorage.removeItem("projects");
     },
-    //updateInstrumentSlot
+    //masterFXNode
   };
 }
