@@ -305,7 +305,7 @@ useEffect(() => {
           )}
 
           {openComponents["FXChain"] && (
-              <FXChain instrumentList={instrumentList} setInstrumentlist={setInstrumentList}/>
+              <FXChain instrumentList={instrumentList} setInstrumentList={setInstrumentList}/>
           )}
           <TransportBar />
         </PlayContext>
