@@ -10,7 +10,7 @@ const DrumRackControls = ({ numSteps, setNumSteps, onReset, onDeleteAll, onAddTo
 
   return (
     <>
-      <div className="flex gap-1 ml-2">
+      <div className="flex gap-1">
         <button onClick={onAddToggle} className="hover:text-white" title="Add channel">
           <IoAddOutline size={iconSize} />
         </button>
