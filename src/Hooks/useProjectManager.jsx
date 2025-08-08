@@ -25,18 +25,22 @@ export function useProjectManager() {
     audioObjects,
     setAudioObjects
   } = useSoundBank();
+
   const initLength = 8;
-  const [patterns, setPatterns] = useState([{
-    id: 1,
-    name: "Pattern 1",
-    color: getColorByIndex(0),
-    grid: Array(16).fill(false),
-    pianoData: []
-  }]);
+
+  const [patterns, setPatterns] = useState(() =>
+    Array.from({ length: initLength }, (_, i) => ({
+      id: i, 
+      name: `Pattern ${i + 1}`,
+      color: getColorByIndex(i),
+      grid: Array(16).fill(false), 
+      pianoData: []              
+    }))
+  );
+
 
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
   const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
-  //const masterFXNode = useRef(new Tone.Gain().toDestination());
 
 
   const initializeInstrumentList = useCallback(() => {
@@ -292,6 +296,5 @@ const loadProject = async (projectId, fromProjects = projects) => {
       setProjects([]);
       localStorage.removeItem("projects");
     },
-    //masterFXNode
   };
 }
