@@ -1,5 +1,5 @@
 import { useGlobalColorContext } from "../../Contexts/GlobalColorContext";
-
+import { MdDeleteSweep } from "react-icons/md";
 
 
 export default function DeleteAllPatterns ({patterns, setPatterns, setInstrumentList, onSelect}) {
@@ -23,10 +23,11 @@ export default function DeleteAllPatterns ({patterns, setPatterns, setInstrument
          {patterns.length > 1 && (
             <button 
             onClick={handleDeleteAllPatterns}
-            className="w-20 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
-            style={{ backgroundColor: "black" }}        
+            className="w-15 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
+            style={{ backgroundColor: "black" }}  
+            title="Delete all patterns"      
             >
-            Delete All
+            <MdDeleteSweep size={25}/>
             </button>
         )}
       </div>

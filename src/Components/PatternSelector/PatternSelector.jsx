@@ -1,34 +1,238 @@
+import { useState, useEffect } from "react";
 import AddPattern from "./AddPattern";
-import DeletePattern from "./DeletePattern";
 import DeleteAllPatterns from "./DeleteAllPatterns";
-import ResetPattern from "./ResetPattern";
-import RenamePattern from "./RenamePattern";
-import DuplicatePattern from "./DuplicatePattern";
 
-const PatternSelector = ({ patterns, setPatterns, colorByIndex, initLength, onSelect, selectedPatternID, setInstrumentList }) => {
-  
-  
+
+const PatternSelector = ({
+  patterns,
+  setPatterns,
+  colorByIndex,
+  initLength,
+  onSelect,
+  selectedPatternID,
+  setInstrumentList,
+}) => {
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    targetId: null,
+  });
+
+  const [renameInput, setRenameInput] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
+
+  // Fermer menu au clic extérieur
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        setContextMenu((prev) => ({ ...prev, visible: false }));
+      }
+    };
+    window.addEventListener("click", handleClickOutside);
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
+    };
+  }, [contextMenu.visible]);
+
+  // Clic droit sur un pattern → ouvre le menu
+  const handleContextMenu = (e, patternId) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      targetId: patternId,
+    });
+  };
+
+  // Actions du menu
+  const handleMenuAction = (action) => {
+    const targetId = contextMenu.targetId;
+    if (!targetId) return;
+
+    switch (action) {
+      case "rename":
+        const p = patterns.find((p) => p.id === targetId);
+        if (p) setRenameInput(p.name);
+        setIsRenaming(true);
+        break;
+
+      case "duplicate":
+        const patternToDup = patterns.find((p) => p.id === targetId);
+        if (patternToDup) {
+          const newPattern = {
+            ...patternToDup,
+            id: Date.now(),
+            name: patternToDup.name,
+          };
+          setPatterns((prev) => [...prev, newPattern]);
+        }
+        break;
+
+      case "delete":
+        setPatterns((prev) => prev.filter((p) => p.id !== targetId));
+        break;
+
+      case "reset":
+        setPatterns((prev) =>
+          prev.map((p) =>
+            p.id === targetId
+              ? { ...p,  name: "pattern " + p.id }
+              : p
+          )
+        );
+        break;
+
+      case "resetAll": {
+          // 1. Créer une nouvelle liste de patterns vides
+          const resetPatterns = Array.from({ length: initLength }, (_, i) => ({
+            id: i,
+            name: `Pattern ${i + 1}`,
+            color: colorByIndex(i),
+          }));
+
+          // 2. Mettre à jour les patterns
+          setPatterns(resetPatterns);
+          onSelect(0);
+
+          // 3. Réinitialiser complètement les grilles de chaque instrument
+          setInstrumentList(prev => {
+            const newList = { ...prev };
+
+            Object.keys(newList).forEach(inst => {
+              // On remplace entièrement grids par de nouveaux steps vides
+              newList[inst] = {
+                ...newList[inst],
+                grids: resetPatterns.reduce((acc, pattern) => {
+                  acc[pattern.id] = Array(initLength).fill(false);
+                  return acc;
+                }, {})
+              };
+            });
+
+            return newList;
+          });
+          break;
+        }
+
+
+      default:
+        break;
+    }
+
+    setContextMenu((prev) => ({ ...prev, visible: false }));
+  };
+
+  // Valider renommage
+  const handleRenameSubmit = () => {
+    if (!renameInput.trim() || renameInput.length > 9) {
+      setIsRenaming(false);
+      return;
+    }
+    setPatterns((prev) =>
+      prev.map((p) =>
+        p.id === contextMenu.targetId ? { ...p, name: renameInput.trim() } : p
+      )
+    );
+    setIsRenaming(false);
+  };
+
   return (
-    <div className="flex gap-4 p-2 absolute bottom-0 border-4 w-screen overflow-auto border-gray-700 scrollbar-custom">
-      {patterns.map((pattern) => (
-        <button
-          key={pattern.id}
-          onClick={() => onSelect(pattern.id)}
-          className={`flex flex-col items-center justify-center w-15 h-15 rounded-full border-4 transition-all duration-150 ease-in-out ${
-            selectedPatternID === pattern.id ? "border-white" : "border-transparent"
-          } ${pattern.color}`}
-          title={pattern.name}
+    <div className="flex gap-4 p-2 bottom-0 absolute border-4 w-screen overflow-auto border-gray-700 scrollbar-custom">
+      {/* Menu contextuel */}
+      {contextMenu.visible && (
+        <div
+          className="bg-gray-800 text-white border border-gray-300 shadow-lg rounded-md overflow-hidden"
+          style={{
+            position: "fixed",
+            top: contextMenu.y / 2 + 150,
+            left: contextMenu.x,
+            zIndex: 1000,
+            minWidth: 180,
+          }}
+          onClick={(e) => e.stopPropagation()}
         >
-          {pattern.name}
-        </button>
-      ))}
 
-      <AddPattern onSelect={onSelect} patterns={patterns} setPatterns={setPatterns} colorByIndex={colorByIndex} setInstrumentList={setInstrumentList}/>
-      <DeleteAllPatterns patterns={patterns} setPatterns={setPatterns} setInstrumentList={setInstrumentList} selectedPatternID={selectedPatternID} onSelect={onSelect}/>
-      <RenamePattern patterns={patterns} setPatterns={setPatterns} selectedPatternID={selectedPatternID}/>
-      <DeletePattern patterns={patterns} setPatterns={setPatterns} selectedPatternID={selectedPatternID}/>
-      <DuplicatePattern onSelect={onSelect} setPatterns={setPatterns} selectedPatternID={selectedPatternID} setInstrumentList={setInstrumentList}/>
-      <ResetPattern patterns={patterns} setPatterns={setPatterns} colorByIndex={colorByIndex} initLength={initLength} onSelect={onSelect} setInstrumentList={setInstrumentList}/>
+          <div
+            className="px-3 py-2 hover:bg-gray-600 cursor-pointer"
+            onClick={() => handleMenuAction("rename")}
+          >
+            Rename
+          </div>
+          <div
+            className="px-3 py-2 hover:bg-gray-600 cursor-pointer"
+            onClick={() => handleMenuAction("duplicate")}
+          >
+            Duplicate
+          </div>
+          <div
+            className="px-3 py-2 hover:bg-gray-600 cursor-pointer"
+            onClick={() => handleMenuAction("reset")}
+          >
+            Reset name
+          </div>
+          <div
+            className="px-3 py-2 hover:bg-gray-600 cursor-pointer text-red-400"
+            onClick={() => handleMenuAction("delete")}
+          >
+            remove
+          </div>
+          <div>
+            <div
+              className="px-3 py-2 hover:bg-gray-600 cursor-pointer"
+              onClick={() => handleMenuAction("resetAll")}
+            >
+              Reset All
+            </div>
+        </div>
+        </div>
+      )}
+      {/* Liste patterns */}
+      {patterns.map((pattern) =>
+        isRenaming && contextMenu.targetId === pattern.id ? (
+          <input
+            key={pattern.id}
+            type="text"
+            value={renameInput}
+            onChange={(e) => setRenameInput(e.target.value)}
+            onBlur={handleRenameSubmit}
+            onKeyDown={(e) => e.key === "Enter" && handleRenameSubmit()}
+            className="w-20 px-1 rounded border border-white bg-black text-white text-sm"
+            autoFocus
+          />
+        ) : (
+          <button
+            key={pattern.id}
+            onClick={() => onSelect(pattern.id)}
+            onContextMenu={(e) => handleContextMenu(e, pattern.id)}
+            className={`flex flex-col items-center justify-center w-15 h-15 rounded-full border-4 transition-all duration-150 ease-in-out ${
+              selectedPatternID === pattern.id
+                ? "border-white"
+                : "border-transparent"
+            } ${pattern.color}`}
+            title={pattern.name}
+          >
+            {pattern.name}
+          </button>
+        )
+      )}
+
+      {/* Boutons additionnels */}
+      <AddPattern
+        onSelect={onSelect}
+        patterns={patterns}
+        setPatterns={setPatterns}
+        colorByIndex={colorByIndex}
+        setInstrumentList={setInstrumentList}
+      />
+      <DeleteAllPatterns
+        patterns={patterns}
+        setPatterns={setPatterns}
+        setInstrumentList={setInstrumentList}
+        selectedPatternID={selectedPatternID}
+        onSelect={onSelect}
+      />
     </div>
   );
 };

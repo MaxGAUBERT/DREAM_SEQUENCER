@@ -38,7 +38,8 @@ export default function AddPattern ({onSelect, patterns, setPatterns, colorByInd
       <button 
         onClick={handleAddPattern}
         className="w-15 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
-        style={{ backgroundColor: "black" }}      
+        style={{ backgroundColor: "black" }}     
+        title="Add pattern" 
       >
         +
       </button>
