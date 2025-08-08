@@ -16,11 +16,10 @@ const InstrumentList = ({
   return (
     <>
       {Object.entries(instrumentList).map(([name, data]) => {
-        // 🔁 Adapter la grille à numSteps si nécessaire
         let currentGrid = data.grids?.[selectedPatternID] || [];
 
         if (currentGrid.length !== numSteps) {
-          currentGrid = [...currentGrid]; // copie défensive
+          currentGrid = [...currentGrid]; 
           if (currentGrid.length < numSteps) {
             currentGrid.push(...Array(numSteps - currentGrid.length).fill(false));
           } else {
@@ -46,8 +45,8 @@ const InstrumentList = ({
                 type="checkbox"
                 checked={data.muted}
                 onChange={(e) => onMute(name, e.target.checked)}
-                className="w-3 h-3 cursor-pointer"
               />
+              
               <input
                 type="number"
                 min={0}

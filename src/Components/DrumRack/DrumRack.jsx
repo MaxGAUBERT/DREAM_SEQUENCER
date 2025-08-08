@@ -9,6 +9,9 @@ import ChannelModal from "../../UI/Modals/ChannelModal";
 import { usePlayContext } from "../../Contexts/PlayContext";
 import * as Tone from "tone";
 import {useSampleContext} from "../../Contexts/ChannelProvider";
+import { LiaVolumeMuteSolid } from "react-icons/lia";
+import { RxMixerVertical } from "react-icons/rx";
+import { FaListOl } from "react-icons/fa";
 
 
 const DrumRack = ({
@@ -141,6 +144,12 @@ const DrumRack = ({
         <div>
           Current Pattern: {patterns.find(p => p.id === selectedPatternID)?.name} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
         </div>
+      </div>
+
+      <div className="flex items-center space-x-2 mt-2 left-16.5 relative">
+          <LiaVolumeMuteSolid size={20} />
+          <RxMixerVertical size={20} />
+          <FaListOl size={20} className="relative left-11" />
       </div>
 
       <InstrumentList
