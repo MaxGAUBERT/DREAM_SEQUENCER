@@ -137,7 +137,7 @@ const DrumRack = ({
   }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
 
   return (
-    <div className="absolute top-[50px] right-0 border-2 overflow-auto resize-y flex flex-col w-full sm:w-[400px] md:w-[500px] lg:w-[600px] max-h-[80vh] shadow-lg scrollbar-custom" 
+    <div className="absolute top-[50px] right-0 border-2 overflow-hidden resize-y flex flex-col w-full sm:w-[400px] md:w-[500px] lg:w-[600px] max-h-[80vh] shadow-lg scrollbar-custom" 
       style={{ backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: colorsComponent.Border }}>
 
       <div className="text-xs border-b p-2 pb-2 flex justify-between items-center">
@@ -151,7 +151,7 @@ const DrumRack = ({
           <RxMixerVertical size={20} />
           <FaListOl size={20} className="relative left-11" />
       </div>
-
+      
       <InstrumentList
         instrumentList={instrumentList}
         selectedPatternID={selectedPatternID}

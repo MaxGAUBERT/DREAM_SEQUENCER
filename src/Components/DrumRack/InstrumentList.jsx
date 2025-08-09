@@ -1,7 +1,7 @@
 import React from "react";
 import { FiUpload } from "react-icons/fi";
 
-const STEP_SIZE = 24; // px de largeur/hauteur par step
+const STEP_SIZE = 24; 
 
 const InstrumentList = ({
   instrumentList,
@@ -16,7 +16,7 @@ const InstrumentList = ({
   onDeleteInstrument
 }) => {
   return (
-    <div className="flex flex-col overflow-auto">
+    <div className="flex flex-col">
       {Object.entries(instrumentList).map(([name, data]) => {
         let currentGrid = data.grids?.[selectedPatternID] || [];
 
@@ -79,7 +79,7 @@ const InstrumentList = ({
             </div>
 
             <div
-              className="flex gap-1 p-2"
+              className="flex overflow-x-auto gap-1 p-2"
               style={{
                 minHeight: STEP_SIZE,
                 maxWidth: "calc(100vw - 300px)"
