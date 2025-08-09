@@ -17,34 +17,76 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
   };
 
   function applyFXChainToInstrument(instrument, fxName) {
-    if (!instrument.sampler) return; 
+  if (!instrument?.sampler) return;
 
-    if (instrument.fx !== null) {
-      instrument.sampler.disconnect(instrument.fx);
-    }
+  // 🔹 Nettoyage de l'ancien FX
+  if (instrument.fx) {
+    instrument.sampler.disconnect(instrument.fx);
+    instrument.fx.dispose?.();
+    instrument.fx = null;
+  }
 
+  // 🔹 Si aucun effet sélectionné → on quitte
+  if (!fxName || fxName === "-- Select an effect --") {
+    instrument.sampler.connect(Tone.Destination);
+    setInstrumentList(prev => ({
+      ...prev,
+      [selectedSlot.channel]: {
+        ...prev[selectedSlot.channel],
+        fx: null
+      }
+    }));
+    return;
+  }
+
+  // 🔹 Création du nouvel effet
   let fxNode;
-
   switch (fxName) {
     case "Reverberator":
-      fxNode = new Tone.Reverb({ decay: fxParams[fxName].decay, wet: fxParams[fxName].wet }).toDestination();
+      fxNode = new Tone.Reverb({
+        decay: fxParams[fxName].decay,
+        wet: fxParams[fxName].wet
+      }).toDestination();
       break;
     case "Hypno Chorus":
-      fxNode = new Tone.Chorus({rate: fxParams[fxName].rate, depth: fxParams[fxName].depth, feedback: fxParams[fxName].feedback}).toDestination().start();
+      fxNode = new Tone.Chorus({
+        rate: fxParams[fxName].rate,
+        depth: fxParams[fxName].depth,
+        feedback: fxParams[fxName].feedback
+      }).toDestination().start();
       break;
     case "Super Delay":
-      fxNode = new Tone.FeedbackDelay({delayTime: fxParams[fxName].delayTime, feedback: fxParams[fxName].feedback}).toDestination();
+      fxNode = new Tone.FeedbackDelay({
+        delayTime: fxParams[fxName].delayTime,
+        feedback: fxParams[fxName].feedback
+      }).toDestination();
+      break;
+    case "Complex Distortion":
+      fxNode = new Tone.Distortion({
+        distortion: fxParams[fxName].distortion,
+        oversample: fxParams[fxName].oversample
+      }).toDestination();
       break;
     default:
-      fxNode = new Tone.Gain().toDestination();
-      break;
+      fxNode = null; // pas de fallback obligatoire
   }
 
-  if (instrument.slot !== 0) {
+  // 🔹 Application du nouvel FX si défini
+  if (fxNode) {
     instrument.sampler.connect(fxNode);
     instrument.fx = fxNode;
-  } 
   }
+
+  // 🔹 Mise à jour de l'état
+  setInstrumentList(prev => ({
+    ...prev,
+    [selectedSlot.channel]: {
+      ...prev[selectedSlot.channel],
+      fx: fxName || null
+    }
+  }));
+}
+
   /*
   const updateFXParam = (fxName, param, value) => {
     setFXParams(prev => ({
@@ -124,7 +166,7 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
               <select
                 className="w-full bg-gray-900 text-white text-sm p-1 rounded border border-gray-600 mb-2"
                 disabled={!assignedChannel}
-                value={instrumentList[assignedChannel]?.fx || ""}
+                value={instrumentList[s]?.fx}
                 onChange={(e) => handleApplyFX(e, assignedChannel)}
               >
 
@@ -132,6 +174,7 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
                 <option>Reverberator</option>
                 <option>Hypno Chorus</option>
                 <option>Super Delay</option>
+                <option>Complex Distortion</option>
               </select>
 
               <input
