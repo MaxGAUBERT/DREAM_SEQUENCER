@@ -1,4 +1,4 @@
-// DrumRack.jsx (composant principal allégé)
+// DrumRack.jsx (composant principal utilisant le système d'historique global)
 import React, { useState, useEffect } from "react";
 import { useGlobalColorContext } from "../../Contexts/GlobalColorContext";
 import useDrumRackHandlers from "../../Hooks/useDrumRackHandlers";
@@ -9,6 +9,9 @@ import ChannelModal from "../../UI/Modals/ChannelModal";
 import { usePlayContext } from "../../Contexts/PlayContext";
 import * as Tone from "tone";
 import {useSampleContext} from "../../Contexts/ChannelProvider";
+import { LiaVolumeMuteSolid } from "react-icons/lia";
+import { RxMixerVertical } from "react-icons/rx";
+import { FaListOl } from "react-icons/fa";
 
 
 const DrumRack = ({
@@ -26,7 +29,19 @@ const DrumRack = ({
 }) => {
   const [input, setInput] = useState(false);
   const { colorsComponent } = useGlobalColorContext();
-  const handlers = useDrumRackHandlers({
+  
+  const {
+    toggleStep,
+    onMute,
+    onSlotChange,
+    onSampleLoad,
+    onDeleteInstrument,
+    onReset,
+    onDeleteAll,
+    onRename,
+    onAddInstrument,
+    onSelectSample
+  } = useDrumRackHandlers({
     instrumentName,
     setInstrumentName,
     setInstrumentList,
@@ -36,17 +51,15 @@ const DrumRack = ({
   });
 
   const {isPlaying, playMode, bpm, sequencesRef} = usePlayContext();
-
-  const {getSampler, loadSample} = useSampleContext();
+  const {getSampler} = useSampleContext();
 
   function padPattern(pattern, numSteps) {
-  const padded = [...pattern];
-  while (padded.length < numSteps) {
-    padded.push(false);
+    const padded = [...pattern];
+    while (padded.length < numSteps) {
+      padded.push(false);
+    }
+    return padded;
   }
-  return padded;
-}
-
 
   useEffect(() => {
     // Nettoyage systématique à chaque changement
@@ -74,33 +87,32 @@ const DrumRack = ({
     let hasValidSequences = false;
 
     Object.entries(instrumentList).forEach(([instrumentName, instrumentData]) => {
-  const rawPattern = instrumentData.grids?.[selectedPatternID];
-  const sampler = getSampler(instrumentName);
+      const rawPattern = instrumentData.grids?.[selectedPatternID];
+      const sampler = getSampler(instrumentName);
 
-  if (!Array.isArray(rawPattern)) return;
-  if (instrumentData.muted || playMode !== 'Pattern') return;
+      if (!Array.isArray(rawPattern)) return;
+      if (instrumentData.muted || playMode !== 'Pattern') return;
 
-  const pattern = padPattern(rawPattern, numSteps);
-  const hasActiveSteps = pattern.some(step => step === true);
-  if (!hasActiveSteps) return;
+      const pattern = padPattern(rawPattern, numSteps);
+      const hasActiveSteps = pattern.some(step => step === true);
+      if (!hasActiveSteps) return;
 
-  try {
-    const seq = new Tone.Sequence((time, stepIndex) => {
-      if (pattern[stepIndex]) {
-        if (sampler && sampler.loaded !== false) {
-          sampler.triggerAttackRelease("C4", "8n", time);
-        }
+      try {
+        const seq = new Tone.Sequence((time, stepIndex) => {
+          if (pattern[stepIndex]) {
+            if (sampler && sampler.loaded !== false) {
+              sampler.triggerAttackRelease("C4", "4n", time);
+            }
+          }
+        }, Array.from({ length: numSteps }, (_, i) => i), "16n");
+
+        seq.start(0);
+        sequencesRef.current.push(seq);
+        hasValidSequences = true;
+      } catch (error) {
+        console.error(`Error creating sequence for ${instrumentName}:`, error);
       }
-    }, Array.from({ length: numSteps }, (_, i) => i), "16n");
-
-    seq.start(0);
-    sequencesRef.current.push(seq);
-    hasValidSequences = true;
-  } catch (error) {
-    console.error(`Error creating sequence for ${instrumentName}:`, error);
-  }
-});
-
+    });
 
     // Démarrer le transport seulement s'il y a des séquences valides
     if (hasValidSequences) {
@@ -122,34 +134,42 @@ const DrumRack = ({
 
     // Cleanup au démontage
     return cleanup;
-    }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
+  }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
 
   return (
-    <div className="absolute top-[50px] right-0 border-2 overflow-auto resize-y flex flex-col w-full sm:w-[400px] md:w-[500px] lg:w-[600px] max-h-[80vh] shadow-lg" 
+    <div className="absolute top-[50px] right-0 border-2 overflow-hidden resize-y flex flex-col w-full sm:w-[400px] md:w-[500px] lg:w-[600px] max-h-[80vh] shadow-lg scrollbar-custom" 
       style={{ backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: colorsComponent.Border }}>
 
-      <div className="text-xs border-b p-2 pb-2">
-        Current Pattern: {patterns.find(p => p.id === selectedPatternID)?.name} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
+      <div className="text-xs border-b p-2 pb-2 flex justify-between items-center">
+        <div>
+          Current Pattern: {patterns.find(p => p.id === selectedPatternID)?.name} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
+        </div>
       </div>
 
+      <div className="flex items-center space-x-2 mt-2 left-16.5 relative">
+          <LiaVolumeMuteSolid size={20} />
+          <RxMixerVertical size={20} />
+          <FaListOl size={20} className="relative left-11" />
+      </div>
+      
       <InstrumentList
         instrumentList={instrumentList}
         selectedPatternID={selectedPatternID}
         numSteps={numSteps}
         setChannelModalOpen={setChannelModalOpen}
         setInstrumentName={setInstrumentName}
-        toggleStep={handlers.toggleStep}
-        onMute={handlers.onMute}
-        onSlotChange={handlers.onSlotChange}
-        onSampleLoad={handlers.onSampleLoad}
-        onDeleteInstrument={handlers.onDeleteInstrument}
+        toggleStep={toggleStep}
+        onMute={onMute}
+        onSlotChange={onSlotChange}
+        onSampleLoad={onSampleLoad}
+        onDeleteInstrument={onDeleteInstrument}
       />
 
       <DrumRackControls
         numSteps={numSteps}
         setNumSteps={setNumSteps}
-        onReset={handlers.onReset}
-        onDeleteAll={handlers.onDeleteAll}
+        onReset={onReset}
+        onDeleteAll={onDeleteAll}
         onAddToggle={() => setInput(!input)}
       />
 
@@ -157,7 +177,7 @@ const DrumRack = ({
         <InstrumentInput
           instrumentName={instrumentName}
           setInstrumentName={setInstrumentName}
-          onConfirm={handlers.onAddInstrument}
+          onConfirm={onAddInstrument}
           onCancel={() => {
             setInput(false);
             setInstrumentName('');
@@ -173,8 +193,8 @@ const DrumRack = ({
             setInstrumentList={setInstrumentList}
             instrumentName={instrumentName}
             setInstrumentName={setInstrumentName}
-            onRename={handlers.onRename}
-            onSelectSample={handlers.onSelectSample}
+            onRename={onRename}
+            onSelectSample={onSelectSample}
             channelUrl={instrumentList[instrumentName]?.sampleUrl}
             onOpenPianoRoll={onOpenPianoRoll}
           />
