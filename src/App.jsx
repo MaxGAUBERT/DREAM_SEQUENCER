@@ -99,7 +99,7 @@ export default function App() {
     "Drum Rack": true,
     "Pattern Selector": true,
     "Piano Roll": false,
-    "Playlist": false,
+    "Playlist": true,
     "FXChain": false
   }));
 
