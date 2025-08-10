@@ -165,93 +165,75 @@ useEffect(() => {
   };
 
   return (
-    <div
-      className="border-2 bottom-20 left-328 max-w-150 max-h-112 resize scrollbar-custom bg-gray-800 overflow-auto absolute p-2"
+  <div className="border-2 bottom-20 left-328 min-w-150 max-w-150 max-h-112 min-h-112 fixed bg-gray-800 p-2 overflow-auto scrollbar-custom">
+    {/* Zone contrôles */}
+    <div className="flex items-center gap-4 mb-4">
+      <label className="text-white">
+        {isPlaying && currentColumn !== null
+          ? `Col: ${currentColumn + 1} / ${width}`
+          : "Stopped"}
+      </label>
 
+      <button
+        onClick={() => setCells(Array(width * height).fill(null))}
+        className="p-2 bg-red-500 text-white rounded"
+      >
+        <MdDelete size={15} />
+      </button>
+
+      <div className="flex items-center gap-2">
+        <label>Width ({width})</label>
+        <input type="range" min={5} max={50} value={width} onChange={handleWidthChange} />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <label>Height ({height})</label>
+        <input type="range" min={5} max={50} value={height} onChange={handleHeightChange} />
+      </div>
+    </div>
+
+    {/* Zone grille */}
+    <div
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${width}, ${CELL_SIZE}px)`,
-        gridTemplateRows: `repeat(${height}, ${CELL_SIZE}px)`,
+        gridTemplateRows: `repeat(${height}, ${CELL_SIZE / 2}px)`,
         gap: "3px",
         width: `${width * CELL_SIZE}px`,
-        height: `${height * CELL_SIZE}px`,
+        height: `${height * (CELL_SIZE / 2)}px`,
       }}
     >
-    <label className="sticky top-[30px] left-[700px] text-white">
-      {isPlaying && currentColumn !== null ? `Col: ${currentColumn + 1} / ${width}` : "Stopped"}
-    </label>
-
-
-      <button 
-        onClick={() => setCells(Array(width * height).fill(null))}
-        style={{
-          width: `${50}px`,
-          height: `${50}px`,
-          border: "2px solid #ccc",
-          backgroundColor: "red",
-        }}
-        className="sticky left-5 top-0"
-      >
-        <MdDelete size={15}/>
-      </button>
-
-      <div className="sticky top-[10px] left-0">
-        <label>Width ({width})</label>
-        <input
-          type="range"
-          min={5}
-          max={50}
-          value={width}
-          onChange={handleWidthChange} 
+      {isPlaying && currentColumn !== null && (
+        <div
+          className="absolute top-0 bg-red-400 bg-opacity-30 pointer-events-none z-0 transition-transform duration-300"
+          style={{
+            transform: `translateX(${currentColumn * CELL_SIZE}px)`,
+            width: `${CELL_SIZE / 20}px`,
+            height: `${(height * CELL_SIZE) / 2}px`,
+          }}
         />
-        <label>Height ({height})</label>
-        <input
-          type="range"
-          min={5}
-          max={50}
-          value={height}
-          onChange={handleHeightChange} 
-        />
-      </div>
+      )}
 
-      <div
-        className="mt-15 bg-gray-800 relative top-[50px] left-[10px]"
-        style={{
-          gridTemplateColumns: `repeat(${width}, ${CELL_SIZE}px)`,
-          gridTemplateRows: `repeat(${height}, ${CELL_SIZE}px)`,
-          gap: "3px",
-          width: `${width * CELL_SIZE}px`,
-          height: `${height * CELL_SIZE}px`,
-        }}
-      >
-        {isPlaying && currentColumn !== null && (
-          <div
-            className="absolute top-0 bg-red-400 bg-opacity-30 pointer-events-none z-0 transition-normal duration-1000 ease-out"
-            style={{
-              transform: `translateX(${currentColumn * CELL_SIZE}px)`,
-              width: `${CELL_SIZE / 20}px`,
-              height: `${(height * CELL_SIZE) / 2}px`,
-            }}
-          />
-        )}
-
-        {cells.map((cell, index) => (
-          <button
-            key={index}
-            onClick={() => placePattern(index)}
-            style={{
-              width: `${CELL_SIZE}px`,
-              height: `${CELL_SIZE / 2}px`,
-              border: "1px solid #ccc",
-            }}
-            className={`${cell !== null ? colorByIndex(cell - 1) : "bg-gray-800"} hover:bg-gray-700`}
-          >
-            {cell ? patterns[cell - 1].name : null}
-          </button>
-        ))}
-      </div>
+      {cells.map((cell, index) => (
+        <button
+          key={index}
+          onClick={() => placePattern(index)}
+          style={{
+            width: `${CELL_SIZE}px`,
+            height: `${CELL_SIZE / 2}px`,
+            border: "1px solid #ccc",
+          }}
+          className={`${
+            cell !== null ? colorByIndex(cell - 1) : "bg-gray-800"
+          } hover:bg-gray-700`}
+        >
+          {cell ? patterns[cell - 1].name : null}
+        </button>
+      ))}
     </div>
-  );
+  </div>
+);
+
 };
 
 export default React.memo(Playlist);
