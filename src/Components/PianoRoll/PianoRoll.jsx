@@ -625,7 +625,7 @@ const handleResizeRight = useCallback((e, note) => {
   return (
     <div 
       ref={onOpen} 
-      className="w-328 max-w-328 h-200 max-h-200 fixed bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize scrollbar-custom"
+      className="w-full h-full fixed bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize scrollbar-custom"
       style={{ willChange: 'transform'}}
     >
       <TopBar
