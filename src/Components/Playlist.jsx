@@ -166,7 +166,8 @@ useEffect(() => {
 
   return (
     <div
-      className="border-2 min-w-100 min-h-140 max-w-232.5 w-232.5 max-h-100 resize scrollbar-custom bg-gray-800 overflow-auto absolute top-[50px]"
+      className="border-2 bottom-20 left-328 max-w-150 max-h-112 resize scrollbar-custom bg-gray-800 overflow-auto absolute p-2"
+
       style={{
         display: "grid",
         gridTemplateColumns: `repeat(${width}, ${CELL_SIZE}px)`,
