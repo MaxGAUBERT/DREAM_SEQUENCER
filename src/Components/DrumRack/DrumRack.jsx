@@ -137,7 +137,7 @@ const DrumRack = ({
   }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
 
   return (
-    <div className="absolute border-2 resize-y overflow-y-auto overflow-x-hidden flex flex-col sm:w-[25%] md:w-[35%] lg:w-[1/3px] xl:max-h-1/2 xl:max-w-[1/2] shadow-lg scrollbar-custom" 
+    <div className="absolute border-2 resize-y overflow-y-auto overflow-x-hidden flex flex-col sm:w-[25%] md:w-[35%] lg:w-[1/3px] 2xl:max-h-1/2 xl:max-h-1/2 xl:max-w-[1/2] shadow-lg scrollbar-custom" 
       style={{ backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: colorsComponent.Border }}>
 
       <div className="text-xs border-b p-2 pb-2 flex justify-between items-center">
