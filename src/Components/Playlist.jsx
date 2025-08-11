@@ -165,7 +165,7 @@ useEffect(() => {
   };
 
   return (
-  <div className="border-2 bottom-20 left-328 min-w-150 max-w-150 max-h-112 min-h-112 fixed bg-gray-800 p-2 overflow-auto scrollbar-custom">
+  <div className="border-2 fixed xl:w-[1/2] xl:h-[43.5%] xl:max-w-[35%] xl:max-h-[50%] bottom-0 bg-gray-800 p-2 overflow-auto scrollbar-custom">
     {/* Zone contrôles */}
     <div className="flex items-center gap-4 mb-4">
       <label className="text-white">
