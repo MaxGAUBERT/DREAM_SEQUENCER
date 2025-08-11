@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import AddPattern from "./AddPattern";
 import DeleteAllPatterns from "./DeleteAllPatterns";
 
-
 const PatternSelector = ({
   patterns,
   setPatterns,
@@ -22,7 +21,7 @@ const PatternSelector = ({
   const [renameInput, setRenameInput] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
 
-  // Fermer menu au clic extérieur
+  // Fermeture menu au clic extérieur
   useEffect(() => {
     const handleClickOutside = () => {
       if (contextMenu.visible) {
@@ -35,18 +34,7 @@ const PatternSelector = ({
     };
   }, [contextMenu.visible]);
 
-  // Clic droit sur un pattern → ouvre le menu
-  const handleContextMenu = (e, patternId) => {
-    e.preventDefault();
-    setContextMenu({
-      visible: true,
-      x: e.clientX,
-      y: e.clientY,
-      targetId: patternId,
-    });
-  };
-
-  // Actions du menu
+  
   const handleMenuAction = (action) => {
     const targetId = contextMenu.targetId;
     if (!targetId) return;
@@ -77,45 +65,36 @@ const PatternSelector = ({
       case "reset":
         setPatterns((prev) =>
           prev.map((p) =>
-            p.id === targetId
-              ? { ...p,  name: "pattern " + p.id }
-              : p
+            p.id === targetId ? { ...p, name: `pattern ${p.id + 1}` } : p
           )
         );
         break;
 
       case "resetAll": {
-          // 1. Créer une nouvelle liste de patterns vides
-          const resetPatterns = Array.from({ length: initLength }, (_, i) => ({
-            id: i,
-            name: `Pattern ${i + 1}`,
-            color: colorByIndex(i),
-          }));
+        const resetPatterns = Array.from({ length: initLength }, (_, i) => ({
+          id: i,
+          name: `Pattern ${i + 1}`,
+          color: colorByIndex(i),
+        }));
 
-          // 2. Mettre à jour les patterns
-          setPatterns(resetPatterns);
-          onSelect(0);
+        setPatterns(resetPatterns);
+        onSelect(0);
 
-          // 3. Réinitialiser complètement les grilles de chaque instrument
-          setInstrumentList(prev => {
-            const newList = { ...prev };
-
-            Object.keys(newList).forEach(inst => {
-              // On remplace entièrement grids par de nouveaux steps vides
-              newList[inst] = {
-                ...newList[inst],
-                grids: resetPatterns.reduce((acc, pattern) => {
-                  acc[pattern.id] = Array(initLength).fill(false);
-                  return acc;
-                }, {})
-              };
-            });
-
-            return newList;
+        setInstrumentList((prev) => {
+          const newList = { ...prev };
+          Object.keys(newList).forEach((inst) => {
+            newList[inst] = {
+              ...newList[inst],
+              grids: resetPatterns.reduce((acc, pattern) => {
+                acc[pattern.id] = Array(initLength).fill(false);
+                return acc;
+              }, {}),
+            };
           });
-          break;
-        }
-
+          return newList;
+        });
+        break;
+      }
 
       default:
         break;
@@ -123,6 +102,53 @@ const PatternSelector = ({
 
     setContextMenu((prev) => ({ ...prev, visible: false }));
   };
+
+  // Raccourcis clavier globaux
+   useEffect(() => {
+  const handleGlobalShortcut = (e) => {
+    if (!contextMenu.visible) return;
+
+    if (e.ctrlKey && e.key.toLowerCase() === "n") {
+      e.preventDefault();
+      e.stopPropagation();
+      handleMenuAction("reset");
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === "r") {
+      e.preventDefault();
+      e.stopPropagation();
+      handleMenuAction("rename");
+    }
+    if (e.ctrlKey && e.key.toLowerCase() === "d") {
+      e.preventDefault();
+      e.stopPropagation();
+      handleMenuAction("duplicate");
+    }
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") {
+      e.preventDefault();
+      e.stopPropagation();
+      handleMenuAction("resetAll");
+    }
+  };
+
+  // utilisation de `true` pour activer la phase de capture
+  window.addEventListener("keydown", handleGlobalShortcut, true);
+  return () => {
+    window.removeEventListener("keydown", handleGlobalShortcut, true);
+  };
+}, [contextMenu.visible]);
+
+
+  // Clic droit sur un pattern → ouvre le menu
+  const handleContextMenu = (e, patternId) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      targetId: patternId,
+    });
+  };
+
 
   // Valider renommage
   const handleRenameSubmit = () => {
@@ -139,56 +165,52 @@ const PatternSelector = ({
   };
 
   return (
-    <div className="flex gap-4 p-2 bottom-0 absolute border-4 w-screen overflow-auto border-gray-700 scrollbar-custom">
-      {/* Menu contextuel */}
+    <div className="flex flex-col gap-4 p-2 bottom-0 right-0 absolute border-4 md:h-[93%] overflow-auto border-gray-700 scrollbar-custom">
       {contextMenu.visible && (
         <div
           className="bg-gray-800 text-white border border-gray-300 shadow-lg rounded-md overflow-hidden"
           style={{
             position: "fixed",
-            top: contextMenu.y / 2 + 150,
-            left: contextMenu.x,
+            top: contextMenu.y / 2,
+            left: contextMenu.x / 2 + 450,
             zIndex: 1000,
             minWidth: 180,
           }}
           onClick={(e) => e.stopPropagation()}
         >
-
           <div
             className="px-3 py-2 hover:bg-gray-600 cursor-pointer"
             onClick={() => handleMenuAction("rename")}
           >
-            Rename
+            Rename (CTRL + R)
           </div>
           <div
             className="px-3 py-2 hover:bg-gray-600 cursor-pointer"
             onClick={() => handleMenuAction("duplicate")}
           >
-            Duplicate
+            Duplicate (CTRL + D)
           </div>
           <div
             className="px-3 py-2 hover:bg-gray-600 cursor-pointer"
             onClick={() => handleMenuAction("reset")}
           >
-            Reset name
+            Reset name (CTRL + N)
           </div>
           <div
             className="px-3 py-2 hover:bg-gray-600 cursor-pointer text-red-400"
             onClick={() => handleMenuAction("delete")}
           >
-            remove
+            Remove (SUPPR)
           </div>
-          <div>
-            <div
-              className="px-3 py-2 hover:bg-gray-600 cursor-pointer"
-              onClick={() => handleMenuAction("resetAll")}
-            >
-              Reset All
-            </div>
-        </div>
+          <div
+            className="px-3 py-2 hover:bg-gray-600 cursor-pointer"
+            onClick={() => handleMenuAction("resetAll")}
+          >
+            Reset All (CTRL + SHIFT + A)
+          </div>
         </div>
       )}
-      {/* Liste patterns */}
+
       {patterns.map((pattern) =>
         isRenaming && contextMenu.targetId === pattern.id ? (
           <input
@@ -218,7 +240,6 @@ const PatternSelector = ({
         )
       )}
 
-      {/* Boutons additionnels */}
       <AddPattern
         onSelect={onSelect}
         patterns={patterns}
