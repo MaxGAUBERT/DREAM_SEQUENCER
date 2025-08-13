@@ -12,8 +12,8 @@ const MENU = [
     items: ["Undo", "Redo"],
   },
   {
-    id: "view",
-    label: "View",
+    id: "Window",
+    label: "Window",
     items: ["Drum Rack", "Pattern Selector", "FXChain", "Playlist"],
   },
 ];
