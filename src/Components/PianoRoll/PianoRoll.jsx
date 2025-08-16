@@ -7,6 +7,7 @@ import { NoteLabels } from './NoteLabels';
 import { useChordGenerator } from '../../Hooks/useChordGenerator';
 import { rowToNoteName } from '../Utils/noteUtils';
 import { useSampleContext } from '../../Contexts/ChannelProvider';
+import { useHistoryContext } from '../../Contexts/HistoryProvider';
 
 export const ROWS = 48;
 export const CELL_WIDTH = 20;
@@ -172,7 +173,7 @@ const PianoRoll = ({
   const playModeRef = useRef();
   
   // Hooks
-  const { generateChordNotes, playChord } = useChordGenerator({
+  const { generateChordNotes } = useChordGenerator({
     ROWS, 
     selectedChordType, 
     noteLabelsRef
@@ -625,7 +626,7 @@ const handleResizeRight = useCallback((e, note) => {
   return (
     <div 
       ref={onOpen} 
-      className="w-full h-full fixed bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize scrollbar-custom"
+      className="xl:w-[58.5%] xl:h-1/2 top-12.5 xl:left-[35%] fixed bg-gray-900 text-white border-2 border-white p-3 overflow-auto scrollbar-custom"
       style={{ willChange: 'transform'}}
     >
       <TopBar
