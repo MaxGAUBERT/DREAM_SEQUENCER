@@ -12,6 +12,7 @@ import {useSampleContext} from "../../Contexts/ChannelProvider";
 import { LiaVolumeMuteSolid } from "react-icons/lia";
 import { RxMixerVertical } from "react-icons/rx";
 import { FaListOl } from "react-icons/fa";
+import {Rnd} from "react-rnd";
 
 
 const DrumRack = ({
@@ -137,7 +138,7 @@ const DrumRack = ({
   }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
 
   return (
-    <div className="absolute overflow-y border-2 bottom-0 left-0 resize overflow-y-auto  flex flex-col md:w-[25%] lg:w-[25%] xl:max-w-1/2 xl:h-250px 2xl:w-1/2 2xl:max-h-1/2 shadow-lg scrollbar-custom" 
+    <Rnd bounds="window" default={{ x: 0, y: 340, width: "50%", height: "50%" }} maxWidth={"50%"} minWidth={"50%"} minHeight={"50%"} className="overflow-y border-2 resize overflow-y-auto  flex flex-col shadow-lg scrollbar-custom" 
       style={{ backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: colorsComponent.Border }}>
 
       <div className="text-xs border-b p-2 pb-2 flex justify-between items-center">
@@ -200,7 +201,7 @@ const DrumRack = ({
           />
         </div>
       )}
-    </div>
+    </Rnd>
   );
 };
 
