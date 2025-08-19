@@ -172,10 +172,10 @@ useEffect(() => {
         x: 770,        
         y: 50,         
         width: "50%", 
-        height: "50%", 
+        height: "92%", 
       }}
       maxWidth="43.5%" 
-      maxHeight="100%"   
+      maxHeight="92%"   
       className="border-2 bg-gray-800 p-2 overflow-auto scrollbar-custom"
       cancel="input, label, .no-drag"
     >
