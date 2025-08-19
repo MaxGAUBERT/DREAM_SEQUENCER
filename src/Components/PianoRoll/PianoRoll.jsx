@@ -8,6 +8,7 @@ import { useChordGenerator } from '../../Hooks/useChordGenerator';
 import { rowToNoteName } from '../Utils/noteUtils';
 import { useSampleContext } from '../../Contexts/ChannelProvider';
 import { useHistoryContext } from '../../Contexts/HistoryProvider';
+import {Rnd} from 'react-rnd';
 
 export const ROWS = 48;
 export const CELL_WIDTH = 20;
@@ -624,9 +625,21 @@ const handleResizeRight = useCallback((e, note) => {
   }, [isPlaying, COLS, getSampler, getSynth]);
 
   return (
-    <div 
+    <Rnd 
       ref={onOpen} 
-      className="xl:w-1/2 2xl:max-h-[43vh] fixed bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize-y scrollbar-custom"
+      bounds={'window'}
+      enableResizing={{ top: false, right: false, bottom: true, left: true }}
+      maxWidth={window.innerWidth / 2}
+      maxHeight={window.innerHeight - 48}
+      minHeight={290}
+      minWidth={window.innerWidth / 3}
+      default={{
+        x: 0,
+        y: 48,
+        width: window.innerWidth / 2,
+        height: 100
+      }}
+      className="bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize-y scrollbar-custom"
       style={{ willChange: 'transform'}}
     >
       <TopBar
@@ -707,7 +720,7 @@ const handleResizeRight = useCallback((e, note) => {
           </div>
         </div>
       </div>
-    </div>
+    </Rnd>
   );
 };
 
