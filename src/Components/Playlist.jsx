@@ -5,6 +5,7 @@ import { rowToNoteName } from "./Utils/noteUtils";
 import * as Tone from "tone";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import { useSampleContext } from "../Contexts/ChannelProvider";
+import { Rnd } from "react-rnd";
 
 function resizeCells(prevCells, oldWidth, oldHeight, newWidth, newHeight) {
   const newCells = Array(newWidth * newHeight).fill(null);
@@ -165,8 +166,20 @@ useEffect(() => {
   };
 
   return (
-  <div className="border-2 fixed xl:w-[1/2] xl:h-[43.5%] xl:max-w-[35%] xl:max-h-[50%] bottom-0 bg-gray-800 p-2 overflow-auto scrollbar-custom">
-    {/* Zone contrôles */}
+   <Rnd
+      bounds="window"
+      default={{
+        x: 770,        
+        y: 50,         
+        width: "50%", 
+        height: "50%", 
+      }}
+      maxWidth="43.5%" 
+      maxHeight="100%"   
+      className="border-2 bg-gray-800 p-2 overflow-auto scrollbar-custom"
+      cancel="input, label, .no-drag"
+    >
+    {/* Zone contrôles */} 
     <div className="flex items-center gap-4 mb-4">
       <label className="text-white">
         {isPlaying && currentColumn !== null
@@ -231,7 +244,7 @@ useEffect(() => {
         </button>
       ))}
     </div>
-  </div>
+  </Rnd>
 );
 
 };
