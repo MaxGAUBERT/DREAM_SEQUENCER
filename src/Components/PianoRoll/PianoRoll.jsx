@@ -7,8 +7,7 @@ import { NoteLabels } from './NoteLabels';
 import { useChordGenerator } from '../../Hooks/useChordGenerator';
 import { rowToNoteName } from '../Utils/noteUtils';
 import { useSampleContext } from '../../Contexts/ChannelProvider';
-import { useHistoryContext } from '../../Contexts/HistoryProvider';
-import {Rnd} from 'react-rnd';
+import { useHistoryContext } from '../../Contexts/HistoryProvider'
 
 export const ROWS = 48;
 export const CELL_WIDTH = 20;
@@ -625,22 +624,13 @@ const handleResizeRight = useCallback((e, note) => {
   }, [isPlaying, COLS, getSampler, getSynth]);
 
   return (
-    <Rnd 
-      ref={onOpen} 
-      bounds={'window'}
-      enableResizing={{ top: false, right: false, bottom: true, left: true }}
-      maxWidth={window.innerWidth / 2}
-      maxHeight={window.innerHeight - 48}
-      minHeight={290}
-      minWidth={window.innerWidth / 3}
-      default={{
-        x: 0,
-        y: 48,
-        width: window.innerWidth / 2,
-        height: 100
-      }}
-      className="bg-gray-900 text-white border-2 border-white p-3 overflow-auto resize-y scrollbar-custom"
-      style={{ willChange: 'transform'}}
+    <div
+      ref={onOpen}
+      className="
+        bg-black text-white border border-white/20 rounded-xl p-3
+        h-full w-full min-h-0
+        overflow-auto scrollbar-custom
+      "
     >
       <TopBar
         selectedInstrument={selectedInstrument}
@@ -720,7 +710,7 @@ const handleResizeRight = useCallback((e, note) => {
           </div>
         </div>
       </div>
-    </Rnd>
+    </div>
   );
 };
 
