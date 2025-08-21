@@ -166,19 +166,13 @@ useEffect(() => {
   };
 
   return (
-   <Rnd
-      bounds="window"
-      default={{
-        x: 770,        
-        y: 50,         
-        width: "50%", 
-        height: "92%", 
-      }}
-      maxWidth="43.5%" 
-      maxHeight="92%"   
-      className="border-2 bg-gray-800 p-2 overflow-auto scrollbar-custom"
-      cancel="input, label, .no-drag"
-    >
+   <div
+  className="
+    border border-white/20 rounded-xl bg-black/80 text-white
+    p-2 min-h-0 h-full w-full
+    overflow-auto scrollbar-custom
+  "
+  >
     {/* Zone contrôles */} 
     <div className="flex items-center gap-4 mb-4">
       <label className="text-white">
@@ -244,7 +238,7 @@ useEffect(() => {
         </button>
       ))}
     </div>
-  </Rnd>
+  </div>
 );
 
 };
