@@ -149,9 +149,9 @@ export const TopBar = ({
   const isChordSelectorDisabled = mode !== "chords";
 
   return (
-    <div className="flex gap-2 mb-2 items-center ml-20">
+    <div className="flex gap-2 mb-2 items-center ml-40">
       {/* Instrument Label */}
-      <label className="absolute left-0 px-4 py-2 bg-gray-800 rounded text-sm font-medium">
+      <label className="static left-2 px-2 py-2 bg-gray-800 rounded text-sm font-medium">
         {selectedInstrument}
       </label>
 
