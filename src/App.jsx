@@ -15,7 +15,6 @@ import PianoRoll from "./Components/PianoRoll/PianoRoll";
 import Playlist from "./Components/Playlist";
 import ChannelProvider from "./Contexts/ChannelProvider";
 import { useHistoryContext } from "./Contexts/HistoryProvider";
-import FXChain from "./Components/FXChain";
 
 
 const getColorByIndex = (() => {
@@ -137,7 +136,7 @@ export default function App() {
       Object.keys(updated).forEach(inst => {
         if (!updated[inst].grids) updated[inst].grids = {};
         if (!updated[inst].grids[id]) {
-          updated[inst].grids[id] = Array(16).fill(false);
+          updated[inst].grids[id] = Array(numSteps).fill(false);
         }
         if (!updated[inst].pianoData) updated[inst].pianoData = {};
         if (!updated[inst].pianoData[id]) {
@@ -148,6 +147,33 @@ export default function App() {
       return updated;
     });
   }, [setSelectedPatternID, setInstrumentList]);
+
+  useEffect(() => {
+  setInstrumentList(prev => {
+    if (!prev) return prev;
+    const next = { ...prev };
+
+    Object.values(next).forEach(inst => {
+      if (!inst.grids) inst.grids = {};
+      // assure qu'on a une grille pour le pattern courant
+      if (!inst.grids[selectedPatternID]) {
+        inst.grids[selectedPatternID] = Array(numSteps).fill(false);
+      }
+
+      const arr = inst.grids[selectedPatternID] || [];
+      if (arr.length < numSteps) {
+        inst.grids[selectedPatternID] = [
+          ...arr,
+          ...Array(numSteps - arr.length).fill(false),
+        ];
+      } else if (arr.length > numSteps) {
+        inst.grids[selectedPatternID] = arr.slice(0, numSteps);
+      }
+    });
+
+    return next;
+  });
+}, [numSteps, selectedPatternID, setInstrumentList]);
 
   const handleKeyDown = (e) => {
     if (e.ctrlKey && e.key === "z" && !e.shiftKey) {
@@ -233,17 +259,20 @@ useEffect(() => {
   }, [currentProject, setInstrumentList]);
 
   return (
-    <div className="min-h-screen h-screen bg-gray-900 font-['Orbitron'] text-sm font-bold relative">
-      <MdGraphicEq size={300} className="absolute top-2/4 left-2/4 transform -translate-x-1/2 -translate-y-1/2 text-white"/>
-      <span className="absolute top-2 right-2 text-white">
-        <h3>Dream Sequencer: {currentProjectName}</h3>  
-      </span>
-     
-      <GlobalColorContextProvider>
-        <ChannelProvider>
+  <div className="w-full h-full absolute bg-gray-900 font-['Orbitron'] text-sm font-bold">
+    <div className="z-0 pointer-events-none">
+      <MdGraphicEq
+        size={50}
+        className="absolute z-0 pointer-events-none top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white opacity-0"
+      />
+    </div>
+
+    {/* ====== Top bar ====== */}
+    <GlobalColorContextProvider>
+      <ChannelProvider>
         <StripMenu onAction={handleRunAction} />
-        
-        <ModalManager 
+
+        <ModalManager
           modals={modals}
           projects={projects}
           closeModal={closeModal}
@@ -252,65 +281,107 @@ useEffect(() => {
           deleteAllProjects={deleteAllProjects}
           saveAsProject={saveAsProject}
         />
+
+        {/* ====== Workspace (grid) ====== */}
         <PlayContext>
-          {openComponents["Drum Rack"] && (
-            <DrumRack 
-              numSteps={numSteps} 
-              setNumSteps={setNumSteps} 
-              patterns={patterns}
-              instrumentList={instrumentList} 
-              setInstrumentList={setInstrumentList}
-              selectedPatternID={selectedPatternID}
-              channelModalOpen={channelModalOpen}
-              setChannelModalOpen={setChannelModalOpen}
-              instrumentName={instrumentName}
-              setInstrumentName={setInstrumentName}
-              onOpenPianoRoll={openPianoRollForInstrument}
-            />
-          )}
+          <main
+            className="
+              h-[calc(100vh-50px)]  /* ajuste si ta top bar est plus/moins haute */
+              p-0 overflow-hidden
+              grid gap-0
+              grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)_104px]
+              xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_120px]
+              2xl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)_136px]
+            "
+          >
+            {/* ===== Colonne GAUCHE : DrumRack (haut) + PianoRoll (bas) ===== */}
+            <section
+              className="
+                min-h-0 overflow-hidden
+                grid gap-0
+                grid-rows-[minmax(0,0.62fr)_minmax(0,0.38fr)]
+                2xl:grid-rows-[minmax(0,0.65fr)_minmax(0,0.35fr)]
+              "
+            >
+              <div className="min-h-0 overflow-hidden">
+                {openComponents['Drum Rack'] && (
+                  <div className="h-full w-full min-h-0 overflow-auto scrollbar-custom border border-white/15 rounded-xl bg-black/80 text-white p-2">
+                    <DrumRack
+                      numSteps={numSteps}
+                      setNumSteps={setNumSteps}
+                      patterns={patterns}
+                      instrumentList={instrumentList}
+                      setInstrumentList={setInstrumentList}
+                      selectedPatternID={selectedPatternID}
+                      channelModalOpen={channelModalOpen}
+                      setChannelModalOpen={setChannelModalOpen}
+                      instrumentName={instrumentName}
+                      setInstrumentName={setInstrumentName}
+                      onOpenPianoRoll={openPianoRollForInstrument}
+                    />
+                  </div>
+                )}
+              </div>
 
-          {openComponents["Pattern Selector"] && (
-            <PatternSelector 
-              patterns={patterns} 
-              setPatterns={setPatterns} 
-              colorByIndex={getColorByIndex} 
-              initLength={initLength} 
-              onSelect={handleSelectPattern} 
-              selectedPatternID={selectedPatternID}
-              setInstrumentList={setInstrumentList}
-            />
-          )}
+              <div className="min-h-0 overflow-hidden">
+                {isPianoRollOpen && (
+                  <div className="h-full w-full min-h-0 overflow-auto scrollbar-custom border border-white/15 rounded-xl bg-black text-white">
+                    <PianoRoll
+                      selectedPatternID={selectedPatternID}
+                      selectedInstrument={pianoRollInstrument}
+                      instrumentList={instrumentList}
+                      setInstrumentList={setInstrumentList}
+                      onOpen={setIsPianoRollOpen}
+                      onClose={() => setIsPianoRollOpen(false)}
+                    />
+                  </div>
+                )}
+              </div>
+            </section>
 
-          {openComponents["Playlist"] && (
-            <Playlist 
-              selectedPatternID={selectedPatternID}
-              colorByIndex={getColorByIndex}
-              patterns={patterns}
-              instrumentList={instrumentList}
-              cells={cells}
-              setCells={setCells}
-              numSteps={numSteps}
-            />
-          )}
+            {/* ===== Colonne MILIEU : Playlist ===== */}
+            <aside className="min-h-0 overflow-hidden">
+              {openComponents['Playlist'] && (
+                <div className="h-full w-full min-h-0 overflow-auto scrollbar-custom border border-white/15 rounded-xl bg-black/80 text-white">
+                  <Playlist
+                    selectedPatternID={selectedPatternID}
+                    colorByIndex={getColorByIndex}
+                    patterns={patterns}
+                    instrumentList={instrumentList}
+                    cells={cells}
+                    setCells={setCells}
+                    numSteps={numSteps}
+                  />
+                </div>
+              )}
+            </aside>
 
-          {isPianoRollOpen && (
-            <PianoRoll 
-              selectedPatternID={selectedPatternID} 
-              selectedInstrument={pianoRollInstrument} 
-              instrumentList={instrumentList} 
-              setInstrumentList={setInstrumentList} 
-              onOpen={setIsPianoRollOpen} 
-              onClose={() => setIsPianoRollOpen(false)}
-            />
-          )}
+            {/* ===== Colonne DROITE : Pattern Selector (hauteur = entre menu strip et bas) ===== */}
+            <aside className="min-h-0 overflow-hidden">
+              {openComponents['Pattern Selector'] && (
+                <div className="min-h-0 overflow-auto scrollbar-custom bg-[#101826]">
+                  <PatternSelector
+                    patterns={patterns}
+                    setPatterns={setPatterns}
+                    colorByIndex={getColorByIndex}
+                    initLength={initLength}
+                    onSelect={handleSelectPattern}
+                    selectedPatternID={selectedPatternID}
+                    setInstrumentList={setInstrumentList}
+                  />
+                </div>
+              )}
+            </aside>
+          </main>
 
-          {openComponents["FXChain"] && (
-              <FXChain instrumentList={instrumentList} setInstrumentList={setInstrumentList}/>
-          )}
-          <TransportBar />
+          {/* TransportBar occupe toute la largeur en bas */}
+          <div className="col-span-3 border-t border-white/10">
+            <TransportBar />
+          </div>
         </PlayContext>
-        </ChannelProvider> 
-      </GlobalColorContextProvider>
-    </div>
-  );
+      </ChannelProvider>
+    </GlobalColorContextProvider>
+  </div>
+);
+
 }
