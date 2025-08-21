@@ -5,13 +5,20 @@ html, body, #root {
   margin: 0;
 }
 
+/* gouttière horizontale entre les colonnes */
+.gutter.gutter-horizontal {
+  cursor: col-resize;
+  background: rgba(148, 163, 184, 0.25); /* slate-300/25 */
+  width: 8px;
+}
+.gutter.gutter-horizontal:hover { background: rgba(148, 163, 184, 0.45); }
+
 
 #root {
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
 }
 
 .scrollbar-custom {
@@ -55,6 +62,7 @@ body {
   place-items: center;
   min-width: 100vw;
   min-height: 100vh;
+  overflow: hidden;
 }
 
 h1 {
