@@ -7,7 +7,7 @@ import { NoteLabels } from './NoteLabels';
 import { useChordGenerator } from '../../Hooks/useChordGenerator';
 import { rowToNoteName } from '../Utils/noteUtils';
 import { useSampleContext } from '../../Contexts/ChannelProvider';
-import { useHistoryContext } from '../../Contexts/HistoryProvider'
+import { useHistoryContext } from '../../Contexts/HistoryProvider';
 
 export const ROWS = 48;
 export const CELL_WIDTH = 20;
@@ -156,6 +156,7 @@ const PianoRoll = ({
   const [state, dispatch] = useReducer(pianoRollReducer, initialState);
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedChordType, setSelectedChordType] = useState("major");
+  const {dispatchAction} = useHistoryContext();
 
   const [isResizing, setIsResizing] = useState(false);
   const [resizeMode, setResizeMode] = useState(null); 
@@ -257,28 +258,79 @@ const handleResizeRight = useCallback((e, note) => {
   dispatch({ type: 'SET_SELECTED_NOTE_ID', id: note.id });
 }, []);
 
+// Optimized note update function with proper undo/redo capture
+const handleSetNotes = useCallback((updater) => {
+  let prevNotes = [];
+  let nextNotes = [];
 
-  // Optimized note update function
-  const handleSetNotes = useCallback((updater) => {
-    setInstrumentList(prev => {
-      const instrument = prev[selectedInstrument];
-      if (!instrument) return prev;
-      
-      const current = instrument.pianoData?.[selectedPatternID] || [];
-      const updatedNotes = typeof updater === 'function' ? updater(current) : updater;
+  // 1) Lire l'état courant + calculer une seule fois
+  setInstrumentList(prev => {
+    const inst = prev[selectedInstrument];
+    if (!inst) return prev;
 
-      return {
-        ...prev,
-        [selectedInstrument]: {
-          ...instrument,
-          pianoData: {
-            ...instrument.pianoData,
-            [selectedPatternID]: updatedNotes,
-          },
+    prevNotes = inst.pianoData?.[selectedPatternID] ?? [];
+    nextNotes = (typeof updater === 'function') ? updater(prevNotes) : updater;
+
+    // Early exit si inchangé (shallow + longueur + ===)
+    const same =
+      prevNotes === nextNotes ||
+      (Array.isArray(prevNotes) && Array.isArray(nextNotes) &&
+       prevNotes.length === nextNotes.length &&
+       prevNotes.every((v, i) => v === nextNotes[i]));
+    if (same) return prev;
+
+    // 2) Appliquer tout de suite (l’historique retiendra apply/revert)
+    return {
+      ...prev,
+      [selectedInstrument]: {
+        ...inst,
+        pianoData: {
+          ...inst.pianoData,
+          [selectedPatternID]: nextNotes,
         },
-      };
-    });
-  }, [selectedInstrument, selectedPatternID, setInstrumentList]);
+      },
+    };
+  });
+
+  // 3) Enregistrer l’action avec apply/revert figées
+  dispatchAction({
+    type: 'setNotes',
+    payload: { selectedInstrument, selectedPatternID },
+    apply: () => {
+      setInstrumentList(prev => {
+        const inst = prev[selectedInstrument];
+        if (!inst) return prev;
+        return {
+          ...prev,
+          [selectedInstrument]: {
+            ...inst,
+            pianoData: {
+              ...inst.pianoData,
+              [selectedPatternID]: nextNotes,
+            },
+          },
+        };
+      });
+    },
+    revert: () => {
+      setInstrumentList(prev => {
+        const inst = prev[selectedInstrument];
+        if (!inst) return prev;
+        return {
+          ...prev,
+          [selectedInstrument]: {
+            ...inst,
+            pianoData: {
+              ...inst.pianoData,
+              [selectedPatternID]: prevNotes,
+            },
+          },
+        };
+      });
+    }
+  });
+}, [selectedInstrument, selectedPatternID, setInstrumentList, dispatchAction]);
+
 
   // Optimized sound playing
   const handlePlaySound = useCallback(async (_, row) => {
@@ -623,9 +675,9 @@ const handleResizeRight = useCallback((e, note) => {
     };
   }, [isPlaying, COLS, getSampler, getSynth]);
 
+
   return (
     <div
-      ref={onOpen}
       className="
         bg-black text-white border border-white/20 rounded-xl p-3
         h-full w-full min-h-0

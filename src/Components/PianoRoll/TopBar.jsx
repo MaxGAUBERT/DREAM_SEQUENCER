@@ -151,19 +151,19 @@ export const TopBar = ({
   return (
     <div className="flex gap-2 mb-2 items-center ml-40">
       {/* Instrument Label */}
-      <label className="static left-2 px-2 py-2 bg-gray-800 rounded text-sm font-medium">
-        {selectedInstrument}
-      </label>
 
       {/* Close Button */}
       <button 
         onClick={onClose} 
-        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors"
+        className="px-1 py-2 left-0 fixed bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors"
         title="Close Piano Roll"
         aria-label="Close Piano Roll"
       >
-        <IoClose size={20} />
+        <IoClose size={15} />
       </button>
+      <label className="static left-2 px-2 py-2 bg-gray-800 rounded text-sm font-medium">
+        {selectedInstrument}
+      </label>
 
       {/* Mode Buttons */}
       {modeButtons.map(({ mode: buttonMode, onClick, icon, title }) => (
