@@ -85,8 +85,15 @@ export default function App() {
     setNumSteps,
     deleteAllProjects
   } = useProjectManager();
-
-  const [isPianoRollOpen, setIsPianoRollOpen] = useState(false);
+  /*
+  const [isComponentsOpen, setIsComponentsOpen] = useState({
+    "DrumRack": true,
+    "PatternSelector": true,
+    "PianoRoll": false,
+    "Playlist": true,
+    "FXChain": false
+  });
+  */
   const [pianoRollInstrument, setPianoRollInstrument] = useState(null);
   const [instrumentName, setInstrumentName] = useState("");
   const [channelModalOpen, setChannelModalOpen] = useState(false);
@@ -108,14 +115,16 @@ export default function App() {
     saveAs: false,
   }));
 
+  /*
   const currentProjectName = useMemo(() => 
     projects.find(p => p.id === currentProjectId)?.name || "New Project",
     [projects, currentProjectId]
   );
+  */
 
   const openPianoRollForInstrument = useCallback((instrumentName) => {
     setPianoRollInstrument(instrumentName);
-    setIsPianoRollOpen(true);
+    setOpenComponents(prev => ({ ...prev, "Piano Roll": true }));
   }, []);
 
   const openModal = useCallback((name) => {
@@ -191,7 +200,7 @@ useEffect(() => {
     return () => {
         window.removeEventListener('keydown', handleKeyDown);
     };
-}, [undo, redo]); // ✅ Inclure les deux fonctions
+}, [undo, redo]); 
 
   const actionHandlers = useMemo(() => ({
     "Drum Rack": () => setOpenComponents(prev => ({ ...prev, "Drum Rack": !prev["Drum Rack"] })),
@@ -318,21 +327,22 @@ useEffect(() => {
                       instrumentName={instrumentName}
                       setInstrumentName={setInstrumentName}
                       onOpenPianoRoll={openPianoRollForInstrument}
+                      onClose={() => setOpenComponents(prev => ({ ...prev, "Drum Rack": false }))}
                     />
                   </div>
                 )}
               </div>
 
               <div className="min-h-0 overflow-hidden">
-                {isPianoRollOpen && (
+                {openComponents['Piano Roll'] && (
                   <div className="h-full w-full min-h-0 overflow-auto scrollbar-custom border border-white/15 rounded-xl bg-black text-white">
                     <PianoRoll
                       selectedPatternID={selectedPatternID}
                       selectedInstrument={pianoRollInstrument}
                       instrumentList={instrumentList}
                       setInstrumentList={setInstrumentList}
-                      onOpen={setIsPianoRollOpen}
-                      onClose={() => setIsPianoRollOpen(false)}
+                      onOpen={() => setOpenComponents(prev => ({ ...prev, "Piano Roll": true }))}
+                      onClose={() => setOpenComponents(prev => ({ ...prev, "Piano Roll": false }))}
                     />
                   </div>
                 )}
@@ -351,6 +361,7 @@ useEffect(() => {
                     cells={cells}
                     setCells={setCells}
                     numSteps={numSteps}
+                    onClose={() => setOpenComponents(prev => ({ ...prev, "Playlist": false }))}
                   />
                 </div>
               )}
@@ -383,5 +394,4 @@ useEffect(() => {
     </GlobalColorContextProvider>
   </div>
 );
-
 }
