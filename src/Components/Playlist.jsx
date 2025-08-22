@@ -6,6 +6,7 @@ import * as Tone from "tone";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import { useSampleContext } from "../Contexts/ChannelProvider";
 import { Rnd } from "react-rnd";
+import { IoClose } from "react-icons/io5";
 
 function resizeCells(prevCells, oldWidth, oldHeight, newWidth, newHeight) {
   const newCells = Array(newWidth * newHeight).fill(null);
@@ -30,7 +31,7 @@ function resizeCells(prevCells, oldWidth, oldHeight, newWidth, newHeight) {
 }
 
 
-const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, cells, setCells, numSteps}) => {
+const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, cells, setCells, numSteps, onClose}) => {
   const {isPlaying, playMode, bpm} = usePlayContext();
   const {width, setWidth, height, setHeight, CELL_SIZE} = useProjectManager();
   const {getSampler} = useSampleContext();
@@ -173,6 +174,13 @@ useEffect(() => {
     overflow-auto scrollbar-custom
   "
   >
+      <button
+        onClick={onClose}
+        title="Close Playlist"
+        className="px-1 py-2 left-0 relative bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors">
+
+        <IoClose size={15} />
+      </button>
     {/* Zone contrôles */} 
     <div className="flex items-center gap-4 mb-4">
       <label className="text-white">
