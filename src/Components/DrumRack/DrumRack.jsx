@@ -12,7 +12,8 @@ import {useSampleContext} from "../../Contexts/ChannelProvider";
 import { LiaVolumeMuteSolid } from "react-icons/lia";
 import { RxMixerVertical } from "react-icons/rx";
 import { FaListOl } from "react-icons/fa";
-
+import { IoClose } from "react-icons/io5";
+import { CgMaximizeAlt } from "react-icons/cg";
 
 const DrumRack = ({
   numSteps,
@@ -25,7 +26,9 @@ const DrumRack = ({
   setChannelModalOpen,
   instrumentName,
   setInstrumentName,
-  onOpenPianoRoll
+  onOpenPianoRoll, 
+  onClose, 
+  onMaximize
 }) => {
   const [input, setInput] = useState(false);
   const { colorsComponent } = useGlobalColorContext();
@@ -139,8 +142,17 @@ const DrumRack = ({
   return (
     <div className="border-2 overflow-auto scrollbar-custom flex flex-col"
       style={{ backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: "black" }}>
+        <div>
+          <button
+            className="px-1 py-2 left-0 fixed bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors"
+            onClick={onClose}
+            title="Close Drum Rack"
+          >
+            <IoClose size={15} />
+          </button>
+        </div>
 
-      <div className="text-xs border-b p-2 pb-2 flex justify-between items-center">
+      <div className="text-xs ml-15 border-b p-2 pb-2 flex justify-between">
         <div>
           Current Pattern: {patterns.find(p => p.id === selectedPatternID)?.name} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
         </div>
