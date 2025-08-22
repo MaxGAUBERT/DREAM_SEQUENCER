@@ -1,6 +1,6 @@
 import { createContext, useContext, useRef } from "react";
 import * as Tone from "tone";
-import { useSynth } from "../Hooks/useSynth";
+
 // Création du contexte
 const SampleContext = createContext(null);
 
