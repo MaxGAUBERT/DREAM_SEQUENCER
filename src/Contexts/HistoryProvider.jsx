@@ -3,101 +3,85 @@ import { createContext, useCallback, useContext, useReducer } from 'react';
 const HistoryContext = createContext(null);
 export const useHistoryContext = () => useContext(HistoryContext);
 
-// ✅ Reducer pur, sans effets de bord
 function historyReducer(state, action) {
   switch (action.type) {
     case 'ADD':
-      return {
-        past: [...state.past, action.payload],
-        future: [],
-      };
-
+      return { past: [...state.past, action.payload], future: [] };
     case 'UNDO': {
       const last = state.past[state.past.length - 1];
       if (!last) return state;
-      return {
-        past: state.past.slice(0, -1),
-        future: [last, ...state.future],
-      };
+      return { past: state.past.slice(0, -1), future: [last, ...state.future] };
     }
-
     case 'REDO': {
       const next = state.future[0];
       if (!next) return state;
-      return {
-        past: [...state.past, next],
-        future: state.future.slice(1),
-      };
+      return { past: [...state.past, next], future: state.future.slice(1) };
     }
-
     case 'CLEAR':
       return { past: [], future: [] };
-
     default:
       return state;
   }
 }
 
 export function HistoryProvider({ children }) {
-  const [state, dispatch] = useReducer(historyReducer, {
-    past: [],
-    future: [],
-  });
+  const [state, dispatch] = useReducer(historyReducer, { past: [], future: [] });
 
-  // ✅ Accepte soit un objet action complet, soit juste les données
-  const addAction = useCallback((actionOrData) => {
-    let action;
-    
-    // Si c'est déjà un objet action avec apply/revert, on l'utilise tel quel
-    if (typeof actionOrData?.apply === 'function') {
-      action = actionOrData;
-      action.apply();
-    } else {
-      // Sinon, on considère que ce sont juste des données à stocker
-      action = actionOrData;
+  const dispatchAction = useCallback((actionOrData) => {
+  
+    if (actionOrData && typeof actionOrData.apply === 'function' && typeof actionOrData.revert === 'function') {
+      actionOrData.apply();             
+      dispatch({ type: 'ADD', payload: actionOrData }); 
+      return;
     }
-    
-    dispatch({ type: 'ADD', payload: action });
-  }, [dispatch]);
 
-  // ✅ Gère les actions avec ou sans méthode revert
+   
+    const { do: doFn, undo: undoFn, ...rest } = actionOrData ?? {};
+    if (typeof doFn === 'function' && typeof undoFn === 'function') {
+      const normalized = {
+        ...rest,
+        apply: doFn,
+        revert: undoFn,
+      };
+      normalized.apply();
+      dispatch({ type: 'ADD', payload: normalized });
+      return;
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[History] dispatchAction appelé sans apply/revert');
+    }
+  }, []);
+
+  const addAction = useCallback((action) => {
+    dispatchAction(action);
+  }, [dispatchAction]);
+
   const undo = useCallback(() => {
     const last = state.past[state.past.length - 1];
     if (!last) return;
-    
-    if (typeof last.revert === 'function') {
-      last.revert();
-    }
-    // Si pas de méthode revert, on fait juste l'undo dans l'historique
-    
+    if (typeof last.revert === 'function') last.revert();
     dispatch({ type: 'UNDO' });
-  }, [state.past, dispatch]);
+  }, [state.past]);
 
   const redo = useCallback(() => {
     const next = state.future[0];
     if (!next) return;
-    
-    if (typeof next.apply === 'function') {
-      next.apply();
-    }
-    // Si pas de méthode apply, on fait juste le redo dans l'historique
-    
+    if (typeof next.apply === 'function') next.apply();
     dispatch({ type: 'REDO' });
-  }, [state.future, dispatch]);
+  }, [state.future]);
 
-  const clear = useCallback(() => {
-    dispatch({ type: 'CLEAR' });
-  }, [dispatch]);
+  const clear = useCallback(() => { dispatch({ type: 'CLEAR' }); }, []);
 
   return (
     <HistoryContext.Provider
       value={{
+        dispatchAction,  
+        addAction,   
         undo,
         redo,
-        addAction,
         clear,
         state,
-        dispatch,
         canUndo: state.past.length > 0,
         canRedo: state.future.length > 0,
         history: state.past,
