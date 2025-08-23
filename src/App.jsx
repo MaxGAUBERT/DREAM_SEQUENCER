@@ -298,9 +298,9 @@ useEffect(() => {
               h-[calc(100vh-50px)]  /* ajuste si ta top bar est plus/moins haute */
               p-0 overflow-hidden
               grid gap-0
-              grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)_104px]
+              grid-cols-[minmax(0,0.7fr)_minmax(0,1.8fr)_104px]
               xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_120px]
-              2xl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)_136px]
+              2xl:grid-cols-[minmax(0,1.90fr)_minmax(0,1.25fr)_136px]
             "
           >
             {/* ===== Colonne GAUCHE : DrumRack (haut) + PianoRoll (bas) ===== */}
@@ -309,12 +309,12 @@ useEffect(() => {
                 min-h-0 overflow-hidden
                 grid gap-0
                 grid-rows-[minmax(0,0.62fr)_minmax(0,0.38fr)]
-                2xl:grid-rows-[minmax(0,0.65fr)_minmax(0,0.35fr)]
+                2xl:grid-rows-[minmax(0,0..60fr)_minmax(0,0.45fr)]
               "
             >
-              <div className="min-h-0 overflow-hidden">
+              <div className="min-h-0 scrollbar-custom overflow-hidden">
                 {openComponents['Drum Rack'] && (
-                  <div className="h-full w-full min-h-0 overflow-auto scrollbar-custom border border-white/15 rounded-xl bg-black/80 text-white p-2">
+                  <div className="h-full w-full min-h-0 border-2 border-white rounded-xl text-white p-0">
                     <DrumRack
                       numSteps={numSteps}
                       setNumSteps={setNumSteps}
@@ -333,9 +333,9 @@ useEffect(() => {
                 )}
               </div>
 
-              <div className="min-h-0 overflow-hidden">
+              <div className="min-h-0 overflow-y-auto overflow-x-hidden">
                 {openComponents['Piano Roll'] && (
-                  <div className="h-full w-full min-h-0 overflow-auto scrollbar-custom border border-white/15 rounded-xl bg-black text-white">
+                  <div className="h-full w-full min-h-0 border border-white rounded-xl text-white">
                     <PianoRoll
                       selectedPatternID={selectedPatternID}
                       selectedInstrument={pianoRollInstrument}
@@ -352,7 +352,7 @@ useEffect(() => {
             {/* ===== Colonne MILIEU : Playlist ===== */}
             <aside className="min-h-0 overflow-hidden">
               {openComponents['Playlist'] && (
-                <div className="h-full w-full min-h-0 overflow-auto scrollbar-custom border border-white/15 rounded-xl bg-black/80 text-white">
+                <div className="h-full w-full min-h-0 overflow-auto scrollbar-custom border rounded-xl text-white">
                   <Playlist
                     selectedPatternID={selectedPatternID}
                     colorByIndex={getColorByIndex}
