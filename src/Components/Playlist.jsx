@@ -5,7 +5,6 @@ import { rowToNoteName } from "./Utils/noteUtils";
 import * as Tone from "tone";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import { useSampleContext } from "../Contexts/ChannelProvider";
-import { Rnd } from "react-rnd";
 import { IoClose } from "react-icons/io5";
 
 function resizeCells(prevCells, oldWidth, oldHeight, newWidth, newHeight) {
@@ -63,7 +62,6 @@ function playPattern(pattern, instrumentList, startTime, numSteps) {
       return;
     }
 
-    // Drum rack (grille)
     const rawSteps = instrument?.grids?.[pattern.id] || [];
     const paddedSteps = [...rawSteps];
     while (paddedSteps.length < numSteps) paddedSteps.push(false);
@@ -80,7 +78,7 @@ function playPattern(pattern, instrumentList, startTime, numSteps) {
     notes.forEach(note => {
       if (note) {
         const noteTime = startTime + note.start * stepDuration;
-        const duration = Tone.Time(note.length * stepDuration).toNotation();
+        const duration = Tone.Time(note.length * stepDuration * 2).toNotation();
         const velocity = note.velocity ?? 1;
         const noteName = rowToNoteName(note.row);
         sampler.triggerAttackRelease(noteName, duration, noteTime, velocity);
@@ -139,7 +137,7 @@ useEffect(() => {
 
     currentColumn = (currentColumn + 1) % width;
     console.log("Pattern duration:", patternDuration, "and numSteps: ", numSteps)
-  }, patternDuration * 2); 
+  }, patternDuration * width); 
 
   Tone.Transport.start();
 
@@ -169,7 +167,7 @@ useEffect(() => {
   return (
    <div
   className="
-    border border-white/20 rounded-xl bg-black/80 text-white
+    border-2 border-white rounded-xl bg-gray-900 text-white
     p-2 min-h-0 h-full w-full
     overflow-auto scrollbar-custom
   "
@@ -181,7 +179,7 @@ useEffect(() => {
 
         <IoClose size={15} />
       </button>
-    {/* Zone contrôles */} 
+
     <div className="flex items-center gap-4 mb-4">
       <label className="text-white">
         {isPlaying && currentColumn !== null
@@ -220,7 +218,7 @@ useEffect(() => {
     >
       {isPlaying && currentColumn !== null && (
         <div
-          className="absolute top-0 bg-red-400 bg-opacity-30 pointer-events-none z-0 transition-transform duration-300"
+          className="absolute top-0 bg-opacity-30 pointer-events-none z-0 transition-transform duration-300"
           style={{
             transform: `translateX(${currentColumn * CELL_SIZE}px)`,
             width: `${CELL_SIZE / 20}px`,
