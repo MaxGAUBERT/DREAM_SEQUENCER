@@ -12,11 +12,11 @@ function getColorByIndex(i) {
 
 export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
-  const [width, setWidth] = useState(5); 
-  const [height, setHeight] = useState(5); 
+  const [width, setWidth] = useState(10); 
+  const [height, setHeight] = useState(10); 
   const CELL_SIZE = 100;
   const [cells, setCells] = useState(Array(width * height).fill(0));
-  const [numSteps, setNumSteps] = useState(16);
+  const [numSteps, setNumSteps] = useState(64);
   const [notes, setNotes] = useState([]);
   const [projects, setProjects] = useState([]);
   const [currentProjectId, setCurrentProjectId] = useState(0);
@@ -84,7 +84,21 @@ export function useProjectManager() {
   return structuredClone(instrumentList);
   }, [instrumentList]);
 
+  const updateInstrumentSlot = useCallback((channelId, newSlot) => {
+    setInstrumentList(prev => {
+      if (!prev[channelId]) {
+        return prev;
+      }
 
+      const updated = {
+        ...prev,
+        [channelId]: {
+            ...prev[channelId], slot: Number(newSlot),
+        },
+      }
+      return updated;
+    });
+  }, [instrumentList])
 
   useEffect(() => {
     const saved = localStorage.getItem("projects");
@@ -296,5 +310,6 @@ const loadProject = async (projectId, fromProjects = projects) => {
       setProjects([]);
       localStorage.removeItem("projects");
     },
+    updateInstrumentSlot
   };
 }
