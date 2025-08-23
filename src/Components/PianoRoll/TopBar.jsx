@@ -64,7 +64,6 @@ const ChordSelector = React.memo(({ selectedChordType, onChordTypeChange, disabl
   );
 });
 
-// Composant ColsSlider mémorisé
 const ColsSlider = React.memo(({ cols, onColsChange }) => {
   return (
     <div className="flex items-center gap-2 ml-4">
@@ -112,7 +111,6 @@ export const TopBar = ({
     setCols(Number(e.target.value));
   }, []);
 
-  // Configuration des boutons de mode
   const modeButtons = useMemo(() => [
     {
       mode: 'draw',
@@ -155,7 +153,7 @@ export const TopBar = ({
       {/* Close Button */}
       <button 
         onClick={onClose} 
-        className="px-1 py-2 left-0 fixed bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors"
+        className="px-1 py-2 left-0 static bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors"
         title="Close Piano Roll"
         aria-label="Close Piano Roll"
       >

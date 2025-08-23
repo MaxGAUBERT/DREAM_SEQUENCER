@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo, useReducer } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo, useReducer } from 'react'; 
 import * as Tone from 'tone';
 import { usePlayContext } from '../../Contexts/PlayContext';
 import { TopBar } from './TopBar';
@@ -8,6 +8,9 @@ import { useChordGenerator } from '../../Hooks/useChordGenerator';
 import { rowToNoteName } from '../Utils/noteUtils';
 import { useSampleContext } from '../../Contexts/ChannelProvider';
 import { useHistoryContext } from '../../Contexts/HistoryProvider';
+
+// === AJOUT
+import ZoomBarTW from '../../UI/ZoomBarTW';
 
 export const ROWS = 48;
 export const CELL_WIDTH = 20;
@@ -20,7 +23,7 @@ const initialState = {
   isMouseDown: false,
   isResizing: false,
   resizeDirection: null,
-  cols: 16
+  cols: 32
 };
 
 function pianoRollReducer(state, action) {
@@ -42,9 +45,8 @@ function pianoRollReducer(state, action) {
   }
 }
 
-// GridLines virtualisé avec cache
+// GridLines
 const GridLines = React.memo(({ rows, cols, cellWidth, cellHeight }) => {
-  // Cache des lignes horizontales (ne changent jamais)
   const horizontalLines = useMemo(() => {
     const lines = [];
     for (let i = 0; i <= rows; i++) {
@@ -52,18 +54,13 @@ const GridLines = React.memo(({ rows, cols, cellWidth, cellHeight }) => {
         <div 
           key={i} 
           className={`absolute border-t ${i % 12 === 0 ? 'border-gray-500' : 'border-gray-700'}`} 
-          style={{ 
-            top: `${i * cellHeight}px`, 
-            width: '100%',
-            transform: 'translateZ(0)' // GPU acceleration
-          }} 
+          style={{ top: `${i * cellHeight}px`, width: '100%', transform: 'translateZ(0)' }} 
         />
       );
     }
     return lines;
-  }, [rows, cellHeight]); // rows et cellHeight ne changent jamais
+  }, [rows, cellHeight]);
 
-  // Cache des lignes verticales (changent seulement quand cols change)
   const verticalLines = useMemo(() => {
     const lines = [];
     for (let i = 0; i <= cols; i++) {
@@ -71,11 +68,7 @@ const GridLines = React.memo(({ rows, cols, cellWidth, cellHeight }) => {
         <div 
           key={i} 
           className={`absolute border-l ${i % 4 === 0 ? 'border-gray-500' : 'border-gray-700'}`} 
-          style={{ 
-            left: `${i * cellWidth}px`, 
-            height: '100%',
-            transform: 'translateZ(0)' // GPU acceleration
-          }} 
+          style={{ left: `${i * cellWidth}px`, height: '100%', transform: 'translateZ(0)' }} 
         />
       );
     }
@@ -90,22 +83,20 @@ const GridLines = React.memo(({ rows, cols, cellWidth, cellHeight }) => {
   );
 });
 
-// CellGrid virtualisé - rendu seulement des cellules visibles
-const VirtualizedCellGrid = React.memo(({ rows, cols, cellWidth, cellHeight, onCellMouseEnter }) => {
-  // Créer un seul gestionnaire d'événements pour toute la grille
+// Grille interactive — convertit x viewport -> x contenu via xToContent
+const VirtualizedCellGrid = React.memo(({ rows, cols, cellWidth, cellHeight, onCellMouseEnter, xToContent }) => {
   const handleMouseEnter = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
+    const xView = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const col = Math.floor(x / cellWidth);
+    const xContent = xToContent(xView);
+    const col = Math.floor(xContent / cellWidth);
     const row = Math.floor(y / cellHeight);
-    
     if (row >= 0 && row < rows && col >= 0 && col < cols) {
       onCellMouseEnter(row, col);
     }
-  }, [rows, cols, cellWidth, cellHeight, onCellMouseEnter]);
+  }, [rows, cols, cellWidth, cellHeight, onCellMouseEnter, xToContent]);
 
-  // Un seul div couvrant toute la grille au lieu de cellules individuelles
   return (
     <div 
       className="absolute inset-0"
@@ -119,21 +110,17 @@ const VirtualizedCellGrid = React.memo(({ rows, cols, cellWidth, cellHeight, onC
   );
 });
 
-// TopBar measure labels optimisé
+// Labels mesures
 const MeasureLabels = React.memo(({ cols, cellWidth }) => {
   const labels = useMemo(() => {
     const measureCount = Math.ceil(cols / 4);
     const elements = [];
-    
     for (let i = 0; i < measureCount; i++) {
       elements.push(
         <div 
           key={i} 
           className="border-r border-gray-600 text-center text-xs py-1 text-gray-300" 
-          style={{ 
-            width: `${cellWidth * 4}px`,
-            transform: 'translateZ(0)' // GPU acceleration
-          }}
+          style={{ width: `${cellWidth * 4}px`, transform: 'translateZ(0)' }}
         >
           {i + 1}
         </div>
@@ -163,8 +150,9 @@ const PianoRoll = ({
   const [initialMouseX, setInitialMouseX] = useState(0);
   const [initialNote, setInitialNote] = useState(null);
   
-  // Refs pour éviter les re-renders
+  // Refs
   const gridRef = useRef(null);
+  const viewportRef = useRef(null);
   const loopRef = useRef(null);
   const stepRef = useRef(0);
   const modeRef = useRef(state.mode);
@@ -184,41 +172,79 @@ const PianoRoll = ({
 
   const COLS = state.cols;
 
-  // Memoized values
+  // ====== ZOOM / PAN ======
+  const [windowRange, setWindowRange] = useState([0, 20]); // [%, %]
+  const minWindowPercent = 2;
+  const naturalWidthPx = COLS * CELL_WIDTH;            // largeur "contenu" sans transform
+  const windowWidthPercent = windowRange[1] - windowRange[0];
+  const scaleX = 100 / windowWidthPercent;             // ex: fenêtre 20% -> scaleX 5
+  const startPx = (windowRange[0] / 100) * naturalWidthPx;
+
+  // convertit coord x de la vue -> coord x du contenu (avant transform)
+  const xToContent = useCallback((xView) => xView / scaleX + startPx, [scaleX, startPx]);
+
+  // Ctrl + molette pour zoomer dans le viewport principal
+  useEffect(() => {
+    const vp = viewportRef.current;
+    if (!vp) return;
+    const onWheel = (e) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+
+      const rect = vp.getBoundingClientRect();
+      const xView = e.clientX - rect.left;
+      const xContent = xToContent(xView);
+      const cursorPercent = (xContent / naturalWidthPx) * 100;
+
+      const delta = Math.sign(e.deltaY);
+      const factor = 1 + 0.15 * Math.abs(delta);
+      const currentWidth = windowRange[1] - windowRange[0];
+      const newWidth = delta > 0 ? currentWidth * factor : currentWidth / factor;
+      const clampedWidth = Math.max(minWindowPercent, Math.min(100, newWidth));
+
+      const startToCursor = cursorPercent - windowRange[0];
+      const ratio = startToCursor / currentWidth;
+      let newStart = cursorPercent - ratio * clampedWidth;
+      let newEnd = newStart + clampedWidth;
+
+      if (newStart < 0) { newStart = 0; newEnd = clampedWidth; }
+      if (newEnd > 100) { newEnd = 100; newStart = 100 - clampedWidth; }
+      setWindowRange([newStart, newEnd]);
+    };
+    vp.addEventListener('wheel', onWheel, { passive: false });
+    return () => vp.removeEventListener('wheel', onWheel);
+  }, [xToContent, windowRange, naturalWidthPx]);
+  // ========================
+
   const currentNotes = useMemo(() =>
     instrumentList[selectedInstrument]?.pianoData?.[selectedPatternID] || [],
     [instrumentList, selectedInstrument, selectedPatternID]
   );
 
-  // Note labels cachées (ne changent jamais)
   const noteLabels = useMemo(() => {
     const labels = Array.from({ length: ROWS }, (_, i) => rowToNoteName(i));
     noteLabelsRef.current = labels;
     return labels;
-  }, []); // Pas de dépendances - ne recalcule jamais
+  }, []);
 
   const isBlackKey = useCallback((row) => 
     [1, 3, 6, 8, 10].includes((ROWS - 1 - row) % 12), []
   );
 
-  // Sync refs avec state/props - optimisé
   useEffect(() => { modeRef.current = state.mode; }, [state.mode]);
   useEffect(() => { instrumentListRef.current = instrumentList; }, [instrumentList]);
   useEffect(() => { selectedPatternIDRef.current = selectedPatternID; }, [selectedPatternID]);
   useEffect(() => { playModeRef.current = playMode; }, [playMode]);
 
-  // Gestionnaire de changement de colonnes optimisé
   const handleColsChange = useCallback((newCols) => {
     requestAnimationFrame(() => {
       dispatch({ type: 'SET_COLS', value: newCols });
 
-      // Nettoyage des notes hors limites
       setInstrumentList(prev => {
         const instrument = prev[selectedInstrument];
         if (!instrument) return prev;
 
         const pianoData = instrument.pianoData?.[selectedPatternID] || [];
-
         const filteredNotes = pianoData.filter(note => note.start < newCols);
 
         return {
@@ -232,112 +258,105 @@ const PianoRoll = ({
           }
         };
       });
+
+      // Réinitialise la fenêtre sur une proportion simple
+      setWindowRange(([s, e]) => {
+        const width = Math.max(minWindowPercent, e - s);
+        return [0, Math.min(100, width)];
+      });
     });
-}, [selectedInstrument, selectedPatternID, setInstrumentList]);
+  }, [selectedInstrument, selectedPatternID, setInstrumentList]);
 
+  const handleResizeLeft = useCallback((e, note) => {
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeMode('left');
+    setInitialMouseX(e.clientX);
+    setInitialNote({ ...note });
+    dispatch({ type: 'SET_SELECTED_NOTE_ID', id: note.id });
+  }, []);
 
-const handleResizeLeft = useCallback((e, note) => {
-  e.stopPropagation();
-  
-  setIsResizing(true);
-  setResizeMode('left');
-  setInitialMouseX(e.clientX);
-  setInitialNote({ ...note });
-  
-  dispatch({ type: 'SET_SELECTED_NOTE_ID', id: note.id });
-}, []);
+  const handleResizeRight = useCallback((e, note) => {
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeMode('right');
+    setInitialMouseX(e.clientX);
+    setInitialNote({ ...note });
+    dispatch({ type: 'SET_SELECTED_NOTE_ID', id: note.id });
+  }, []);
 
-const handleResizeRight = useCallback((e, note) => {
-  e.stopPropagation();
-  
-  setIsResizing(true);
-  setResizeMode('right');
-  setInitialMouseX(e.clientX);
-  setInitialNote({ ...note });
-  
-  dispatch({ type: 'SET_SELECTED_NOTE_ID', id: note.id });
-}, []);
+  const handleSetNotes = useCallback((updater) => {
+    let prevNotes = [];
+    let nextNotes = [];
 
-// Optimized note update function with proper undo/redo capture
-const handleSetNotes = useCallback((updater) => {
-  let prevNotes = [];
-  let nextNotes = [];
+    setInstrumentList(prev => {
+      const inst = prev[selectedInstrument];
+      if (!inst) return prev;
 
-  // 1) Lire l'état courant + calculer une seule fois
-  setInstrumentList(prev => {
-    const inst = prev[selectedInstrument];
-    if (!inst) return prev;
+      prevNotes = inst.pianoData?.[selectedPatternID] ?? [];
+      nextNotes = (typeof updater === 'function') ? updater(prevNotes) : updater;
 
-    prevNotes = inst.pianoData?.[selectedPatternID] ?? [];
-    nextNotes = (typeof updater === 'function') ? updater(prevNotes) : updater;
+      const same =
+        prevNotes === nextNotes ||
+        (Array.isArray(prevNotes) && Array.isArray(nextNotes) &&
+         prevNotes.length === nextNotes.length &&
+         prevNotes.every((v, i) => v === nextNotes[i]));
+      if (same) return prev;
 
-    // Early exit si inchangé (shallow + longueur + ===)
-    const same =
-      prevNotes === nextNotes ||
-      (Array.isArray(prevNotes) && Array.isArray(nextNotes) &&
-       prevNotes.length === nextNotes.length &&
-       prevNotes.every((v, i) => v === nextNotes[i]));
-    if (same) return prev;
-
-    // 2) Appliquer tout de suite (l’historique retiendra apply/revert)
-    return {
-      ...prev,
-      [selectedInstrument]: {
-        ...inst,
-        pianoData: {
-          ...inst.pianoData,
-          [selectedPatternID]: nextNotes,
+      return {
+        ...prev,
+        [selectedInstrument]: {
+          ...inst,
+          pianoData: {
+            ...inst.pianoData,
+            [selectedPatternID]: nextNotes,
+          },
         },
+      };
+    });
+
+    dispatchAction({
+      type: 'setNotes',
+      payload: { selectedInstrument, selectedPatternID },
+      apply: () => {
+        setInstrumentList(prev => {
+          const inst = prev[selectedInstrument];
+          if (!inst) return prev;
+          return {
+            ...prev,
+            [selectedInstrument]: {
+              ...inst,
+              pianoData: {
+                ...inst.pianoData,
+                [selectedPatternID]: nextNotes,
+              },
+            },
+          };
+        });
       },
-    };
-  });
-
-  // 3) Enregistrer l’action avec apply/revert figées
-  dispatchAction({
-    type: 'setNotes',
-    payload: { selectedInstrument, selectedPatternID },
-    apply: () => {
-      setInstrumentList(prev => {
-        const inst = prev[selectedInstrument];
-        if (!inst) return prev;
-        return {
-          ...prev,
-          [selectedInstrument]: {
-            ...inst,
-            pianoData: {
-              ...inst.pianoData,
-              [selectedPatternID]: nextNotes,
+      revert: () => {
+        setInstrumentList(prev => {
+          const inst = prev[selectedInstrument];
+          if (!inst) return prev;
+          return {
+            ...prev,
+            [selectedInstrument]: {
+              ...inst,
+              pianoData: {
+                ...inst.pianoData,
+                [selectedPatternID]: prevNotes,
+              },
             },
-          },
-        };
-      });
-    },
-    revert: () => {
-      setInstrumentList(prev => {
-        const inst = prev[selectedInstrument];
-        if (!inst) return prev;
-        return {
-          ...prev,
-          [selectedInstrument]: {
-            ...inst,
-            pianoData: {
-              ...inst.pianoData,
-              [selectedPatternID]: prevNotes,
-            },
-          },
-        };
-      });
-    }
-  });
-}, [selectedInstrument, selectedPatternID, setInstrumentList, dispatchAction]);
+          };
+        });
+      }
+    });
+  }, [selectedInstrument, selectedPatternID, setInstrumentList, dispatchAction]);
 
-
-  // Optimized sound playing
   const handlePlaySound = useCallback(async (_, row) => {
     await Tone.start();
     const noteLabel = rowToNoteName(row);
     const sampler = getSampler(selectedInstrument);
-    
     try {
       if (sampler?.loaded) {
         sampler.triggerAttackRelease(noteLabel, "8n");
@@ -348,38 +367,37 @@ const handleSetNotes = useCallback((updater) => {
   }, [selectedInstrument, getSampler, getSynth]);
 
   const handleDeleteCell = useCallback((row, col) => {
-  if (!state.isMouseDown || modeRef.current !== 'delete') return;
+    if (!state.isMouseDown || modeRef.current !== 'delete') return;
 
-  handleSetNotes((prev) => {
-    const existingIndex = prev.findIndex(n =>
-      row >= n.row && row < n.row + n.height &&
-      col >= n.start && col < n.start + n.length
-    );
+    handleSetNotes((prev) => {
+      const existingIndex = prev.findIndex(n =>
+        row >= n.row && row < n.row + n.height &&
+        col >= n.start && col < n.start + n.length
+      );
 
-    if (existingIndex !== -1) {
-      const updated = [...prev];
-      updated.splice(existingIndex, 1);
-      dispatch({ type: 'SET_SELECTED_NOTE_ID', id: null });
-      return updated;
-    } else {
-      return prev;
-    }
-  });
+      if (existingIndex !== -1) {
+        const updated = [...prev];
+        updated.splice(existingIndex, 1);
+        dispatch({ type: 'SET_SELECTED_NOTE_ID', id: null });
+        return updated;
+      } else {
+        return prev;
+      }
+    });
   }, [state.isMouseDown, handleSetNotes]);
 
-  // Optimized grid click handler avec debouncing
   const handleGridClick = useCallback((e) => {
-
     if (state.isResizing) return;
     
-    const currentMode = state.mode;
     const rect = gridRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
+    const xView = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const col = Math.floor(x / CELL_WIDTH);
+    const xContent = xToContent(xView);
+    const col = Math.floor(xContent / CELL_WIDTH);
     const row = Math.floor(y / CELL_HEIGHT);
-    
     if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
+
+    const currentMode = state.mode;
 
     if (currentMode === 'draw') {
       handlePlaySound(null, row);
@@ -410,13 +428,13 @@ const handleSetNotes = useCallback((updater) => {
     }
 
     if (currentMode === 'resize') {
-    const noteUnderCursor = instrumentList[selectedInstrument]?.pianoData?.[selectedPatternID]
-      ?.find(n =>
-        row >= n.row &&
-        row < n.row + n.height &&
-        col >= n.start &&
-        col < n.start + n.length
-      );
+      const noteUnderCursor = instrumentList[selectedInstrument]?.pianoData?.[selectedPatternID]
+        ?.find(n =>
+          row >= n.row &&
+          row < n.row + n.height &&
+          col >= n.start &&
+          col < n.start + n.length
+        );
 
       if (noteUnderCursor) {
         dispatch({ type: 'SET_SELECTED_NOTE_ID', id: noteUnderCursor.id });
@@ -425,9 +443,8 @@ const handleSetNotes = useCallback((updater) => {
         const noteLeft = noteUnderCursor.start * CELL_WIDTH;
         const noteRight = noteLeft + noteUnderCursor.length * CELL_WIDTH;
 
-        const clickX = e.clientX - gridRect.left;
-        const clickRelX = clickX - noteLeft;
-
+        const clickXContent = xToContent(e.clientX - gridRect.left);
+        const clickRelX = clickXContent - noteLeft;
         const direction = clickRelX < (noteRight - noteLeft) / 2 ? 'left' : 'right';
 
         dispatch({ type: 'SET_IS_RESIZING', value: true });
@@ -450,27 +467,23 @@ const handleSetNotes = useCallback((updater) => {
       }
       handlePlaySound(null, row);
     }
-  }, [state.isResizing, state.mode, handleSetNotes, handlePlaySound, generateChordNotes, COLS]);
+  }, [state.isResizing, state.mode, handleSetNotes, handlePlaySound, generateChordNotes, COLS, xToContent]);
 
-  // Debug function pour voir les événements de resize
   const handleNoteMouseDown = useCallback((e, note, direction = null) => {
     e.stopPropagation();
-    console.log('NoteMouseDown:', { noteId: note.id, direction }); 
-    
     dispatch({ type: 'SET_SELECTED_NOTE_ID', id: note.id });
-    
     if (direction) {
-      console.log('Starting resize:', direction);
       dispatch({ type: 'SET_RESIZE_DIRECTION', value: direction });
       dispatch({ type: 'SET_IS_RESIZING', value: true });
     }
   }, []);
 
   const handleMouseMove = useCallback((e) => {
-     // Si on est en mode resize des notes
+    // Resize en mode "drag des poignées" local
     if (isResizing && initialNote) {
-      const deltaX = e.clientX - initialMouseX;
-      const deltaCells = Math.round(deltaX / CELL_WIDTH);
+      const deltaXView = e.clientX - initialMouseX;
+      const deltaXContent = deltaXView / scaleX;
+      const deltaCells = Math.round(deltaXContent / CELL_WIDTH);
       
       handleSetNotes(prevNotes => {
         return prevNotes.map(note => {
@@ -479,39 +492,31 @@ const handleSetNotes = useCallback((updater) => {
           if (resizeMode === 'left') {
             const maxDelta = initialNote.length - 1;
             const actualDelta = Math.max(-initialNote.start, Math.min(deltaCells, maxDelta));
-            
             return {
               ...note,
               start: initialNote.start + actualDelta,
               length: initialNote.length - actualDelta
             };
-            
           } else if (resizeMode === 'right') {
             const maxLength = COLS - initialNote.start;
             const newLength = Math.max(1, Math.min(initialNote.length + deltaCells, maxLength));
-            
-            return {
-              ...note,
-              length: newLength
-            };
+            return { ...note, length: newLength };
           }
-          
           return note;
         });
       });
       return;
     }
-    console.log('MouseMove - isResizing:', state.isResizing, 'direction:', state.resizeDirection); 
-    
+
+    // Resize via mode "resize"
     if (!state.isResizing || !state.selectedNoteId) return;
 
     const rect = gridRef.current?.getBoundingClientRect();
     if (!rect) return;
     
-    const x = e.clientX - rect.left;
-    const col = Math.floor(x / CELL_WIDTH);
-    
-    console.log('Resize to column:', col); // Debug
+    const xView = e.clientX - rect.left;
+    const xContent = xToContent(xView);
+    const col = Math.floor(xContent / CELL_WIDTH);
 
     handleSetNotes((prevNotes) => {
       return prevNotes.map((note) => {
@@ -521,9 +526,6 @@ const handleSetNotes = useCallback((updater) => {
           const maxStart = note.start + note.length - 1;
           const newStart = Math.max(0, Math.min(col, maxStart));
           const newLength = note.start + note.length - newStart;
-          
-          console.log('Left resize:', { oldStart: note.start, newStart, newLength }); // Debug
-          
           if (newLength >= 1) {
             return { ...note, start: newStart, length: newLength };
           }
@@ -533,48 +535,35 @@ const handleSetNotes = useCallback((updater) => {
           const minLength = 1;
           const maxLength = COLS - note.start;
           const newLength = Math.max(minLength, Math.min(col - note.start + 1, maxLength));
-          
-          console.log('Right resize:', { oldLength: note.length, newLength }); // Debug
-          
           return { ...note, length: newLength };
         }
-
         return note;
       });
     });
-  }, [state.isResizing, state.selectedNoteId, state.resizeDirection, COLS, handleSetNotes]);
+  }, [state.isResizing, state.selectedNoteId, state.resizeDirection, COLS, handleSetNotes, isResizing, initialNote, initialMouseX, resizeMode, scaleX, xToContent]);
 
   const handleMouseUp = useCallback(() => {
-  if (isResizing) {
-    console.log('MouseUp - ending resize'); // Debug
-    setIsResizing(false);
-    setResizeMode(null);
-    setInitialNote(null);
-    setInitialMouseX(0);
+    if (isResizing) {
+      setIsResizing(false);
+      setResizeMode(null);
+      setInitialNote(null);
+      setInitialMouseX(0);
+      dispatch({ type: 'SET_IS_RESIZING', value: false });
+      dispatch({ type: 'SET_RESIZE_DIRECTION', value: null });
+    }
+  }, [isResizing, dispatch]);
 
-    dispatch({ type: 'SET_IS_RESIZING', value: false });
-    dispatch({ type: 'SET_RESIZE_DIRECTION', value: null });
-  }
-}, [isResizing, dispatch]);
-
-
-  // Paint cell handler avec throttling
   const paintThrottleRef = useRef(null);
   const handlePaintCell = useCallback((row, col) => {
     if (!state.isMouseDown || modeRef.current !== 'paint') return;
-    
-    // Throttle pour éviter trop d'appels
     if (paintThrottleRef.current) return;
-    paintThrottleRef.current = setTimeout(() => {
-      paintThrottleRef.current = null;
-    }, 16); // 60fps
+    paintThrottleRef.current = setTimeout(() => { paintThrottleRef.current = null; }, 16);
     
     handleSetNotes(prev => {
       const exists = prev.some(n => 
         n.row === row && col >= n.start && col < n.start + n.length
       );
       if (exists) return prev;
-      
       return [...prev, { 
         id: crypto.randomUUID(), 
         row, 
@@ -586,44 +575,36 @@ const handleSetNotes = useCallback((updater) => {
     });
   }, [state.isMouseDown, handleSetNotes]);
 
-  // Optimized clear function
   const clearAll = useCallback(() => {
-    handleSetNotes([]);
-    dispatch({ type: 'SET_SELECTED_NOTE_ID', id: null });
+    handleSetNotes([]); dispatch({ type: 'SET_SELECTED_NOTE_ID', id: null });
   }, [handleSetNotes]);
 
-  // Mode toggle function
   const toggleMode = useCallback((newMode) => {
     dispatch({ type: "SET_MODE", mode: newMode });
   }, []);
 
-  // Event listeners setup
   useEffect(() => {
-  if (isResizing) {
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }
-}, [isResizing, handleMouseMove, handleMouseUp]);
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
 
   useEffect(() => {
     const handleMouseDown = () => dispatch({ type: 'SET_IS_MOUSE_DOWN', value: true });
     const handleMouseUpGlobal = () => dispatch({ type: 'SET_IS_MOUSE_DOWN', value: false });
-    
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUpGlobal);
-    
     return () => {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUpGlobal);
     };
   }, []);
 
-  // Audio loop effect (inchangé)
   useEffect(() => {
     if (!isPlaying || loopRef.current) return;
 
@@ -646,7 +627,6 @@ const handleSetNotes = useCallback((updater) => {
           .forEach(n => {
             const noteName = noteLabelsRef.current[n.row];
             const duration = new Tone.Time("4n").toSeconds() * n.length;
-            
             try {
               if (sampler?.loaded) {
                 sampler.triggerAttackRelease(noteName, duration, time);
@@ -675,15 +655,9 @@ const handleSetNotes = useCallback((updater) => {
     };
   }, [isPlaying, COLS, getSampler, getSynth]);
 
-
+  // === RENDER
   return (
-    <div
-      className="
-        bg-black text-white border border-white/20 rounded-xl p-3
-        h-full w-full min-h-0
-        overflow-auto scrollbar-custom
-      "
-    >
+    <div className="bg-gray-800 text-white border-white  border-2 rounded-xl min-h-0">
       <TopBar
         selectedInstrument={selectedInstrument}
         mode={state.mode}
@@ -695,17 +669,29 @@ const handleSetNotes = useCallback((updater) => {
         setCols={handleColsChange}
         onClose={onClose}
       />
-      
+
       <div className="flex">
         <NoteLabels
           noteLabels={noteLabels}
           handlePlaySound={handlePlaySound}
           isBlackKey={isBlackKey}
         />
-        
-        <div className="relative" style={{ willChange: 'transform' }}>
-          <MeasureLabels cols={COLS} cellWidth={CELL_WIDTH} />
-          
+
+        {/* Viewport qui clippe, contenu translaté + scaleX */}
+        <div className="relative w-full overflow-hidden" ref={viewportRef}>
+          {/* Mesures */}
+          <div
+            className="relative"
+            style={{
+              width: `${COLS * CELL_WIDTH}px`,
+              transformOrigin: 'left center',
+              transform: `translateX(-${startPx}px) scaleX(${scaleX})`,
+            }}
+          >
+            <MeasureLabels cols={COLS} cellWidth={CELL_WIDTH} />
+          </div>
+
+          {/* Grille + notes */}
           <div
             ref={gridRef}
             className="relative cursor-crosshair select-none"
@@ -713,6 +699,8 @@ const handleSetNotes = useCallback((updater) => {
             style={{ 
               width: `${COLS * CELL_WIDTH}px`, 
               height: `${ROWS * CELL_HEIGHT}px`,
+              transformOrigin: 'left top',
+              transform: `translateX(-${startPx}px) scaleX(${scaleX})`,
               willChange: 'transform'
             }}
           >
@@ -743,16 +731,17 @@ const handleSetNotes = useCallback((updater) => {
               ))}
             </div>
 
-            {/* Virtualized Cell Grid */}
+            {/* Grille interactive (convertit x via xToContent) */}
             <VirtualizedCellGrid
               rows={ROWS}
               cols={COLS}
               cellWidth={CELL_WIDTH}
               cellHeight={CELL_HEIGHT}
               onCellMouseEnter={(row, col) => {handlePaintCell(row, col); handleDeleteCell(row, col)}}
+              xToContent={xToContent}
             />
 
-            {/* Grid Lines */}
+            {/* Lignes */}
             <GridLines
               rows={ROWS}
               cols={COLS}
@@ -761,6 +750,15 @@ const handleSetNotes = useCallback((updater) => {
             />
           </div>
         </div>
+      </div>
+
+      {/* Barre de zoom/pan */}
+      <div className="mt-2">
+        <ZoomBarTW
+          windowRange={windowRange}
+          setWindowRange={setWindowRange}
+          minWindowPercent={minWindowPercent}
+        />
       </div>
     </div>
   );
