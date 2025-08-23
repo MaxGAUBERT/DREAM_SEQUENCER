@@ -140,11 +140,11 @@ const DrumRack = ({
   }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
 
   return (
-    <div className="border-2 overflow-auto scrollbar-custom flex flex-col"
+    <div className="border-2 border-white  bg-gray-900 overflow-auto scrollbar-custom flex flex-col"
       style={{ backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: "black" }}>
         <div>
           <button
-            className="px-1 py-2 left-0 fixed bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors"
+            className="px-1 py-2 static left-0 bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors"
             onClick={onClose}
             title="Close Drum Rack"
           >
@@ -152,7 +152,7 @@ const DrumRack = ({
           </button>
         </div>
 
-      <div className="text-xs ml-15 border-b p-2 pb-2 flex justify-between">
+      <div className="text-xs border-b flex justify-between">
         <div>
           Current Pattern: {patterns.find(p => p.id === selectedPatternID)?.name} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
         </div>
