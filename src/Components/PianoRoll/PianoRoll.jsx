@@ -657,7 +657,7 @@ const PianoRoll = ({
 
   // === RENDER
   return (
-    <div className="bg-gray-800 text-white border-white  border-2 rounded-xl min-h-0">
+    <div className="bg-gray-900 text-white border-white  border-2 rounded-xl min-h-0">
       <TopBar
         selectedInstrument={selectedInstrument}
         mode={state.mode}
