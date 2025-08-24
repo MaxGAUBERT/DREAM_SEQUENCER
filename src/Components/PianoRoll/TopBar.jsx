@@ -147,7 +147,7 @@ export const TopBar = ({
   const isChordSelectorDisabled = mode !== "chords";
 
   return (
-    <div className="flex gap-2 mb-2 items-center ml-40">
+    <div className="flex gap-2 mb-2 items-center ml-10">
       {/* Instrument Label */}
 
       {/* Close Button */}
