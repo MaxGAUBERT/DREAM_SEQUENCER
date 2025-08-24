@@ -2,10 +2,12 @@ import { useRef, useEffect } from "react";
 import { useProjectManager } from "../Hooks/useProjectManager";
 import useFXChain from "../Hooks/useFXChain";
 import * as Tone from "tone";
+import { usePlayContext } from "../Contexts/PlayContext";
 
 const FXChain = ({instrumentList, setInstrumentList}) => {
   const slotRefs = useRef({});
-  const { updateInstrumentSlot } = useProjectManager();
+  const {volume, setVolume} = usePlayContext();
+  const {updateInstrumentSlot} = useProjectManager()
   const { slots, selectedSlot, setSelectedSlot, fxParams, setFXParams } = useFXChain();
 
   const getChannelAtSlot = (slotNumber) => {
@@ -86,7 +88,6 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
     }
   }));
 }
-
   /*
   const updateFXParam = (fxName, param, value) => {
     setFXParams(prev => ({
@@ -99,8 +100,6 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
   };
 
   */
-
-
   const handleApplyFX = (e, assignedChannel) => {
   const selectedFX = e.target.value;
 
@@ -122,8 +121,9 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
   useEffect(() => {
     if (selectedSlot.channel !== null) {
       console.log("✅ selectedSlot mis à jour :", selectedSlot, instrumentList[selectedSlot.channel].fx);
+      console.log("Volume pour cet instru:", volume);
     }
-  }, [selectedSlot]);
+  }, [selectedSlot, instrumentList]);
 
   useEffect(() => {
     console.log("🎛 FX actuel :", instrumentList[selectedSlot.channel]?.fx);
@@ -136,7 +136,7 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
   };
 
   return (
-    <div className="absolute bg-black scrollbar-custom text-white top-[50px] border-2 overflow-auto resize w-[800px] h-500 min-h-1/2 max-w-[935px] max-h-[80vh] shadow-lg p-4 flex flex-col gap-4">
+    <div className="relative bg-black scrollbar-custom w-full h-full text-white border-2 overflow-auto shadow-lg flex flex-col">
       <label className="text-sm sticky left-0 bg-gray-800 font-semibold px-2">
         {getChannelAtSlot(selectedSlot.slot) || "All Channels"}
       </label>
@@ -182,14 +182,16 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
                 min="0"
                 max="50"
                 defaultValue="0"
+                value={selectedSlot.volume}
                 className="h-50 w-[200px] rotate-[-90deg] mt-4"
                 disabled={!assignedChannel}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (assignedChannel) {
+                  if (assignedChannel){
                     updateInstrumentSlot(assignedChannel, s);
                   }
                 }}
+                onChange={(e) => setVolume(e.target.value)}
               />
             </div>
           );
