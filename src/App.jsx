@@ -288,7 +288,7 @@ useEffect(() => {
               grid gap-0
               grid-cols-[minmax(0,0.7fr)_minmax(0,1.8fr)_104px]
               xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_120px]
-              2xl:grid-cols-[minmax(0,1.90fr)_minmax(0,1.25fr)_136px]
+              2xl:grid-cols-[minmax(0,1.90fr)_minmax(0,1.25fr)_85px]
             "
           >
             {/* ===== Colonne GAUCHE : DrumRack (haut) PianoRoll (bas) ===== */}
@@ -379,7 +379,7 @@ useEffect(() => {
               {/* Bas : FXChain */}
               <div className="min-h-0 overflow-y-auto overflow-x-hidden">
                 {openComponents['FXChain'] && (
-                  <div className="min-h-0 overflow-y-auto overflow-x-hidden scrollbar-custom border rounded-xl text-white">
+                  <div className="scrollbar-custom border rounded-xl text-white">
                     <FXChain
                       instrumentList={instrumentList}
                       setInstrumentList={setInstrumentList}
