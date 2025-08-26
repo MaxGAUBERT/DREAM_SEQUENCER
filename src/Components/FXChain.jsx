@@ -3,8 +3,9 @@ import { useProjectManager } from "../Hooks/useProjectManager";
 import useFXChain from "../Hooks/useFXChain";
 import * as Tone from "tone";
 import { usePlayContext } from "../Contexts/PlayContext";
+import { IoClose } from "react-icons/io5";
 
-const FXChain = ({instrumentList, setInstrumentList}) => {
+const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
   const slotRefs = useRef({});
   const {volume, setVolume} = usePlayContext();
   const {updateInstrumentSlot} = useProjectManager()
@@ -136,7 +137,16 @@ const FXChain = ({instrumentList, setInstrumentList}) => {
   };
 
   return (
-    <div className="relative bg-black scrollbar-custom w-full h-full text-white border-2 overflow-auto shadow-lg flex flex-col">
+    <div className="relative gap-10 bg-black scrollbar-custom w-full h-full text-white border-2 overflow-auto shadow-lg flex flex-col">
+      <div>
+        <button
+          onClick={onClose}
+          title="Close Playlist"
+          className="left-0 mt-1 absolute bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors">
+
+          <IoClose size={15} />
+      </button>
+      </div>
       <label className="text-sm sticky left-0 bg-gray-800 font-semibold px-2">
         {getChannelAtSlot(selectedSlot.slot) || "All Channels"}
       </label>
