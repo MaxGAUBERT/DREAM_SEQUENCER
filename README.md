@@ -7,12 +7,11 @@
 ### ✨ Features
 
 1. **Drum Rack** – Load and manage `.wav` files per channel.  
-2. **Sound Browser** – Load a folder of `.wav` files easily.  
-3. **Menu Strip** – Controls sub-menus such as project import/export and UI toggles.  
-4. **Piano Roll** – Create melodies on a rhythmic grid system with customizable dimensions.  
-5. **Playlist** – Place patterns in a grid to build complete songs.  
-6. **Pattern Selector** – Add, delete, or duplicate patterns for flexible song building.
-7. **FX Chain** - Assign an audio channel to a track in the effects chain, to add effects such as reverb, delay, echo and more.
+2. **Menu Strip** – Controls sub-menus such as project import/export and UI toggles.  
+3. **Piano Roll** – Create melodies on a rhythmic grid system with customizable dimensions.  
+4. **Playlist** – Place patterns in a grid to build complete songs.  
+5. **Pattern Selector** – Add, delete, or duplicate patterns for flexible song building.
+6. **FX Chain** - Assign an audio channel to a track in the effects chain, to add effects such as reverb, delay, echo and more.
 
 ---
 
