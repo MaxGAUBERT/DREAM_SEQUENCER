@@ -73,7 +73,6 @@ export default function App() {
     initializeInstrumentList,
     DEFAULT_INSTRUMENTS,
     cells, setCells,
-    currentProjectId,
     currentProject,
     initLength,
     patterns,
@@ -123,7 +122,7 @@ export default function App() {
     setModals(prev => ({ ...prev, [name]: false }));
   }, []);
 
-  const handleSelectPattern = useCallback((id) => {
+  /*const handleSelectPattern = useCallback((id) => {
     setSelectedPatternID(id);
     console.log("Selected pattern",  id + 1);
 
@@ -144,6 +143,7 @@ export default function App() {
       return updated;
     });
   }, [setSelectedPatternID, setInstrumentList]);
+  */
 
   useEffect(() => {
   setInstrumentList(prev => {
@@ -293,56 +293,65 @@ useEffect(() => {
           >
             {/* ===== Colonne GAUCHE : DrumRack (haut) PianoRoll (bas) ===== */}
           <section className="h-full min-h-0 overflow-hidden">
-            <Split
-              direction="vertical"
-              sizes={[50, 67]}          
-              minSize={[120, 180]}
-              gutterSize={8}
-              className="h-full min-h-0 flex flex-col"
-              gutter={(index, dir) => {
-                const g = document.createElement('div');
-                g.className = 'gutter bg-white/10 hover:bg-white/25 cursor-row-resize';
-                return g;
-              }}
-            >
-              {/* Haut : DrumRack */}
-              <div className="min-h-0 overflow-y-auto overflow-x-hidden">
-                {openComponents['Drum Rack'] && (
-                  <div className="h-full w-full min-h-0 border-2 border-white rounded-xl text-white p-0">
-                    <DrumRack
-                      numSteps={numSteps}
-                      setNumSteps={setNumSteps}
-                      patterns={patterns}
-                      instrumentList={instrumentList}
-                      setInstrumentList={setInstrumentList}
-                      selectedPatternID={selectedPatternID}
-                      channelModalOpen={channelModalOpen}
-                      setChannelModalOpen={setChannelModalOpen}
-                      instrumentName={instrumentName}
-                      setInstrumentName={setInstrumentName}
-                      onOpenPianoRoll={openPianoRollForInstrument}
-                      onClose={() => setOpenComponents(p => ({ ...p, "Drum Rack": false }))}
-                    />
-                  </div>
-                )}
-              </div>
+            {(openComponents['Drum Rack'] || openComponents['Piano Roll']) ? (
+              <Split
+                direction="vertical"
+                sizes={[50, 67]}
+                minSize={[120, 180]}
+                gutterSize={8}
+                className="h-full min-h-0 flex flex-col"
+                gutter={(index, dir) => {
+                  const g = document.createElement('div');
+                  g.className =
+                    'gutter bg-white/10 hover:bg-white/25 cursor-row-resize';
+                  return g;
+                }}
+              >
+                {/* Haut : DrumRack */}
+                <div className="min-h-0 overflow-y-auto overflow-x-hidden">
+                  {openComponents['Drum Rack'] && (
+                    <div className="h-full w-full border-2 border-white rounded-xl text-white ">
+                      <DrumRack
+                        numSteps={numSteps}
+                        setNumSteps={setNumSteps}
+                        patterns={patterns}
+                        instrumentList={instrumentList}
+                        setInstrumentList={setInstrumentList}
+                        selectedPatternID={selectedPatternID}
+                        channelModalOpen={channelModalOpen}
+                        setChannelModalOpen={setChannelModalOpen}
+                        instrumentName={instrumentName}
+                        setInstrumentName={setInstrumentName}
+                        onOpenPianoRoll={openPianoRollForInstrument}
+                        onClose={() =>
+                          setOpenComponents((p) => ({ ...p, 'Drum Rack': false }))
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
 
-              {/* Bas : PianoRoll */}
-              <div className="min-h-0 overflow-y-auto overflow-x-hidden">
-                {openComponents['Piano Roll'] && (
-                  <div className="h-full w-full min-h-0 border border-white rounded-xl text-white">
-                    <PianoRoll
-                      selectedPatternID={selectedPatternID}
-                      selectedInstrument={pianoRollInstrument}
-                      instrumentList={instrumentList}
-                      setInstrumentList={setInstrumentList}
-                      onOpen={() => setOpenComponents(p => ({ ...p, "Piano Roll": true }))}
-                      onClose={() => setOpenComponents(p => ({ ...p, "Piano Roll": false }))}
-                    />
-                  </div>
-                )}
-              </div>
-            </Split>
+                {/* Bas : PianoRoll */}
+                <div className="min-h-0 overflow-y-auto overflow-x-hidden">
+                  {openComponents['Piano Roll'] && (
+                    <div className="h-full w-full min-h-0 border border-white rounded-xl text-white">
+                      <PianoRoll
+                        selectedPatternID={selectedPatternID}
+                        selectedInstrument={pianoRollInstrument}
+                        instrumentList={instrumentList}
+                        setInstrumentList={setInstrumentList}
+                        onOpen={() =>
+                          setOpenComponents((p) => ({ ...p, 'Piano Roll': true }))
+                        }
+                        onClose={() =>
+                          setOpenComponents((p) => ({ ...p, 'Piano Roll': false }))
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+              </Split>
+            ) : null}
           </section>
 
           <aside className="h-full min-h-0 overflow-hidden">
@@ -383,6 +392,7 @@ useEffect(() => {
                     <FXChain
                       instrumentList={instrumentList}
                       setInstrumentList={setInstrumentList}
+                      onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
                     />
                   </div>
                 )}
@@ -397,8 +407,10 @@ useEffect(() => {
           <div className="col-span-3 border-t border-white/10">
             <TransportBar />
           </div>
+          
 
-          <div>
+          {openComponents['Pattern Selector'] && (
+            <div>
             <PatternSelector
               patterns={patterns}
               setPatterns={setPatterns}
@@ -409,6 +421,7 @@ useEffect(() => {
               onSelect={setSelectedPatternID}
             />
           </div>
+          )}
         </PlayContext>
       </ChannelProvider>
     </GlobalColorContextProvider>
