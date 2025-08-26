@@ -13,7 +13,6 @@ import { LiaVolumeMuteSolid } from "react-icons/lia";
 import { RxMixerVertical } from "react-icons/rx";
 import { FaListOl } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
-import { CgMaximizeAlt } from "react-icons/cg";
 
 const DrumRack = ({
   numSteps,
@@ -28,7 +27,6 @@ const DrumRack = ({
   setInstrumentName,
   onOpenPianoRoll, 
   onClose, 
-  onMaximize
 }) => {
   const [input, setInput] = useState(false);
   const { colorsComponent } = useGlobalColorContext();
