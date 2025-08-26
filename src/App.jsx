@@ -298,7 +298,8 @@ useEffect(() => {
                 direction="vertical"
                 sizes={[50, 67]}
                 minSize={[120, 180]}
-                gutterSize={8}
+                gutterSize={5}
+                title="Split vertically"
                 className="h-full min-h-0 flex flex-col"
                 gutter={(index, dir) => {
                   const g = document.createElement('div');
@@ -359,7 +360,8 @@ useEffect(() => {
               direction="vertical"
               sizes={[67, 33]}        
               minSize={[160, 100]}
-              gutterSize={2}
+              gutterSize={5}
+              title="Split vertically"
               className="h-full min-h-0 flex flex-col"
               gutter={(index, dir) => {
                 const g = document.createElement('div');
