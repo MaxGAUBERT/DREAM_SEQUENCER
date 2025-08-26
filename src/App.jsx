@@ -359,7 +359,7 @@ useEffect(() => {
             <Split
               direction="vertical"
               sizes={[67, 33]}        
-              minSize={[160, 100]}
+              minSize={[265, 100]}
               gutterSize={5}
               title="Split vertically"
               className="h-full min-h-0 flex flex-col"
