@@ -126,7 +126,7 @@ export default function ZoomBarTW({
             title="Right zoom"
           />
           {/* stries décor */}
-          <div className="h-full opacity-30 bg-[linear-gradient(90deg,rgba(255,255,255,0.5)_1px,transparent_1px)] bg-[length:8px_100%]" />
+          <div className="h-full min-h-20 opacity-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.5)_1px,transparent_1px)] bg-[length:8px_100%]" />
         </div>
       </div>
     </div>
