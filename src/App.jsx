@@ -358,14 +358,17 @@ useEffect(() => {
           </section>
 
           <aside className="h-full min-h-0 overflow-hidden">
+        {/* Rien d'ouvert → rien à afficher (pas de split) */}
+        {!(openComponents['Playlist'] || openComponents['FXChain']) ? null : 
+          /* Les deux ouverts → utiliser Split */
+          (openComponents['Playlist'] && openComponents['FXChain']) ? (
             <Split
               direction="vertical"
-              sizes={[67, 33]}        
+              sizes={[67, 33]}
               minSize={[265, 100]}
               gutterSize={5}
-              title="Split vertically"
               className="h-full min-h-0 flex flex-col"
-              gutter={(index, dir) => {
+              gutter={() => {
                 const g = document.createElement('div');
                 g.className = 'gutter bg-white/10 hover:bg-white/25 cursor-row-resize';
                 return g;
@@ -373,36 +376,62 @@ useEffect(() => {
             >
               {/* Haut : Playlist */}
               <div className="min-h-0 overflow-y-auto overflow-x-hidden">
-                {openComponents['Playlist'] && (
-                  <div className="h-full w-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-custom border rounded-xl text-white">
-                    <Playlist
-                      selectedPatternID={selectedPatternID}
-                      colorByIndex={getColorByIndex}
-                      patterns={patterns}
-                      instrumentList={instrumentList}
-                      cells={cells}
-                      setCells={setCells}
-                      numSteps={numSteps}
-                      onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
-                    />
-                  </div>
-                )}
+                <div className="h-full w-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-custom border rounded-xl text-white">
+                  <Playlist
+                    selectedPatternID={selectedPatternID}
+                    colorByIndex={getColorByIndex}
+                    patterns={patterns}
+                    instrumentList={instrumentList}
+                    cells={cells}
+                    setCells={setCells}
+                    numSteps={numSteps}
+                    onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
+                  />
+                </div>
               </div>
 
-              {/* Bas : FXChain */}
-              <div className="min-h-0 overflow-y-auto overflow-x-hidden">
-                {openComponents['FXChain'] && (
-                  <div className="scrollbar-custom border rounded-xl text-white">
-                    <FXChain
-                      instrumentList={instrumentList}
-                      setInstrumentList={setInstrumentList}
-                      onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
-                    />
-                  </div>
-                )}
-              </div>
-            </Split>
+        {/* Bas : FXChain */}
+        <div className="min-h-0 overflow-y-auto overflow-x-hidden">
+          <div className="scrollbar-custom border rounded-xl text-white">
+            <FXChain
+              instrumentList={instrumentList}
+              setInstrumentList={setInstrumentList}
+              onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
+            />
+          </div>
+        </div>
+      </Split>
+    ) : (
+      /* Un seul ouvert → pleine hauteur sans split */
+      <div className="h-full min-h-0 overflow-hidden">
+        {openComponents['Playlist'] && (
+          <div className="h-full w-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-custom border rounded-xl text-white">
+            <Playlist
+              selectedPatternID={selectedPatternID}
+              colorByIndex={getColorByIndex}
+              patterns={patterns}
+              instrumentList={instrumentList}
+              cells={cells}
+              setCells={setCells}
+              numSteps={numSteps}
+              onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
+            />
+          </div>
+        )}
+        {openComponents['FXChain'] && (
+          <div className="h-full scrollbar-custom border rounded-xl text-white">
+            <FXChain
+              instrumentList={instrumentList}
+              setInstrumentList={setInstrumentList}
+              onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
+            />
+          </div>
+        )}
+      </div>
+    )
+  }
           </aside>
+
 
 
           </main>
