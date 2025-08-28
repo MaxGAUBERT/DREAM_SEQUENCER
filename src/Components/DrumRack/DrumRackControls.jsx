@@ -28,13 +28,13 @@ const DrumRackControls = ({ numSteps, setNumSteps, onReset, onDeleteAll, onAddTo
         type="range"
         value={numSteps}
         min={8}
-        max={256}
+        max={128}
         step={1}
         title="Number of Steps"
         className="w-60 px-2 py-1 rounded border focus:border-blue-500 outline-none"
         onChange={(e) => {
           const val = Number(e.target.value);
-          if (val >= 8 && val <= 256) setNumSteps(val);
+          if (val >= 8 && val <= 128) setNumSteps(val);
         }}
       />
     </>
