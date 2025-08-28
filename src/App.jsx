@@ -341,6 +341,8 @@ useEffect(() => {
                         selectedInstrument={pianoRollInstrument}
                         instrumentList={instrumentList}
                         setInstrumentList={setInstrumentList}
+                        numSteps={numSteps}
+                        setNumSteps={setNumSteps}
                         onOpen={() =>
                           setOpenComponents((p) => ({ ...p, 'Piano Roll': true }))
                         }
