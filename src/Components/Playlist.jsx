@@ -137,7 +137,7 @@ useEffect(() => {
 
     currentColumn = (currentColumn + 1) % width;
     console.log("Pattern duration:", patternDuration, "and numSteps: ", numSteps)
-  }, patternDuration * width); 
+  }, patternDuration); 
 
   Tone.Transport.start();
 
@@ -204,46 +204,74 @@ useEffect(() => {
         <input type="range" min={5} max={50} value={height} onChange={handleHeightChange} />
       </div>
     </div>
+  
 
     {/* Zone grille */}
+      <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: `auto repeat(${width}, ${CELL_SIZE}px)`, // 1 col label + steps
+    gridTemplateRows: `auto repeat(${height}, ${CELL_SIZE / 2}px)`, // 1 ligne header + tracks
+    gap: "3px",
+    width: `calc(${width * CELL_SIZE}px + 80px)`,
+    height: `calc(${height * (CELL_SIZE / 2)}px + 30px)`, // + place pour header
+  }}
+>
+  <div></div>
+
+  {/* === Header colonnes === */}
+  {Array.from({ length: width }).map((_, col) => (
     <div
+      key={`col-${col}`}
+      className="text-gray-400 italic flex items-center justify-end pr-5"
       style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${width}, ${CELL_SIZE}px)`,
-        gridTemplateRows: `repeat(${height}, ${CELL_SIZE / 2}px)`,
-        gap: "3px",
-        width: `${width * CELL_SIZE}px`,
-        height: `${height * (CELL_SIZE / 2)}px`,
+        fontSize: "0.9rem",
+        whiteSpace: "nowrap",
       }}
     >
-      {isPlaying && currentColumn !== null && (
-        <div
-          className="absolute top-0 bg-opacity-30 pointer-events-none z-0 transition-transform duration-300"
-          style={{
-            transform: `translateX(${currentColumn * CELL_SIZE}px)`,
-            width: `${CELL_SIZE / 20}px`,
-            height: `${(height * CELL_SIZE) / 2}px`,
-          }}
-        />
-      )}
-
-      {cells.map((cell, index) => (
-        <button
-          key={index}
-          onClick={() => placePattern(index)}
-          style={{
-            width: `${CELL_SIZE}px`,
-            height: `${CELL_SIZE / 2}px`,
-            border: "1px solid #ccc",
-          }}
-          className={`${
-            cell !== null ? colorByIndex(cell - 1) : "bg-gray-800"
-          } hover:bg-gray-700`}
-        >
-          {cell ? patterns[cell - 1].name : null}
-        </button>
-      ))}
+      {col + 1}
     </div>
+  ))}
+
+  {/* === Lignes avec labels Track + cells === */}
+  {Array.from({ length: height }).map((_, row) => (
+    <React.Fragment key={`row-${row}`}>
+      {/* Label Track */}
+      <div
+        className="text-gray-300 italic flex items-center justify-end pr-2"
+        style={{
+          fontSize: "0.8rem",
+          whiteSpace: "nowrap",
+        }}
+      >
+        Track {row + 1}
+      </div>
+
+      {/* Cells */}
+      {Array.from({ length: width }).map((_, col) => {
+        const index = row * width + col;
+        const cell = cells[index];
+        return (
+          <button
+            key={index}
+            onClick={() => placePattern(index)}
+            style={{
+              width: `${CELL_SIZE}px`,
+              height: `${CELL_SIZE / 2}px`,
+              border: "1px solid #ccc",
+            }}
+            className={`${
+              cell !== null ? colorByIndex(cell - 1) : "bg-gray-800"
+            } hover:bg-gray-700`}
+          >
+            {cell ? patterns[cell - 1].name : null}
+          </button>
+        );
+      })}
+    </React.Fragment>
+  ))}
+      </div>
+
   </div>
 );
 
