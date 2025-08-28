@@ -6,6 +6,7 @@ import { IoMusicalNotesSharp } from "react-icons/io5";
 import { MdOutlineDeleteOutline } from "react-icons/md";
 import { IoClose } from "react-icons/io5";
 import { GrClear } from "react-icons/gr";
+import { useProjectManager } from "../../Hooks/useProjectManager";
 
 
 export const CHORD_TYPES = {
@@ -92,8 +93,8 @@ export const TopBar = ({
   clearAll,
   selectedChordType,
   setSelectedChordType,
-  COLS,
-  setCols,
+  numSteps, 
+  setNumSteps,
   onClose,
 }) => {
   // Handlers optimisés avec useCallback
@@ -102,14 +103,15 @@ export const TopBar = ({
   const handleResizeMode = useCallback(() => toggleMode('resize'), [toggleMode]);
   const handleChordsMode = useCallback(() => toggleMode('chords'), [toggleMode]);
   const deleteSelectedNotes = useCallback(() => toggleMode('delete'), [toggleMode]);
+  //const {numSteps, setNumSteps} = useProjectManager();
   
   const handleChordTypeChange = useCallback((e) => {
     setSelectedChordType(e.target.value);
   }, [setSelectedChordType]);
 
   const handleColsChange = useCallback((e) => {
-    setCols(Number(e.target.value));
-  }, []);
+    setNumSteps(Number(e.target.value));
+  }, [setNumSteps]);
 
   const modeButtons = useMemo(() => [
     {
@@ -194,7 +196,7 @@ export const TopBar = ({
 
       {/* Columns Slider */}
       <ColsSlider
-        cols={COLS}
+        cols={numSteps}
         onColsChange={handleColsChange}
       />
     </div>

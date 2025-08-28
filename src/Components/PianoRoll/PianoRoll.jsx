@@ -8,7 +8,7 @@ import { useChordGenerator } from '../../Hooks/useChordGenerator';
 import { rowToNoteName } from '../Utils/noteUtils';
 import { useSampleContext } from '../../Contexts/ChannelProvider';
 import { useHistoryContext } from '../../Contexts/HistoryProvider';
-
+import { useProjectManager } from '../../Hooks/useProjectManager';
 // === AJOUT
 import ZoomBarTW from '../../UI/ZoomBarTW';
 
@@ -136,9 +136,11 @@ const PianoRoll = ({
   selectedPatternID, 
   selectedInstrument, 
   instrumentList, 
-  setInstrumentList, 
-  onOpen, 
-  onClose 
+  setInstrumentList,
+  onOpen,
+  onClose,
+  numSteps,
+  setNumSteps
 }) => {
   const [state, dispatch] = useReducer(pianoRollReducer, initialState);
   const [currentStep, setCurrentStep] = useState(0);
@@ -160,6 +162,7 @@ const PianoRoll = ({
   const selectedPatternIDRef = useRef(selectedPatternID);
   const noteLabelsRef = useRef([]);
   const playModeRef = useRef();
+  //const {numSteps, setNumSteps} = useProjectManager();
   
   // Hooks
   const { generateChordNotes } = useChordGenerator({
@@ -170,7 +173,7 @@ const PianoRoll = ({
   const { getSampler, getSynth } = useSampleContext();
   const { isPlaying, playMode } = usePlayContext();
 
-  const COLS = state.cols;
+  const COLS = numSteps;
 
   // ====== ZOOM / PAN ======
   const [windowRange, setWindowRange] = useState([0, 20]); // [%, %]
@@ -239,7 +242,7 @@ const PianoRoll = ({
   const handleColsChange = useCallback((newCols) => {
     requestAnimationFrame(() => {
       dispatch({ type: 'SET_COLS', value: newCols });
-
+      setNumSteps(newCols);
       setInstrumentList(prev => {
         const instrument = prev[selectedInstrument];
         if (!instrument) return prev;
@@ -265,7 +268,7 @@ const PianoRoll = ({
         return [0, Math.min(100, width)];
       });
     });
-  }, [selectedInstrument, selectedPatternID, setInstrumentList]);
+  }, [selectedInstrument, selectedPatternID, setInstrumentList, setNumSteps]);
 
   const handleResizeLeft = useCallback((e, note) => {
     e.stopPropagation();
@@ -665,10 +668,18 @@ const PianoRoll = ({
         clearAll={clearAll}
         selectedChordType={selectedChordType}
         setSelectedChordType={setSelectedChordType}
-        COLS={COLS}
-        setCols={handleColsChange}
+        numSteps={COLS}
+        setNumSteps={handleColsChange}
         onClose={onClose}
       />
+        {/* Barre de zoom/pan */}
+      <div className="mt-2">
+        <ZoomBarTW
+          windowRange={windowRange}
+          setWindowRange={setWindowRange}
+          minWindowPercent={minWindowPercent}
+        />
+      </div>
 
       <div className="flex">
         <NoteLabels
@@ -751,15 +762,6 @@ const PianoRoll = ({
           </div>
         </div>
       </div>
-
-      {/* Barre de zoom/pan */}
-      <div className="mt-2">
-        <ZoomBarTW
-          windowRange={windowRange}
-          setWindowRange={setWindowRange}
-          minWindowPercent={minWindowPercent}
-        />
-      </div>
     </div>
   );
 };
@@ -769,6 +771,8 @@ function areEqual(prevProps, nextProps) {
   if (prevProps.onClose !== nextProps.onClose) return false;
   if (prevProps.instrumentList !== nextProps.instrumentList) return false;
   if (prevProps.setInstrumentList !== nextProps.setInstrumentList) return false;
+  if (prevProps.numSteps !== nextProps.numSteps) return false;
+  if (prevProps.setNumSteps !== nextProps.setNumSteps) return false;
   return true;
 }
 
