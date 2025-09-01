@@ -13,6 +13,7 @@ import { LiaVolumeMuteSolid } from "react-icons/lia";
 import { RxMixerVertical } from "react-icons/rx";
 import { FaListOl } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
+import MiniBrowser from "./MiniBrowser";
 
 const DrumRack = ({
   numSteps,
@@ -173,6 +174,7 @@ const DrumRack = ({
         onSlotChange={onSlotChange}
         onSampleLoad={onSampleLoad}
         onDeleteInstrument={onDeleteInstrument}
+        onSelectSample={onSelectSample}
       />
 
       <DrumRackControls
@@ -182,6 +184,8 @@ const DrumRack = ({
         onDeleteAll={onDeleteAll}
         onAddToggle={() => setInput(!input)}
       />
+
+      <MiniBrowser />
 
       {input && (
         <InstrumentInput

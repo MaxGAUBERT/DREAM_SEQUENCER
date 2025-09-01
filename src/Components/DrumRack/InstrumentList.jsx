@@ -13,14 +13,19 @@ const InstrumentList = ({
   onMute,
   onSlotChange,
   onSampleLoad,
-  onDeleteInstrument
+  onDeleteInstrument,
+  // 👇 NOUVEAU: permet de déposer une URL externe (depuis MiniBrowser)
+  onSelectSample, // (instrumentName, url)
 }) => {
+  // petite aide visuelle facultative (classes utilitaires)
+  const dropClasses =
+    "outline outline-1 outline-transparent data-[over=true]:outline-blue-400 data-[over=true]:outline-2";
+
   return (
     <div className="flex flex-col">
       {Object.entries(instrumentList).map(([name, data]) => {
         let currentGrid = data.grids?.[selectedPatternID] || [];
 
-        // Ajuster la taille du grid au nombre de steps
         if (currentGrid.length !== numSteps) {
           currentGrid = [...currentGrid];
           if (currentGrid.length < numSteps) {
@@ -30,9 +35,36 @@ const InstrumentList = ({
           }
         }
 
+        // Handlers DnD pour le header du canal
+        const handleDragOver = (e) => {
+          e.preventDefault();
+          e.currentTarget.dataset.over = "true";
+        };
+        const handleDragLeave = (e) => {
+          e.currentTarget.dataset.over = "false";
+        };
+        
+        const handleDrop = (e) => {
+          e.preventDefault();
+          e.currentTarget.dataset.over = "false";
+          const url = e.dataTransfer.getData("audio/url");
+          const droppedName = e.dataTransfer.getData("audio/name"); // 👈 NOUVEAU
+
+          if (url && typeof onSelectSample === "function") {
+            onSelectSample(name, url, droppedName); // 👈 on passe le nom pour l’affichage
+          }
+        };
+
         return (
           <div key={name} className="flex items-center border-b border-gray-600">
-            <div className="flex items-center gap-3 w-64 min-w-64 p-2 bg-gray-800">
+            <div
+              className={`flex items-center gap-3 w-64 min-w-64 p-2 bg-gray-800 ${dropClasses}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              data-over="false"
+              title="Drop here your sample"
+            >
               <input
                 type="file"
                 id={`file-${name}`}
@@ -76,23 +108,18 @@ const InstrumentList = ({
               >
                 {name}
               </button>
+
             </div>
 
             <div
-              className="flex overflow-x-auto gap-1 p-2"
-              style={{
-                minHeight: STEP_SIZE,
-                maxWidth: "calc(100vw - 300px)"
-              }}
+              className="flex gap-1 p-2"
+              style={{ minHeight: STEP_SIZE, maxWidth: "calc(100vw - 300px)" }}
             >
               {currentGrid.map((active, i) => (
                 <button
                   key={i}
                   onClick={() => toggleStep(name, i)}
-                  style={{
-                    width: STEP_SIZE,
-                    height: STEP_SIZE
-                  }}
+                  style={{ width: STEP_SIZE, height: STEP_SIZE }}
                   className={`rounded ${active ? "bg-green-500" : "bg-gray-700"}`}
                 />
               ))}
@@ -105,4 +132,3 @@ const InstrumentList = ({
 };
 
 export default React.memo(InstrumentList);
-
