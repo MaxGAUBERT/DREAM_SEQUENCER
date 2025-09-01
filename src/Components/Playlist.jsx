@@ -34,6 +34,7 @@ const Playlist = ({selectedPatternID, colorByIndex, patterns, instrumentList, ce
   const {isPlaying, playMode, bpm} = usePlayContext();
   const {width, setWidth, height, setHeight, CELL_SIZE} = useProjectManager();
   const {getSampler} = useSampleContext();
+  const [isLoop, setIsLoop] = useState(true);
 
   const [prevDimensions, setPrevDimensions] = useState({width, height});
   const [currentColumn, setCurrentColumn] = useState(null);
@@ -122,8 +123,35 @@ useEffect(() => {
   const stepDuration = Tone.Time("16n").toSeconds(); 
   const patternDuration = stepDuration * numSteps;
   let currentColumn = 0;
+  let repeatId;
 
-  const repeatId = Tone.Transport.scheduleRepeat((time) => {
+  if (!isLoop) {
+    for (let col = 0; col < width; col++) {
+      Tone.Transport.schedule((time) => {
+        setCurrentColumn(col);
+
+        for (let row = 0; row < height; row++) {
+          const index = row * width + col;
+          const patternID = cells[index];
+          if (patternID && patterns[patternID - 1]) {
+            const pattern = patterns[patternID - 1];
+            playPattern(pattern, instrumentList, time, numSteps);
+          }
+        }
+
+        if (col === width - 1) {
+          Tone.Transport.scheduleOnce(() => {
+            Tone.Transport.stop();
+            setCurrentColumn(0); 
+          }, time + patternDuration);
+        }
+      }, col * patternDuration);
+
+      currentColumn = (currentColumn + 1) % width;
+    }
+  }
+  else {
+    repeatId = Tone.Transport.scheduleRepeat((time) => {
     setCurrentColumn(currentColumn); 
 
     for (let row = 0; row < height; row++) {
@@ -138,6 +166,8 @@ useEffect(() => {
     currentColumn = (currentColumn + 1) % width;
     console.log("Pattern duration:", patternDuration, "and numSteps: ", numSteps)
   }, patternDuration); 
+ 
+  }
 
   Tone.Transport.start();
 
@@ -145,7 +175,7 @@ useEffect(() => {
     cleanup();
     Tone.Transport.clear(repeatId);
   };
-}, [isPlaying, playMode, bpm, instrumentList, cells, patterns, numSteps]);
+}, [isPlaying, playMode, bpm, instrumentList, cells, patterns, numSteps, isLoop]);
 
 
   const placePattern = (index) => {
@@ -180,13 +210,17 @@ useEffect(() => {
         <IoClose size={15} />
       </button>
 
-    <div className="flex items-center gap-4 mb-4">
-      <label className="text-white">
-        {isPlaying && currentColumn !== null
-          ? `Col: ${currentColumn + 1} / ${width}`
-          : "Stopped"}
-      </label>
+      <section className="flex items-center gap-4 p-2 mt-2">
+      <input
+        type="checkbox"
+        checked={isLoop}
+        onChange={(e) => setIsLoop(e.target.checked)}
+        title="Enable loop mode"
+      />
+      <label>Loop</label>
+    </section>
 
+    <div className="flex items-center gap-4 mb-4">
       <button
         onClick={() => setCells(Array(width * height).fill(null))}
         className="p-2 bg-red-500 text-white rounded"
@@ -258,11 +292,11 @@ useEffect(() => {
             style={{
               width: `${CELL_SIZE}px`,
               height: `${CELL_SIZE / 2}px`,
-              border: "1px solid #ccc",
+              border: isPlaying && currentColumn === col ? "4px solid green" : "3px solid gray",
             }}
             className={`${
               cell !== null ? colorByIndex(cell - 1) : "bg-gray-800"
-            } hover:bg-gray-700`}
+            } hover:bg-gray-700`} 
           >
             {cell ? patterns[cell - 1].name : null}
           </button>
