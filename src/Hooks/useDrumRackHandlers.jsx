@@ -153,7 +153,7 @@ export default function useDrumRackHandlers({
     if (!file || !file.type.startsWith("audio/")) return;
 
     const url = URL.createObjectURL(file);
-    const cleanName = file.name.replace(/\.[^/.]+$/, "");
+    const cleanName = file.name.replace(/\.[^/.]$/, "");
 
     const sample = {
       name: cleanName,
@@ -166,24 +166,25 @@ export default function useDrumRackHandlers({
       type: "loadSample",
       payload: { name, sample, url, prevState },
       apply: () => {
-        loadSample(name, url);
         setInstrumentList(prev => ({
           ...prev,
-          [name]: {
-            ...prev[name],
-            sampler: getSampler(name),
-            sample,
-            sampleUrl: url
-          }
+          [name]: { ...prev[name], sample, sampleUrl: url }
         }));
-      },
+        loadSample(name, url).then(() => {
+          setInstrumentList(prev => ({
+            ...prev,
+            [name]: { ...prev[name], sampler: getSampler(name) }
+          }));
+        });
+    },
       revert: () => {
         setInstrumentList(prev => ({
           ...prev,
-          [name]: prevState
+          [name]: { ...prev[name], sample: prevState.sample, sampleUrl: prevState.sampleUrl }
         }));
       }
     };
+
 
     action.apply();
     addAction(action);
@@ -352,37 +353,49 @@ export default function useDrumRackHandlers({
     addAction(action);
   }, [instrumentName, selectedPatternID, numSteps, setInstrumentList, setInstrumentName, instrumentList, addAction]);
 
-  const handleSelectSample = useCallback((sample, name) => {
-    const url = sample.url;
-    const prevState = { ...instrumentList[name] };
+  const handleSelectSample = useCallback((arg1, arg2, arg3) => {
+   let name, url, displayName;
+   if (typeof arg1 === "string") {
+     // Nouveau style
+     name = arg1; url = arg2; displayName = arg3;
+   } else {
+     // Ancien style (Channel Modal)
+     const sampleObj = arg1 || {};
+     name = arg2;
+     url = sampleObj.url || sampleObj?.urls?.C4 || sampleObj.src;
+     displayName = sampleObj.name;
+   }
+   if (!name || !url || !instrumentList[name]) return;
 
-    const action = {
-      type: "selectSample",
-      payload: { name, sample, url, prevState },
-      apply: () => {
-        assignSampleToInstrument(name, sample);
-        loadSample(name, url);
-        setInstrumentList(prev => ({
-          ...prev,
-          [name]: {
-            ...prev[name],
-            sampler: getSampler(name),
-            sample,
-            sampleUrl: url
-          }
-        }));
-      },
-      revert: () => {
-        setInstrumentList(prev => ({
-          ...prev,
-          [name]: prevState
-        }));
-      }
-    };
+   const prevState = { ...instrumentList[name] };
+   const cleanName = (displayName || (url.split("/").pop() || "sample")).replace(/\.[^/.]$/, "");
+   const sample = { name: cleanName, urls: { C4: url } };
 
-    action.apply();
-    addAction(action);
-  }, [assignSampleToInstrument, loadSample, getSampler, setInstrumentList, instrumentList, addAction]);
+   const action = {
+     type: "selectSample",
+     payload: { name, sample, url, prevState },
+     apply: () => {
+       // 1) on écrit le nom/URL tout de suite
+       setInstrumentList(prev => ({
+         ...prev,
+         [name]: { ...prev[name], sample, sampleUrl: url }
+       }));
+       // 2) on charge réellement l'audio puis on référence le sampler
+       loadSample(name, url).then(() => {
+         setInstrumentList(prev => ({
+           ...prev,
+           [name]: { ...prev[name], sampler: getSampler(name) }
+         }));
+       });
+     },
+     revert: () => {
+       setInstrumentList(prev => ({ ...prev, [name]: prevState }));
+     }
+   };
+
+   action.apply();
+   addAction(action);
+ }, [setInstrumentList, instrumentList, loadSample, getSampler, addAction]);
 
   const handleUndo = useCallback(() => {
     undo();
