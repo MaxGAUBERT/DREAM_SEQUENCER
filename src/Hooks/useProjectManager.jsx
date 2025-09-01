@@ -12,8 +12,8 @@ function getColorByIndex(i) {
 
 export function useProjectManager() {
   const INITIAL_PATTERN_ID = 0;
-  const [width, setWidth] = useState(10); 
-  const [height, setHeight] = useState(10); 
+  const [width, setWidth] = useState(20); 
+  const [height, setHeight] = useState(50); 
   const CELL_SIZE = 100;
   const [cells, setCells] = useState(Array(width * height).fill(0));
   const [numSteps, setNumSteps] = useState(64);
@@ -40,38 +40,48 @@ export function useProjectManager() {
 
 
   const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
+  
   const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
 
+  const DEFAULT_SAMPLES = {
+    Kick: "/Audio/Drums/Progressive_Kick.wav",
+    Snare: "./Audio/Drums/VEC1_Snare_025.wav",
+    HiHat: "./Audio/Drums/VEC4_Closed_HH_018.wav",
+    Clap: "./Audio/Drums/VEH3_Claps_011.wav",
+  };
 
-  const initializeInstrumentList = useCallback(() => {
-    return Object.fromEntries(
-      DEFAULT_INSTRUMENTS.map((inst, idx) => [
-        inst,
-        {
-          grids: Object.fromEntries(
-            Array.from({ length: initLength }, (_, i) => [i, Array(16).fill(false)])
-          ),
-          pianoData: {
-            [selectedPatternID]: []
-          },
-          volume: 5,
-          fx: null,
-          muted: false,
-          sample: {
-            id: null,
-            urls: { C4: null },
-            name: null
-          },
-          sampler: null,
-          sampleUrl: null,
-          fileName: null,
-          slot: idx + 1
-        }
-      ])
-    );
-  }, [initLength]);
+const initializeInstrumentList = useCallback(() => {
+  return Object.fromEntries(
+    DEFAULT_INSTRUMENTS.map((inst, idx) => [
+      inst,
+      {
+        grids: Object.fromEntries(
+          Array.from({ length: initLength }, (_, i) => [i, Array(16).fill(false)])
+        ),
+        pianoData: {
+          [selectedPatternID]: []
+        },
+        volume: 5,
+        fx: null,
+        muted: false,
+        sample: {
+          id: null,
+          urls: { C4: DEFAULT_SAMPLES[inst] ?? null }, // assignation par défaut
+          name: inst,
+        },
+        sampler: DEFAULT_SAMPLES[inst],
+        sampleUrl: DEFAULT_SAMPLES[inst] ?? null,
+        fileName: DEFAULT_SAMPLES[inst]
+          ? DEFAULT_SAMPLES[inst].split("/").pop()
+          : null,
+        slot: idx + 1,
+      }
+    ])
+  );
+}, [initLength, selectedPatternID]);
 
-  const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
+const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
+
 
   const applyInstrumentChange = useCallback((updateFn) => {
     setInstrumentList((prev) => {
