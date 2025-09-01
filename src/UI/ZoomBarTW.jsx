@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 export default function ZoomBarTW({
-  windowRange,            // [start%, end%] entre 0 et 100
+  windowRange,           
   setWindowRange,
-  minWindowPercent = 2,   // largeur mini de la fenêtre
+  minWindowPercent = 2,  
 }) {
   const barRef = useRef(null);
-  const [drag, setDrag] = useState(null); 
-  // drag = { mode: "left"|"right"|"track", startX, startRange: [s,e] }
+  const [drag, setDrag] = useState(null);
 
   const clampRange = useCallback((r) => {
     const a = Math.min(r[0], r[1]);
