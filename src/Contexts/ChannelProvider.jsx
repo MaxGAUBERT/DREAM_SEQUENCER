@@ -11,23 +11,32 @@ export const useSampleContext = () => useContext(SampleContext);
 export const ChannelProvider = ({ children }) => {
   const samplersRef = useRef({}); 
 
-  const loadSample = async (instrumentName, sampleUrl) => {
-    if (!sampleUrl || samplersRef.current[instrumentName]) console.log(`Error for ${instrumentName}`);
+   const loadSample = (instrumentName, sampleUrl) => {
+    if (!instrumentName || !sampleUrl) {
+      return Promise.reject(new Error("loadSample: bad arguments"));
+    }
+    // Remplace proprement l'ancien sampler s'il existe
+    const old = samplersRef.current[instrumentName];
+    if (old) {
+      try { old.dispose(); } catch {}
+      samplersRef.current[instrumentName] = undefined;
+    }
 
-    const sampler = new Tone.Sampler({
-      urls: { C4: sampleUrl },
-      onload: () => {
-        console.log(`Sampler loaded for ${instrumentName}`);
-      }
-    }).toDestination();
-
-    samplersRef.current[instrumentName] = sampler;
+    return new Promise((resolve) => {
+      const sampler = new Tone.Sampler({
+        urls: { C4: sampleUrl },
+        onload: () => {
+          samplersRef.current[instrumentName] = sampler;
+          console.log(`Sampler loaded for ${instrumentName}`);
+          resolve(sampler);
+        },
+      }).toDestination();
+    });
   };
 
-  const getSampler = (instrumentName) => {
-    console.log(samplersRef);
-    return samplersRef?.current[instrumentName] || null;
-  };
+  const getSampler = (instrumentName) =>
+    samplersRef.current?.[instrumentName] || null;
+
 
   const contextValue = {
     loadSample,
