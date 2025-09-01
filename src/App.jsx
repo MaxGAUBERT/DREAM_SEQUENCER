@@ -62,6 +62,13 @@ const ModalManager = ({
         onSaveAs={saveAsProject} 
       />
     )}
+
+    {modals.save && (
+      <SaveAsProjectModal 
+        onClose={() => closeModal("saveCurrentProject")} 
+        onSaveAs={saveAsProject} 
+      />
+    )}
   </>
 );
 
@@ -199,7 +206,7 @@ useEffect(() => {
     "New Project": () => openModal("new"),
     "Load Project": () => openModal("load"),
     "Save As": () => openModal("saveAs"),
-    "Save": saveCurrentProject,
+    "Save": !currentProject ? () => openModal("saveAs") : saveCurrentProject,
     "Undo": undo,
     "Redo": redo,
   }), [openModal, saveCurrentProject, undo, redo]);
@@ -257,10 +264,15 @@ useEffect(() => {
 
   return (
   <div className="w-full h-full absolute bg-gray-900 font-['Orbitron'] text-sm font-bold">
+    <div>
+      <label className="fixed top-5 right-0 text-white-600">
+      {currentProject ? `Project: ${currentProject.name}` : "No project loaded"}
+    </label>
+    </div>
     <div className="z-0 pointer-events-none">
       <MdGraphicEq
-        size={50}
-        className="absolute z-0 pointer-events-none top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white opacity-0"
+        size={100}
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-600"
       />
     </div>
 
@@ -357,80 +369,77 @@ useEffect(() => {
             ) : null}
           </section>
 
-          <aside className="h-full min-h-0 overflow-hidden">
-        {/* Rien d'ouvert → rien à afficher (pas de split) */}
-        {!(openComponents['Playlist'] || openComponents['FXChain']) ? null : 
-          /* Les deux ouverts → utiliser Split */
-          (openComponents['Playlist'] && openComponents['FXChain']) ? (
-            <Split
-              direction="vertical"
-              sizes={[67, 33]}
-              minSize={[265, 100]}
-              gutterSize={5}
-              className="h-full min-h-0 flex flex-col"
-              gutter={() => {
-                const g = document.createElement('div');
-                g.className = 'gutter bg-white/10 hover:bg-white/25 cursor-row-resize';
-                return g;
-              }}
-            >
-              {/* Haut : Playlist */}
-              <div className="min-h-0 overflow-y-auto overflow-x-hidden">
-                <div className="h-full w-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-custom border rounded-xl text-white">
-                  <Playlist
-                    selectedPatternID={selectedPatternID}
-                    colorByIndex={getColorByIndex}
-                    patterns={patterns}
-                    instrumentList={instrumentList}
-                    cells={cells}
-                    setCells={setCells}
-                    numSteps={numSteps}
-                    onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
-                  />
+            <aside className="h-full min-h-0 overflow-hidden">
+          {!(openComponents['Playlist'] || openComponents['FXChain']) ? null : 
+            (openComponents['Playlist'] && openComponents['FXChain']) ? (
+              <Split
+                direction="vertical"
+                sizes={[67, 33]}
+                minSize={[265, 100]}
+                gutterSize={5}
+                className="h-full min-h-0 flex flex-col"
+                gutter={() => {
+                  const g = document.createElement('div');
+                  g.className = 'gutter bg-white/10 hover:bg-white/25 cursor-row-resize';
+                  return g;
+                }}
+              >
+                {/* Haut : Playlist */}
+                <div className="min-h-0 overflow-y-auto overflow-x-hidden">
+                  <div className="h-full w-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-custom border rounded-xl text-white">
+                    <Playlist
+                      selectedPatternID={selectedPatternID}
+                      colorByIndex={getColorByIndex}
+                      patterns={patterns}
+                      instrumentList={instrumentList}
+                      cells={cells}
+                      setCells={setCells}
+                      numSteps={numSteps}
+                      onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
+                    />
+                  </div>
                 </div>
-              </div>
 
-        {/* Bas : FXChain */}
-        <div className="min-h-0 overflow-y-auto overflow-x-hidden">
-          <div className="scrollbar-custom border rounded-xl text-white">
-            <FXChain
-              instrumentList={instrumentList}
-              setInstrumentList={setInstrumentList}
-              onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
-            />
+          {/* Bas : FXChain */}
+          <div className="min-h-0 overflow-y-auto overflow-x-hidden">
+            <div className="scrollbar-custom border h-full rounded-xl text-white">
+              <FXChain
+                instrumentList={instrumentList}
+                setInstrumentList={setInstrumentList}
+                onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
+              />
+            </div>
           </div>
+        </Split>
+      ) : (
+        <div className="h-full min-h-0 overflow-hidden">
+          {openComponents['Playlist'] && (
+            <div className="h-full w-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-custom border rounded-xl text-white">
+              <Playlist
+                selectedPatternID={selectedPatternID}
+                colorByIndex={getColorByIndex}
+                patterns={patterns}
+                instrumentList={instrumentList}
+                cells={cells}
+                setCells={setCells}
+                numSteps={numSteps}
+                onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
+              />
+            </div>
+          )}
+          {openComponents['FXChain'] && (
+            <div className="h-full scrollbar-custom border rounded-xl text-white">
+              <FXChain
+                instrumentList={instrumentList}
+                setInstrumentList={setInstrumentList}
+                onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
+              />
+            </div>
+          )}
         </div>
-      </Split>
-    ) : (
-      /* Un seul ouvert → pleine hauteur sans split */
-      <div className="h-full min-h-0 overflow-hidden">
-        {openComponents['Playlist'] && (
-          <div className="h-full w-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-custom border rounded-xl text-white">
-            <Playlist
-              selectedPatternID={selectedPatternID}
-              colorByIndex={getColorByIndex}
-              patterns={patterns}
-              instrumentList={instrumentList}
-              cells={cells}
-              setCells={setCells}
-              numSteps={numSteps}
-              onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
-            />
-          </div>
-        )}
-        {openComponents['FXChain'] && (
-          <div className="h-full scrollbar-custom border rounded-xl text-white">
-            <FXChain
-              instrumentList={instrumentList}
-              setInstrumentList={setInstrumentList}
-              onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
-            />
-          </div>
-        )}
-      </div>
-    )
-  }
-          </aside>
+      )
+    }
+            </aside>
 
 
 
