@@ -51,7 +51,7 @@ const PatternSelector = ({
         if (patternToDup) {
           const newPattern = {
             ...patternToDup,
-            id: Date.now(),
+            id: patterns.length,
             name: patternToDup.name,
           };
           setPatterns((prev) => [...prev, newPattern]);
@@ -65,7 +65,7 @@ const PatternSelector = ({
       case "reset":
         setPatterns((prev) =>
           prev.map((p) =>
-            p.id === targetId ? { ...p, name: `pattern ${p.id + 1}` } : p
+            p.id === targetId ? { ...p, name: `Pattern ${p.id + 1}` } : p
           )
         );
         break;
@@ -103,39 +103,7 @@ const PatternSelector = ({
     setContextMenu((prev) => ({ ...prev, visible: false }));
   };
 
-  // Raccourcis clavier globaux
-   useEffect(() => {
-  const handleGlobalShortcut = (e) => {
-    if (!contextMenu.visible) return;
-
-    if (e.ctrlKey && e.key.toLowerCase() === "n") {
-      e.preventDefault();
-      e.stopPropagation();
-      handleMenuAction("reset");
-    }
-    if (e.ctrlKey && e.key.toLowerCase() === "r") {
-      e.preventDefault();
-      e.stopPropagation();
-      handleMenuAction("rename");
-    }
-    if (e.ctrlKey && e.key.toLowerCase() === "d") {
-      e.preventDefault();
-      e.stopPropagation();
-      handleMenuAction("duplicate");
-    }
-    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") {
-      e.preventDefault();
-      e.stopPropagation();
-      handleMenuAction("resetAll");
-    }
-  };
-
-  // utilisation de `true` pour activer la phase de capture
-  window.addEventListener("keydown", handleGlobalShortcut, true);
-  return () => {
-    window.removeEventListener("keydown", handleGlobalShortcut, true);
-  };
-}, [contextMenu.visible]);
+ 
 
 
   // Clic droit sur un pattern → ouvre le menu
@@ -165,14 +133,14 @@ const PatternSelector = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 p-2 bottom-0 right-0 absolute border-4 md:h-[93%] overflow-auto border-gray-700 scrollbar-custom">
+    <div className="flex flex-col gap-1 p-2 bottom-0 right-0 absolute border-2 md:h-[93%] overflow-auto scrollbar-custom">
       {contextMenu.visible && (
         <div
-          className="bg-gray-800 text-white border border-gray-300 shadow-lg rounded-md overflow-hidden"
+          className="text-white z-100 border-red border-2 border-gray-700 bg-gray-900 rounded-xl shadow-lg overflow-hidden"
           style={{
             position: "fixed",
             top: contextMenu.y / 2,
-            left: contextMenu.x / 2 + 450,
+            left: contextMenu.x / 2 + 550,
             zIndex: 1000,
             minWidth: 180,
           }}
