@@ -17,7 +17,7 @@ import ChannelProvider from "./Contexts/ChannelProvider";
 import { useHistoryContext } from "./Contexts/HistoryProvider";
 import FXChain from "./Components/FXChain";
 import Split from "react-split";
-
+import Settings from "./UI/Modals/Settings";
 
 
 const getColorByIndex = (() => {
@@ -28,6 +28,7 @@ const getColorByIndex = (() => {
   
   return (i) => colors[i % colors.length];
 })();
+
 
 
 const ModalManager = ({
@@ -69,6 +70,11 @@ const ModalManager = ({
         onSaveAs={saveAsProject} 
       />
     )}
+
+    {modals.Settings && (
+      <Settings open={modals.Settings} onClose={() => closeModal("Settings")} initialTab="general"/>
+    )}
+
   </>
 );
 
@@ -114,6 +120,7 @@ export default function App() {
     new: false,
     load: false,
     saveAs: false,
+    Settings: false
   }));
 
   const openPianoRollForInstrument = useCallback((instrumentName) => {
@@ -209,6 +216,7 @@ useEffect(() => {
     "Save": !currentProject ? () => openModal("saveAs") : saveCurrentProject,
     "Undo": undo,
     "Redo": redo,
+    "Settings": () => openModal("Settings"),
   }), [openModal, saveCurrentProject, undo, redo]);
 
   const handleRunAction = useCallback((action) => {
