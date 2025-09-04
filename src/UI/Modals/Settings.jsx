@@ -37,31 +37,99 @@ function Settings({
   if (!open) return null;
 
   const tabs = tabsProp ?? [
-    { id: "general", label: "General", content: 
-    <div>
-    
-    
-    </div> 
-      
-    },
-    { id: "audio", label: "Audio", content: 
-    <div>
-      
-
-
-    </div> },
-    { id: "Shortcuts", label: "Shortcuts", content: 
-    <div>
-
-    
-    
-    </div> },
-    {id: "about", label: "About", content:
-      <div>
-      
+  {
+    id: "general",
+    label: "General",
+    content: (
+      <div className="flex flex-col gap-4">
+        <label className="flex items-center gap-2">
+          <input type="checkbox" />
+          <span>Thème sombre</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" />
+          <span>Activer l’historique global (undo/redo)</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" />
+          <span>Sauvegarde auto du projet</span>
+        </label>
       </div>
-    }
-  ];
+    ),
+  },
+  {
+    id: "audio",
+    label: "Audio",
+    content: (
+      <div className="flex flex-col gap-4">
+        <label className="flex flex-col">
+          <span>BPM</span>
+          <input
+            type="number"
+            min="20"
+            max="300"
+            defaultValue={120}
+            className="bg-black/40 border rounded p-1"
+          />
+        </label>
+        <label className="flex flex-col">
+          <span>Sample rate</span>
+          <select className="bg-black/40 border rounded p-1">
+            <option>44100 Hz</option>
+            <option>48000 Hz</option>
+            <option>96000 Hz</option>
+          </select>
+        </label>
+        <label className="flex flex-col">
+          <span>Buffer Size</span>
+          <select className="bg-black/40 border rounded p-1">
+            <option>128</option>
+            <option>256</option>
+            <option>512</option>
+            <option>1024</option>
+          </select>
+        </label>
+      </div>
+    ),
+  },
+  {
+    id: "shortcuts",
+    label: "Shortcuts",
+    content: (
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between">
+          <span>Play / Pause</span>
+          <kbd className="px-2 py-1 bg-gray-800 rounded">Space</kbd>
+        </div>
+        <div className="flex justify-between">
+          <span>Undo</span>
+          <kbd className="px-2 py-1 bg-gray-800 rounded">Ctrl + Z</kbd>
+        </div>
+        <div className="flex justify-between">
+          <span>Redo</span>
+          <kbd className="px-2 py-1 bg-gray-800 rounded">Ctrl + Y</kbd>
+        </div>
+        <div className="flex justify-between">
+          <span>Ouvrir Piano Roll</span>
+          <kbd className="px-2 py-1 bg-gray-800 rounded">P</kbd>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "about",
+    label: "About",
+    content: (
+      <div className="flex flex-col gap-2 text-sm">
+        <p>
+          <strong>Dream Sequencer</strong> v0.1
+        </p>
+        <p>Un séquenceur React + Tone.js inspiré de FL Studio.</p>
+      </div>
+    ),
+  },
+];
+
 
   const idx = Math.max(0, tabs.findIndex(t => t.id === active));
   const activeTab = tabs[idx];
@@ -114,8 +182,8 @@ function Settings({
         </div>
 
         <div className="flex items-center justify-end gap-2 px-5 py-4 border-t">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded border hover:bg-gray-50">Annuler</button>
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded bg-gray-900 text-white hover:opacity-90">Enregistrer</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded border hover:bg-gray-50">Cancel</button>
+          <button type="button" onClick={onClose} className="px-4 py-2 rounded bg-gray-900 text-white hover:opacity-90">Save changes</button>
         </div>
       </div>
     </div>
