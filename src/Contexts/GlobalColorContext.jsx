@@ -11,7 +11,8 @@ const GlobalColorContextProvider = ({ children }) => {
         "Text": "white",
         "TextIO": "black",
         "Button": "white",
-        "Background": "gray.900",
+        "TransportButtons": "white",
+        "Background": "black",
         "BackgroundIO": "gray.500",
         "Border": "gray.700",
     });
