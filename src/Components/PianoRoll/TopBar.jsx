@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { ImPencil } from "react-icons/im";
 import { HiPaintBrush } from "react-icons/hi2";
 import { RxWidth } from "react-icons/rx";
@@ -6,7 +6,6 @@ import { IoMusicalNotesSharp } from "react-icons/io5";
 import { MdOutlineDeleteOutline } from "react-icons/md";
 import { IoClose } from "react-icons/io5";
 import { GrClear } from "react-icons/gr";
-import { useProjectManager } from "../../Hooks/useProjectManager";
 
 
 export const CHORD_TYPES = {
@@ -41,6 +40,7 @@ const ModeButton = React.memo(({ mode, currentMode, onClick, icon: Icon, title }
     </button>
   );
 });
+
 
 // Composant ChordSelector mémorisé
 const ChordSelector = React.memo(({ selectedChordType, onChordTypeChange, disabled }) => {
@@ -103,7 +103,6 @@ export const TopBar = ({
   const handleResizeMode = useCallback(() => toggleMode('resize'), [toggleMode]);
   const handleChordsMode = useCallback(() => toggleMode('chords'), [toggleMode]);
   const deleteSelectedNotes = useCallback(() => toggleMode('delete'), [toggleMode]);
-  //const {numSteps, setNumSteps} = useProjectManager();
   
   const handleChordTypeChange = useCallback((e) => {
     setSelectedChordType(e.target.value);
@@ -113,36 +112,79 @@ export const TopBar = ({
     setNumSteps(Number(e.target.value));
   }, [setNumSteps]);
 
+   // 🎹 Ajout des raccourcis clavier
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return; // ignore combinaisons
+      switch (e.key.toLowerCase()) {
+        case "d": // Draw
+          handleDrawMode();
+          break;
+        case "p": // Paint
+          handlePaintMode();
+          break;
+        case "r": // Resize
+          handleResizeMode();
+          break;
+        case "c": // Chords
+          handleChordsMode();
+          break;
+        case "x": // Delete
+          deleteSelectedNotes();
+          break;
+        case "a": // Clear all
+          clearAll();
+          break;
+        case "escape": // Fermer
+          onClose();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    handleDrawMode,
+    handlePaintMode,
+    handleResizeMode,
+    handleChordsMode,
+    deleteSelectedNotes,
+    clearAll,
+    onClose,
+  ]);
+
   const modeButtons = useMemo(() => [
     {
       mode: 'draw',
       onClick: handleDrawMode,
       icon: ImPencil,
-      title: 'Draw in piano roll'
+      title: 'Draw in piano roll (d)'
     },
     {
       mode: 'paint',
       onClick: handlePaintMode,
       icon: HiPaintBrush,
-      title: 'Paint in piano roll'
+      title: 'Paint in piano roll (p)'
     },
     {
       mode: 'resize',
       onClick: handleResizeMode,
       icon: RxWidth,
-      title: 'Resize notes'
+      title: 'Resize notes (r)'
     },
     {
       mode: 'delete',
       onClick: deleteSelectedNotes,
       icon: GrClear,
-      title: 'Delete selected notes'
+      title: 'Delete selected notes (x)'
     },
     {
       mode: 'chords',
       onClick: handleChordsMode,
       icon: IoMusicalNotesSharp,
-      title: 'Add notes from chords'
+      title: 'Add notes from chords (c)'
     }
   ], [handleDrawMode, handlePaintMode, handleResizeMode, handleChordsMode, deleteSelectedNotes]);
 
@@ -221,6 +263,5 @@ function areEqual (prevProps, nextProps) {
   return true;
 }
 export default React.memo(TopBar, areEqual);
-
 
 
