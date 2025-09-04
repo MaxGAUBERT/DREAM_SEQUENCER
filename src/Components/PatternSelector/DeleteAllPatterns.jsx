@@ -23,8 +23,8 @@ export default function DeleteAllPatterns ({patterns, setPatterns, setInstrument
          {patterns.length > 1 && (
             <button 
             onClick={handleDeleteAllPatterns}
-            className="w-15 h-15 rounded-full border-4 border-white transition-all duration-150 ease-in-out"
-            style={{ backgroundColor: "black" }}  
+            className="w-15 h-15 rounded-full border-4 transition-all duration-150 ease-in-out"
+            style={{ backgroundColor: "black", borderColor: colorsComponent.Border }}  
             title="Delete all patterns"      
             >
             <MdDeleteSweep size={25}/>
