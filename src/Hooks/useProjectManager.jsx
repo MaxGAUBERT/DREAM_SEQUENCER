@@ -50,6 +50,20 @@ export function useProjectManager() {
     Clap: "./Audio/Drums/VEH3_Claps_011.wav",
   };
 
+    useEffect(() => {
+    const saved = localStorage.getItem("projects");
+    if (saved) {
+      try {
+        const parsed = parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setProjects(parsed);
+        }
+      } catch (e) {
+        console.error("Erreur de chargement des projets :", e);
+      }
+    }
+  }, []);
+
 const initializeInstrumentList = useCallback(() => {
   return Object.fromEntries(
     DEFAULT_INSTRUMENTS.map((inst, idx) => [
@@ -110,20 +124,6 @@ const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
     });
   }, [instrumentList])
 
-  useEffect(() => {
-    const saved = localStorage.getItem("projects");
-    if (saved) {
-      try {
-        const parsed = parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setProjects(parsed);
-        }
-      } catch (e) {
-        console.error("Erreur de chargement des projets :", e);
-      }
-    }
-  }, []);
-
   const assignSampleToInstrument = useCallback((instrumentName, sample) => {
     setInstrumentList(prev => ({
       ...prev,
@@ -143,6 +143,8 @@ const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
   const saveToLocalStorage = (updatedProjects) => {
     localStorage.setItem("projects", stringify(updatedProjects));
   };
+
+  // Manage project (localstorage)
 
   const createProject = (newName) => {
     const newId = Math.max(0, ...projects.map(p => p.id)) + 1;
@@ -292,34 +294,38 @@ const loadProject = async (projectId, fromProjects = projects) => {
   };
 
   return {
-    projects,
-    instrumentList,
-    setInstrumentList,
-    initializeInstrumentList,
-    assignSampleToInstrument,
-    applyInstrumentChange,
-    getInstrumentListSnapshot,
-    DEFAULT_INSTRUMENTS,
-    cells, setCells,
-    CELL_SIZE, width, height, setWidth, setHeight,
-    currentProjectId,
-    currentProject: projects.find(p => p.id === currentProjectId),
-    initLength,
-    patterns,
-    setPatterns,
-    selectedPatternID,
-    setSelectedPatternID,
+    // project management
     createProject,
     saveCurrentProject,
     saveAsProject,
     loadProject,
     deleteProject,
-    numSteps,
-    setNumSteps,
+    currentProject: projects.find(p => p.id === currentProjectId),
     deleteAllProjects: () => {
       setProjects([]);
       localStorage.removeItem("projects");
     },
-    updateInstrumentSlot
+    // project data
+    numSteps,
+    setNumSteps,
+    cells, setCells,
+    CELL_SIZE, width, height, setWidth, setHeight,
+    currentProjectId,
+    projects,
+    instrumentList,
+    setInstrumentList,
+    initializeInstrumentList,
+    DEFAULT_INSTRUMENTS,
+    // functions for instruments
+    assignSampleToInstrument,
+    applyInstrumentChange,
+    getInstrumentListSnapshot,
+    updateInstrumentSlot,
+    // patterns management
+    initLength,
+    patterns,
+    setPatterns,
+    selectedPatternID,
+    setSelectedPatternID,
   };
 }
