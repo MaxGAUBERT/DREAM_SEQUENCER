@@ -98,7 +98,9 @@ export default function App() {
     loadProject,
     numSteps,
     setNumSteps,
-    deleteAllProjects
+    deleteAllProjects, 
+    openComponents,
+    setOpenComponents
   } = useProjectManager();
 
   const [pianoRollInstrument, setPianoRollInstrument] = useState(null);
@@ -106,15 +108,6 @@ export default function App() {
   const [channelModalOpen, setChannelModalOpen] = useState(false);
 
   const {undo, redo} = useHistoryContext();
-
-  // Mémoiser openComponents pour éviter les re-renders
-  const [openComponents, setOpenComponents] = useState(() => ({
-    "Drum Rack": true,
-    "Pattern Selector": true,
-    "Piano Roll": true,
-    "Playlist": true,
-    "FXChain": true
-  }));
 
   const [modals, setModals] = useState(() => ({
     new: false,
@@ -135,29 +128,6 @@ export default function App() {
   const closeModal = useCallback((name) => {
     setModals(prev => ({ ...prev, [name]: false }));
   }, []);
-
-  /*const handleSelectPattern = useCallback((id) => {
-    setSelectedPatternID(id);
-    console.log("Selected pattern",  id + 1);
-
-    setInstrumentList(prev => {
-      const updated = { ...prev };
-      
-      Object.keys(updated).forEach(inst => {
-        if (!updated[inst].grids) updated[inst].grids = {};
-        if (!updated[inst].grids[id]) {
-          updated[inst].grids[id] = Array(numSteps).fill(false);
-        }
-        if (!updated[inst].pianoData) updated[inst].pianoData = {};
-        if (!updated[inst].pianoData[id]) {
-          updated[inst].pianoData[id] = [];
-        }
-      });
-
-      return updated;
-    });
-  }, [setSelectedPatternID, setInstrumentList]);
-  */
 
   useEffect(() => {
   setInstrumentList(prev => {
@@ -276,12 +246,6 @@ useEffect(() => {
       <label className="fixed top-5 right-0 text-white-600">
       {currentProject ? `Project: ${currentProject.name}` : "No project loaded"}
     </label>
-    </div>
-    <div className="z-0 pointer-events-none">
-      <MdGraphicEq
-        size={100}
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-gray-600"
-      />
     </div>
 
     {/* ====== Top bar ====== */}
