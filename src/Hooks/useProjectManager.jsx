@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { stringify, parse } from "flatted";
 import { useSoundBank } from "./useSoundBank";
+import { set } from "lodash";
 function getColorByIndex(i) {
   const colors = [
     "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
@@ -11,6 +12,15 @@ function getColorByIndex(i) {
 
 
 export function useProjectManager() {
+    // Mémoiser openComponents pour éviter les re-renders
+  const [openComponents, setOpenComponents] = useState(() => ({
+    "Drum Rack": true,
+    "Pattern Selector": true,
+    "Piano Roll": true,
+    "Playlist": true,
+    "FXChain": true
+  }));
+
   const INITIAL_PATTERN_ID = 0;
   const [width, setWidth] = useState(20); 
   const [height, setHeight] = useState(50); 
@@ -167,7 +177,9 @@ const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
       numSteps: 16,
       selectedPatternID: newPatterns.length - 1,
       createdAt: new Date().toISOString(),
-      cells: Array(width * height).fill(0)
+      cells: Array(width * height).fill(0), 
+      width,
+      height
     };
 
     const updated = [...projects, newProject];
@@ -176,6 +188,15 @@ const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
     setCurrentProjectId(newId);
     saveToLocalStorage(updated);
     loadProject(newId, updated);
+
+    setOpenComponents({
+      "Drum Rack": true,
+      "Pattern Selector": true,
+      "Piano Roll": true,
+      "Playlist": true,
+      "FXChain": true
+    });
+
   };
 
   const saveCurrentProject = () => {
@@ -191,7 +212,10 @@ const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
           numSteps,
           selectedPatternID,
           lastSaved: new Date().toISOString(),
-          cells
+          cells, 
+          openComponents,
+          width, 
+          height
         };
       }
       return p;
@@ -214,7 +238,10 @@ const saveAsProject = (name) => {
     numSteps,
     selectedPatternID,
     createdAt: new Date().toISOString(),
-    cells
+    cells, 
+    openComponents, 
+    width, 
+    height
   };
 
   const updated = [...projects, newProject];
@@ -237,6 +264,24 @@ const loadProject = async (projectId, fromProjects = projects) => {
 
   console.log("Chargement du projet:", project);
 
+   // ✅ Restaurer width/height avec fallback sur l’état courant
+  const newWidth = typeof project.width === 'number' ? project.width : width;
+  const newHeight = typeof project.height === 'number' ? project.height : height;
+  const needed = newWidth * newHeight;
+
+  // ✅ Ajuster cells à la nouvelle surface
+  const loadedCells = Array.isArray(project.cells) ? project.cells : [];
+  const nextCells =
+    loadedCells.length === needed
+      ? loadedCells
+      : loadedCells.length < needed
+        ? [...loadedCells, ...Array(needed - loadedCells.length).fill(0)]
+        : loadedCells.slice(0, needed);
+
+  setWidth(newWidth);
+  setHeight(newHeight);
+  setCells(nextCells);
+
   setCurrentProjectId(projectId);
   setPatterns(project.patterns || []);
 
@@ -256,6 +301,7 @@ const loadProject = async (projectId, fromProjects = projects) => {
         }
       ];
     })
+    
   );
 
   const normalizedInstrumentList = Object.fromEntries(instrumentEntries);
@@ -267,7 +313,15 @@ const loadProject = async (projectId, fromProjects = projects) => {
     typeof project.selectedPatternID === "number" ? project.selectedPatternID : 0
   );
   setNotes(project.notes || []);
-  setCells(project.cells || Array(width * height).fill(0));
+
+  setOpenComponents(project.openComponents || {
+  "Drum Rack": true,
+  "Pattern Selector": true,
+  "Piano Roll": true,
+  "Playlist": true,
+  "FXChain": true
+});
+
 
   console.log("Projet chargé avec instrumentList:", normalizedInstrumentList);
 };
@@ -327,5 +381,7 @@ const loadProject = async (projectId, fromProjects = projects) => {
     setPatterns,
     selectedPatternID,
     setSelectedPatternID,
+    // state of project windows
+    openComponents, setOpenComponents
   };
 }
