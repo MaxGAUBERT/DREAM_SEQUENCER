@@ -5,9 +5,11 @@ import { FaRegStopCircle } from "react-icons/fa";
 import { PiMetronomeBold } from "react-icons/pi";
 import * as Tone from "tone";
 import Timer from "./Timer";
+import { useGlobalColorContext } from "../Contexts/GlobalColorContext";
 
 const TransportBar = () => {
     const {bpm, setBpm, metronome, metronomeSampler, setMetronome, isPlaying, setIsPlaying, playMode, setPlayMode, sequencesRef} = usePlayContext();
+    const {colorsComponent} = useGlobalColorContext();
 
     useEffect(() => {
         if (metronome && metronomeSampler && metronomeSampler.loaded) {
@@ -31,7 +33,7 @@ const TransportBar = () => {
 
     useEffect(() => {
     const handleKeyDown = (e) => {
-        if (e.code === "KeyP") {
+        if (e.ctrlKey + e.code === "KeyP") {
         e.preventDefault(); // empêche le scroll de la page
         setIsPlaying(!isPlaying); // toggle play/pause
         }
@@ -51,7 +53,7 @@ const TransportBar = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
-    const stopPlayback = () => {
+     const stopPlayback = () => {
         console.log("🛑 Stopping playback");
         setIsPlaying(false); // si applicable
         Tone.Transport.stop();
@@ -64,6 +66,7 @@ const TransportBar = () => {
             sequencesRef.current = [];
         }
     };
+
 
 
     return (
@@ -90,13 +93,15 @@ const TransportBar = () => {
                         setIsPlaying(!isPlaying);
                         }
                     }}
-                    className="bg-gray-500 rounded hover:bg-green-600"
-                    title="Play Song [P]"
+                    className="rounded hover:bg-green-600"
+                    style={{ backgroundColor: colorsComponent.TransportButtons, color: colorsComponent.TextIO, borderColor: colorsComponent.Border }}
+                    title="Play Song [CTRL + P]"
                 >
                     <FaRegCirclePlay size={20} />
                 </button>
                 <button 
-                    className="bg-gray-500 rounded hover:bg-red-600"
+                    className="rounded hover:bg-red-600"
+                    style={{ backgroundColor: colorsComponent.TransportButtons, color: colorsComponent.TextIO, borderColor: colorsComponent.Border }}
                     title="Stop Song [SPACE]"
                     onClick={() => {
                         stopPlayback();
@@ -111,7 +116,8 @@ const TransportBar = () => {
                     step="10"
                     value={bpm}
                     onChange={(e) => setBpm(e.target.value)}
-                    className="bg-gray-500 text-white rounded"
+                    className=" text-white rounded"
+                    style={{ backgroundColor: colorsComponent.TransportButtons, color: colorsComponent.TextIO, borderColor: colorsComponent.Border }}
                     title="Adjust BPM"
                 />
                 <button 
