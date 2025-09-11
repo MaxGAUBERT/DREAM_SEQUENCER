@@ -68,7 +68,7 @@ function playPattern(pattern, instrumentList, startTime, numSteps) {
     while (paddedSteps.length < numSteps) paddedSteps.push(false);
 
     for (let stepIndex = 0; stepIndex < numSteps; stepIndex++) {
-      if (paddedSteps[stepIndex]) {
+      if (paddedSteps[stepIndex] && !instrumentList[instrumentName].muted) {
         const noteTime = startTime + stepIndex * stepDuration;
         sampler.triggerAttackRelease("C4", "4n", noteTime);
       }
@@ -210,7 +210,15 @@ useEffect(() => {
         <IoClose size={15} />
       </button>
 
-      <section className="flex items-center gap-4 p-2 mt-2">
+    <div className="flex items-center gap-4 mb-4">
+      <button
+        onClick={() => setCells(Array(width * height).fill(null))}
+        className="p-2 bg-red-500 text-white rounded"
+      >
+        <MdDelete size={15} />
+      </button>
+
+       <section className="flex items-center gap-4 p-2 mt-2">
       <input
         type="checkbox"
         checked={isLoop}
@@ -219,14 +227,6 @@ useEffect(() => {
       />
       <label>Loop</label>
     </section>
-
-    <div className="flex items-center gap-4 mb-4">
-      <button
-        onClick={() => setCells(Array(width * height).fill(null))}
-        className="p-2 bg-red-500 text-white rounded"
-      >
-        <MdDelete size={15} />
-      </button>
 
       <div className="flex items-center gap-2">
         <label>Width ({width})</label>
