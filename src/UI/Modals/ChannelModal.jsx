@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useReducer } from 'react';
+import { useState, useEffect } from 'react';
 import { useSoundBank } from '../../Hooks/useSoundBank';
 import { useFXChain } from '../../Hooks/useFXChain';
-import InstrumentList from '../../Components/DrumRack/InstrumentList';
+import Waveform from '../WaveForm';
 
 const ChannelModal = ({ 
   onClose, 
@@ -171,11 +171,14 @@ const ChannelModal = ({
           </div>
         );
 
-      case "Effects":
+      case "Misc":
         return (
           <div className="text-white">
-            <p className="mb-4">Assign channel to FX slots</p>
-
+            <p className="mb-4">Change properties of your sample (stretch, cut, ...)</p>
+            {/* Ajoute ici les options diverses */}
+            <div className='w-full mt-2'>
+              <Waveform url={channelUrl} height={80} />
+            </div>
           </div>
         );      
 
@@ -197,7 +200,7 @@ const ChannelModal = ({
 
         {/* Tabs */}
         <div className="flex space-x-4 mb-4 border-b border-gray-700">
-          {["General", "Effects", "Advanced"].map((tab) => (
+          {["General", "Misc", "Advanced"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
