@@ -40,7 +40,7 @@ export default function useDrumRackHandlers({
         numSteps
       },
       apply: () => {
-        if (!selectedPatternID) return;
+        if (selectedPatternID === null) return;
         setInstrumentList(prev => ({
           ...prev,
           [name]: {
@@ -55,7 +55,6 @@ export default function useDrumRackHandlers({
         }));
       },
       revert: () => {
-        if (!selectedPatternID) return;
         setInstrumentList(prev => ({
           ...prev,
           [name]: {
