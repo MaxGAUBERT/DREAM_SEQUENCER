@@ -30,7 +30,7 @@ const MiniBrowser = () => {
   }, [sounds]);
 
   return (
-    <div className="w-full h-full p-2">
+    <div className="w-full h-full p-2 overflow-auto flex flex-col">
       <label className=" mb-2 text-sm font-bold">Sound Browser</label>
 
       <input
