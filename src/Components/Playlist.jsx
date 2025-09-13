@@ -225,7 +225,7 @@ useEffect(() => {
         onChange={(e) => setIsLoop(e.target.checked)}
         title="Enable loop mode"
       />
-      <label>Loop</label>
+      <label>{isLoop ? "loop" : "one shot"}</label>
     </section>
 
       <div className="flex items-center gap-2">
