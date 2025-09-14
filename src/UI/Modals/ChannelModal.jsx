@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useSoundBank } from '../../Hooks/useSoundBank';
 import { useFXChain } from '../../Hooks/useFXChain';
-import Waveform from '../WaveForm';
 
 const ChannelModal = ({ 
   onClose, 
-  instrumentList, 
-  setInstrumentList, 
   instrumentName, 
   setInstrumentName, 
   onRename, 
@@ -17,7 +14,7 @@ const ChannelModal = ({
   const [activeTab, setActiveTab] = useState("General");
   const [localName, setLocalName] = useState(instrumentName);
   const [selectedSoundId, setSelectedSoundId] = useState(null);
-  const { setSelectedSlot, selectedSlot, slots } = useFXChain();
+  const { setSelectedSlot, selectedSlot } = useFXChain();
 
   const {
     audioObjects, 
@@ -47,7 +44,9 @@ const ChannelModal = ({
       : readable;
   }
 
-
+  useEffect(() => {
+    
+  })
   const handleSave = () => {
     if (onRename) {
       onRename(localName);
@@ -80,7 +79,6 @@ const ChannelModal = ({
       setSelectedSlot({channel: null, slot: null});
     }
     
-    handleSetFxSlot(instrumentList[instrumentName].slot, 5);
     onSelectSample("", instrumentName);
     if (typeof dispatch === 'function') {
       dispatch({ type: "RESET_ALL" });
@@ -103,23 +101,6 @@ const ChannelModal = ({
   const handleOpenPianoRoll = () => {
     onOpenPianoRoll(instrumentName);
     onClose();
-  };
-
-  const handleSetFxSlot = (instrumentName, slotNumber) => {
-    if (!instrumentName) return;
-    setInstrumentList(prev => {
-      const instrument = prev[instrumentName];
-      if (!instrument) return prev;
-      return {
-        ...prev,
-        [instrumentName]: {
-          ...instrument,
-          slot: slotNumber
-        }
-      };
-    });
-    setSelectedSlot({channel: "Kick", slot: slotNumber});
-    console.log("SelectedSlot updated:", selectedSlot);
   };
 
   const renderTabContent = () => {
@@ -171,14 +152,14 @@ const ChannelModal = ({
           </div>
         );
 
-      case "Misc":
+      case "Effects":
         return (
           <div className="text-white">
-            <p className="mb-4">Change properties of your sample (stretch, cut, ...)</p>
-            {/* Ajoute ici les options diverses */}
-            <div className='w-full mt-2'>
-              <Waveform url={channelUrl} height={80} />
+            <p className="mb-4">Assign channel to FX slots</p>
+            <div className="grid grid-cols-2 gap-4">
+              
             </div>
+
           </div>
         );      
 
@@ -200,7 +181,7 @@ const ChannelModal = ({
 
         {/* Tabs */}
         <div className="flex space-x-4 mb-4 border-b border-gray-700">
-          {["General", "Misc", "Advanced"].map((tab) => (
+          {["General", "Effects", "Advanced"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
