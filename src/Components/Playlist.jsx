@@ -298,7 +298,7 @@ useEffect(() => {
               cell !== null ? colorByIndex(cell - 1) : "bg-gray-800"
             } hover:bg-gray-700`} 
           >
-            {cell ? patterns[cell - 1].name : null}
+            {cell ? patterns[cell - 1] : null}
           </button>
         );
       })}
