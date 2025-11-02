@@ -197,7 +197,7 @@ useEffect(() => {
   return (
    <div
   className="
-    border-2 border-white rounded-xl bg-gray-900 text-white
+     rounded-xl bg-gray-900 text-white
     p-2 min-h-0 h-full w-full
     overflow-auto scrollbar-custom
   "
@@ -225,7 +225,7 @@ useEffect(() => {
         onChange={(e) => setIsLoop(e.target.checked)}
         title="Enable loop mode"
       />
-      <label>{isLoop ? "loop" : "one shot"}</label>
+      <label>{isLoop ? "loop" : ""}</label>
     </section>
 
       <div className="flex items-center gap-2">
@@ -298,7 +298,7 @@ useEffect(() => {
               cell !== null ? colorByIndex(cell - 1) : "bg-gray-800"
             } hover:bg-gray-700`} 
           >
-            {cell ? patterns[cell - 1].name: null}
+            {cell ? patterns[cell - 1].name : null}
           </button>
         );
       })}
