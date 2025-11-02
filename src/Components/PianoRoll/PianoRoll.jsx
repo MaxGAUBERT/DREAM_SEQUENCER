@@ -8,7 +8,6 @@ import { useChordGenerator } from '../../Hooks/useChordGenerator';
 import { rowToNoteName } from '../Utils/noteUtils';
 import { useSampleContext } from '../../Contexts/ChannelProvider';
 import { useHistoryContext } from '../../Contexts/HistoryProvider';
-import { useProjectManager } from '../../Hooks/useProjectManager';
 // === AJOUT
 import ZoomBarTW from '../../UI/ZoomBarTW';
 
@@ -660,7 +659,7 @@ const PianoRoll = ({
 
   // === RENDER
   return (
-    <div className="bg-gray-900 text-white border-white  border-2 rounded-xl min-h-0">
+    <div className="bg-gray-900 text-white rounded-xl min-h-0">
       <TopBar
         selectedInstrument={selectedInstrument}
         mode={state.mode}
