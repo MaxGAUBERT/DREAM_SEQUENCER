@@ -139,82 +139,87 @@ const DrumRack = ({
   }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
 
   return (
-    <div className="border-2 border-white  bg-gray-900 overflow-auto scrollbar-custom flex flex-col"
-      style={{ backgroundColor: colorsComponent.Background, color: colorsComponent.Text, borderColor: "black" }}>
-        <div>
-          <button
-            className="px-1 py-2 static left-0 bg-gray-800 hover:bg-gray-700 rounded ml-4 transition-colors"
-            onClick={onClose}
-            title="Close Drum Rack"
-          >
-            <IoClose size={15} />
-          </button>
-        </div>
+    <div
+  className="flex flex-col h-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/15 bg-gray-900"
+  style={{ backgroundColor: colorsComponent.Background, color: colorsComponent.Text }}
+>
+  {/* Top bar */}
+  <div className="sticky top-0 z-10 flex items-center justify-between bg-gray-800/80 backdrop-blur px-3 py-2">
+    <div className="text-xs">
+      Current Pattern: {patterns.find(p => p.id === selectedPatternID)?.name} |
+      Channels: {Object.keys(instrumentList).length} | Steps: {numSteps}
+    </div>
+    <button
+      className="px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+      onClick={onClose}
+      title="Close Drum Rack"
+    >
+      <IoClose size={15} />
+    </button>
+  </div>
 
-      <div className="text-xs border-b flex justify-between">
-        <div>
-          Current Pattern: {patterns.find(p => p.id === selectedPatternID)?.name} | Channels count: {Object.keys(instrumentList).length} | Steps: {numSteps}
-        </div>
-      </div>
+  {/* Toolbar icônes */}
+  <div className="flex justify-left ml-15 p-4 space-x-2 py-2 border-b border-white/10">
+    <LiaVolumeMuteSolid size={18} className="hover:opacity-80" />
+    <RxMixerVertical size={18} className="hover:opacity-80" />
+    <div className="flex ml-15">
+      <FaListOl size={18} className="hover:opacity-80" />
+    </div>
 
-      <div className="flex items-center space-x-2 mt-2 left-16.5 relative">
-          <LiaVolumeMuteSolid size={20} />
-          <RxMixerVertical size={20} />
-          <FaListOl size={20} className="relative left-11" />
-      </div>
-      
-      <InstrumentList
-        instrumentList={instrumentList}
-        selectedPatternID={selectedPatternID}
-        numSteps={numSteps}
-        setChannelModalOpen={setChannelModalOpen}
-        setInstrumentName={setInstrumentName}
-        toggleStep={toggleStep}
-        onMute={onMute}
-        onSlotChange={onSlotChange}
-        onSampleLoad={onSampleLoad}
-        onDeleteInstrument={onDeleteInstrument}
-        onSelectSample={onSelectSample}
-      />
+  </div>
 
+  {/* Zone scrollable */}
+  <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-custom px-2 py-2">
+    <InstrumentList
+      {...{ instrumentList, selectedPatternID, numSteps, setChannelModalOpen,
+            setInstrumentName, toggleStep, onMute, onSlotChange, onSampleLoad,
+            onDeleteInstrument, onSelectSample }}
+    />
+
+    <div className="mt-3">
       <DrumRackControls
         numSteps={numSteps}
         setNumSteps={setNumSteps}
         onReset={onReset}
         onDeleteAll={onDeleteAll}
-        onAddToggle={() => setInput(!input)}
+        onAddToggle={() => setInput(v => !v)}
       />
+    </div>
 
+    <div className="mt-3">
       <MiniBrowser />
+    </div>
 
-      {input && (
+    {input && (
+      <div className="mt-3">
         <InstrumentInput
           instrumentName={instrumentName}
           setInstrumentName={setInstrumentName}
           onConfirm={onAddInstrument}
-          onCancel={() => {
-            setInput(false);
-            setInstrumentName('');
-          }}
+          onCancel={() => { setInput(false); setInstrumentName(''); }}
         />
-      )}
+      </div>
+    )}
+  </div>
 
-      {channelModalOpen && (
-        <div className="inset-0 z-50 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full flex items-center justify-center bg-opacity-50">
-          <ChannelModal
-            onClose={() => setChannelModalOpen(false)}
-            instrumentList={instrumentList}
-            setInstrumentList={setInstrumentList}
-            instrumentName={instrumentName}
-            setInstrumentName={setInstrumentName}
-            onRename={onRename}
-            onSelectSample={onSelectSample}
-            channelUrl={instrumentList[instrumentName]?.sampleUrl}
-            onOpenPianoRoll={onOpenPianoRoll}
-          />
-        </div>
-      )}
+  {/* Modal centré avec backdrop correct */}
+  {channelModalOpen && (
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+      <ChannelModal
+        onClose={() => setChannelModalOpen(false)}
+        instrumentList={instrumentList}
+        setInstrumentList={setInstrumentList}
+        instrumentName={instrumentName}
+        setInstrumentName={setInstrumentName}
+        onRename={onRename}
+        onSelectSample={onSelectSample}
+        channelUrl={instrumentList[instrumentName]?.sampleUrl}
+        onOpenPianoRoll={onOpenPianoRoll}
+      />
     </div>
+  )}
+</div>
+
   );
 };
 
