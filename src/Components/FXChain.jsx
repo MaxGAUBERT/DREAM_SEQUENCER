@@ -137,7 +137,7 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
   };
 
   return (
-    <div className="relative gap-10 bg-black scrollbar-custom w-full h-full text-white border-2 overflow-auto shadow-lg flex flex-col">
+    <div className="relative gap-10 bg-black scrollbar-custom w-full h-full text-white overflow-auto shadow-lg flex flex-col">
       <div>
         <button
           onClick={onClose}
@@ -174,7 +174,7 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
               </p>
 
               <select
-                className="w-full bg-gray-900 text-white text-sm p-1 rounded border border-gray-600 mb-2"
+                className="w-full bg-gray-900 text-white text-sm p-1 rounded mb-2"
                 disabled={!assignedChannel}
                 value={instrumentList[s]?.fx}
                 onChange={(e) => handleApplyFX(e, assignedChannel)}
