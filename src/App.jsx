@@ -241,184 +241,147 @@ useEffect(() => {
   }, [currentProject, setInstrumentList]);
 
   return (
-  <div className="w-full h-full absolute bg-gray-900 font-['Orbitron'] text-sm font-bold">
-    <div>
-      <label className="fixed top-5 right-0 text-white-600">
-      {currentProject ? `Project: ${currentProject.name}` : "No project loaded"}
-    </label>
-    </div>
+    <div className="w-full h-full absolute bg-gray-900 font-['Orbitron'] text-sm font-bold overflow-hidden">
 
-    {/* ====== Top bar ====== */}
-    <GlobalColorContextProvider>
-      <ChannelProvider>
-        <StripMenu onAction={handleRunAction} />
+      <div>
+        <label className="fixed top-5 right-0 text-white-600">
+        {currentProject ? `Project: ${currentProject.name}` : "No project loaded"}
+      </label>
+      </div>
 
-        <ModalManager
-          modals={modals}
-          projects={projects}
-          closeModal={closeModal}
-          createProject={createProject}
-          loadProject={loadProject}
-          deleteAllProjects={deleteAllProjects}
-          saveAsProject={saveAsProject}
-        />
+      {/* ====== Top bar ====== */}
+      <GlobalColorContextProvider>
+        <ChannelProvider>
+          <StripMenu onAction={handleRunAction} />
 
-        {/* ====== Workspace (grid) ====== */}
-        <PlayContext>
-          <main
-            className="
-              h-[calc(100vh-50px)]  /* ajuste si ta top bar est plus/moins haute */
-              p-0 overflow-hidden
-              grid gap-0
+          <ModalManager
+            modals={modals}
+            projects={projects}
+            closeModal={closeModal}
+            createProject={createProject}
+            loadProject={loadProject}
+            deleteAllProjects={deleteAllProjects}
+            saveAsProject={saveAsProject}
+          />
+
+          {/* ====== Workspace (grid) ====== */}
+          <PlayContext>
+          <main className="h-[calc(100vh-50px)] p-0 overflow-hidden grid gap-0
               grid-cols-[minmax(0,0.7fr)_minmax(0,1.8fr)_104px]
               xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_120px]
               2xl:grid-cols-[minmax(0,1.90fr)_minmax(0,1.25fr)_85px]
-            "
-          >
-            {/* ===== Colonne GAUCHE : DrumRack (haut) PianoRoll (bas) ===== */}
-          <section className="h-full min-h-0 overflow-hidden">
-            {(openComponents['Drum Rack'] || openComponents['Piano Roll']) ? (
-              <Split
-                direction="vertical"
-                sizes={[50, 67]}
-                minSize={[120, 180]}
-                gutterSize={5}
-                title="Split vertically"
-                className="h-full min-h-0 flex flex-col"
-                gutter={(index, dir) => {
-                  const g = document.createElement('div');
-                  g.className =
-                    'gutter bg-white/10 hover:bg-white/25 cursor-row-resize';
-                  return g;
-                }}
-              >
-                {/* Haut : DrumRack */}
-                <div className="min-h-0 overflow-y-auto overflow-x-hidden">
-                  {openComponents['Drum Rack'] && (
-                    <div className="h-full w-full border-2 border-white rounded-xl text-white ">
-                      <DrumRack
-                        numSteps={numSteps}
-                        setNumSteps={setNumSteps}
-                        patterns={patterns}
-                        instrumentList={instrumentList}
-                        setInstrumentList={setInstrumentList}
-                        selectedPatternID={selectedPatternID}
-                        channelModalOpen={channelModalOpen}
-                        setChannelModalOpen={setChannelModalOpen}
-                        instrumentName={instrumentName}
-                        setInstrumentName={setInstrumentName}
-                        onOpenPianoRoll={openPianoRollForInstrument}
-                        onClose={() =>
-                          setOpenComponents((p) => ({ ...p, 'Drum Rack': false }))
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
+            ">
+              <section className="h-full min-h-0 min-w-0 overflow-hidden">
+                {/* Split vertical DrumRack/PianoRoll */}
 
-                {/* Bas : PianoRoll */}
-                <div className="min-h-0 overflow-y-auto overflow-x-hidden">
-                  {openComponents['Piano Roll'] && (
-                    <div className="h-full w-full min-h-0 border border-white rounded-xl text-white">
-                      <PianoRoll
-                        selectedPatternID={selectedPatternID}
-                        selectedInstrument={pianoRollInstrument}
-                        instrumentList={instrumentList}
-                        setInstrumentList={setInstrumentList}
-                        numSteps={numSteps}
-                        setNumSteps={setNumSteps}
-                        onOpen={() =>
-                          setOpenComponents((p) => ({ ...p, 'Piano Roll': true }))
-                        }
-                        onClose={() =>
-                          setOpenComponents((p) => ({ ...p, 'Piano Roll': false }))
-                        }
-                      />
+              {(openComponents['Drum Rack'] || openComponents['Piano Roll']) ? (
+                <Split
+                  direction="vertical"
+                  sizes={[50, 50]}
+                  minSize={[140, 180]}
+                  gutterSize={5}
+                  className="h-full min-h-0 flex flex-col"
+                  gutter={() => {
+                    const g = document.createElement('div');
+                    g.className = 'gutter bg-white/10 hover:bg-white/25 cursor-row-resize';
+                    return g;
+                  }}
+                  >
+                    {/* Haut : DrumRack */}
+                    <div className="min-h-0 min-w-0 overflow-hidden">
+                      {openComponents['Drum Rack'] && (
+                        <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/15 bg-gray-900">
+                          <DrumRack
+                            {...{ numSteps, setNumSteps, patterns, instrumentList, setInstrumentList,
+                            selectedPatternID, channelModalOpen, setChannelModalOpen,
+                            instrumentName, setInstrumentName }}
+                            onOpenPianoRoll={openPianoRollForInstrument}
+                            onClose={() => setOpenComponents(p => ({ ...p, 'Drum Rack': false }))}
+                          />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </Split>
+
+    {/* Bas : PianoRoll */}
+    <div className="min-h-0 min-w-0 overflow-aut">
+      {openComponents['Piano Roll'] && (
+      <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/10 bg-gray-900">
+
+          <PianoRoll
+            {...{ selectedPatternID, instrumentList, setInstrumentList, numSteps, setNumSteps }}
+            selectedInstrument={pianoRollInstrument}
+            onOpen={() => setOpenComponents(p => ({ ...p, 'Piano Roll': true }))}
+            onClose={() => setOpenComponents(p => ({ ...p, 'Piano Roll': false }))}
+          />
+        </div>
+      )}
+    </div>
+  </Split>
+
             ) : null}
           </section>
 
-            <aside className="h-full min-h-0 overflow-hidden">
-          {!(openComponents['Playlist'] || openComponents['FXChain']) ? null : 
-            (openComponents['Playlist'] && openComponents['FXChain']) ? (
-              <Split
-                direction="vertical"
-                sizes={[67, 33]}
-                minSize={[265, 100]}
-                gutterSize={5}
-                className="h-full min-h-0 flex flex-col"
-                gutter={() => {
-                  const g = document.createElement('div');
-                  g.className = 'gutter bg-white/10 hover:bg-white/25 cursor-row-resize';
-                  return g;
-                }}
-              >
-                {/* Haut : Playlist */}
-                <div className="min-h-0 overflow-y-auto overflow-x-hidden">
-                  <div className="h-full w-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-custom border rounded-xl text-white">
-                    <Playlist
-                      selectedPatternID={selectedPatternID}
-                      colorByIndex={getColorByIndex}
-                      patterns={patterns}
-                      instrumentList={instrumentList}
-                      cells={cells}
-                      setCells={setCells}
-                      numSteps={numSteps}
-                      onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
-                    />
-                  </div>
+          <aside className="h-full min-h-0 min-w-0 overflow-hidden">
+          {openComponents['Playlist'] && openComponents['FXChain'] ? (
+            <Split
+              direction="vertical"
+              sizes={[67, 33]}
+              minSize={[265, 100]}
+              gutterSize={5}
+              className="h-full min-h-0 flex flex-col"
+              gutter={() => {
+                const g = document.createElement('div');
+                g.className = 'gutter bg-white/10 hover:bg-white/25 cursor-row-resize';
+                return g;
+              }}
+            >
+              <div className="min-h-0 min-w-0 overflow-hidden">
+                <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/5 bg-gray-900 scrollbar-custom">
+                  <Playlist {...{ selectedPatternID, patterns, instrumentList, cells, setCells, numSteps }}
+                    colorByIndex={getColorByIndex}
+                    onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
+                  />
                 </div>
+              </div>
 
-          {/* Bas : FXChain */}
-          <div className="min-h-0 overflow-y-auto overflow-x-hidden">
-            <div className="scrollbar-custom border h-full rounded-xl text-white">
-              <FXChain
-                instrumentList={instrumentList}
-                setInstrumentList={setInstrumentList}
-                onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
-              />
-            </div>
-          </div>
-        </Split>
-      ) : (
-        <div className="h-full min-h-0 overflow-hidden">
-          {openComponents['Playlist'] && (
-            <div className="h-full w-full min-h-0 overflow-y-auto overflow-x-hidden scrollbar-custom border rounded-xl text-white">
-              <Playlist
-                selectedPatternID={selectedPatternID}
-                colorByIndex={getColorByIndex}
-                patterns={patterns}
-                instrumentList={instrumentList}
-                cells={cells}
-                setCells={setCells}
-                numSteps={numSteps}
-                onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
-              />
-            </div>
-          )}
-          {openComponents['FXChain'] && (
-            <div className="h-full scrollbar-custom border rounded-xl text-white">
-              <FXChain
-                instrumentList={instrumentList}
-                setInstrumentList={setInstrumentList}
-                onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
-              />
+              <div className="min-h-0 min-w-0 overflow-hidden">
+                <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/5 bg-gray-900 scrollbar-custom">
+                  <FXChain
+                    {...{ instrumentList, setInstrumentList }}
+                    onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
+                  />
+                </div>
+              </div>
+            </Split>
+          ) : (
+            <div className="h-full min-h-0 min-w-0 overflow-hidden">
+              {openComponents['Playlist'] && (
+               <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/10 bg-gray-900">
+                  <Playlist {...{ selectedPatternID, patterns, instrumentList, cells, setCells, numSteps }}
+                    colorByIndex={getColorByIndex}
+                    onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
+                  />
+                </div>
+              )}
+              {openComponents['FXChain'] && (
+               <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/10 bg-gray-900">
+                  <FXChain
+                    {...{ instrumentList, setInstrumentList }}
+                    onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
+                  />
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )
-    }
-            </aside>
+        </aside>
+
 
 
 
           </main>
 
           {/* TransportBar occupe toute la largeur en bas */}
-          <div className="col-span-3 border-t border-white/10">
+          <div className="col-span-3 border-t-2 border-gray/10">
             <TransportBar />
           </div>
           
