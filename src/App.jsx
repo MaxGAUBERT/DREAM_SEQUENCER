@@ -303,9 +303,9 @@ useEffect(() => {
                     </div>
 
     {/* Bas : PianoRoll */}
-    <div className="min-h-0 min-w-0 overflow-aut">
+    <div className="min-h-0 min-w-0">
       {openComponents['Piano Roll'] && (
-      <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/10 bg-gray-900">
+      <div className="h-full w-full min-h-0 min-w-0 overflow-auto scrollbar-custom rounded-xl ring-1 ring-white/10 bg-gray-900">
 
           <PianoRoll
             {...{ selectedPatternID, instrumentList, setInstrumentList, numSteps, setNumSteps }}
