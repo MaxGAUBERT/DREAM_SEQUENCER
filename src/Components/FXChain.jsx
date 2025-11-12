@@ -4,12 +4,14 @@ import useFXChain from "../Hooks/useFXChain";
 import * as Tone from "tone";
 import { usePlayContext } from "../Contexts/PlayContext";
 import { IoClose } from "react-icons/io5";
+import { useGlobalColorContext } from "../Contexts/GlobalColorContext";
 
 const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
   const slotRefs = useRef({});
   const {volume, setVolume} = usePlayContext();
   const {updateInstrumentSlot} = useProjectManager()
   const { slots, selectedSlot, setSelectedSlot, fxParams, setFXParams } = useFXChain();
+  const {colorsComponent} = useGlobalColorContext();
 
   const getChannelAtSlot = (slotNumber) => {
     const entries = Object.entries(instrumentList || {});
@@ -137,7 +139,7 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
   };
 
   return (
-    <div className="relative gap-10 bg-black scrollbar-custom w-full h-full text-white overflow-auto shadow-lg flex flex-col">
+    <div style={{ color: colorsComponent.Text, backgroundColor: colorsComponent.Background }} className="relative gap-10 scrollbar-custom w-full h-full overflow-auto shadow-lg flex flex-col">
       <div>
         <button
           onClick={onClose}
