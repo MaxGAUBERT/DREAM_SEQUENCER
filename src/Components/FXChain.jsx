@@ -5,13 +5,15 @@ import * as Tone from "tone";
 import { usePlayContext } from "../Contexts/PlayContext";
 import { IoClose } from "react-icons/io5";
 import { useGlobalColorContext } from "../Contexts/GlobalColorContext";
+import { useSampleContext } from "../Contexts/ChannelProvider";
 
 const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
   const slotRefs = useRef({});
-  const {volume, setVolume} = usePlayContext();
+  const {volume} = usePlayContext();
   const {updateInstrumentSlot} = useProjectManager()
-  const { slots, selectedSlot, setSelectedSlot, fxParams, setFXParams } = useFXChain();
+  const { slots, selectedSlot, setSelectedSlot, fxParams } = useFXChain();
   const {colorsComponent} = useGlobalColorContext();
+  const {getSampler} = useSampleContext();
 
   const getChannelAtSlot = (slotNumber) => {
     const entries = Object.entries(instrumentList || {});
@@ -22,87 +24,84 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
   };
 
   function applyFXChainToInstrument(instrument, fxName) {
-  if (!instrument?.sampler) return;
+    const instrumentName = selectedSlot.channel;
+    const samplerNode = getSampler(instrumentName);
 
-  // 🔹 Nettoyage de l'ancien FX
-  if (instrument.fx) {
-    instrument.sampler.disconnect(instrument.fx);
-    instrument.fx.dispose?.();
-    instrument.fx = null;
-  }
+    if (!samplerNode) return;
 
-  // 🔹 Si aucun effet sélectionné → on quitte
-  if (!fxName || fxName === "-- Select an effect --") {
-    instrument.sampler.connect(Tone.Destination);
+    // Create volume node if needed
+    if (!instrument.volumeNode) {
+      instrument.volumeNode = new Tone.Volume(0);
+    }
+
+    // Disconnect sampler from any previous routing
+    samplerNode.disconnect();
+
+    // NO FX
+    if (!fxName || fxName === "-- Select an effect --") {
+      instrument.volumeNode.disconnect();
+      instrument.volumeNode.toDestination();
+
+      samplerNode.connect(instrument.volumeNode);
+
+      setInstrumentList(prev => ({
+        ...prev,
+        [instrumentName]: { ...instrument, fx: null }
+      }));
+      return;
+    }
+
+    // CREATE FX
+    let fxNode;
+    switch (fxName) {
+      case "Reverberator":
+        fxNode = new Tone.Reverb({
+          decay: fxParams[fxName].decay,
+          wet: fxParams[fxName].wet
+        });
+        break;
+
+      case "Hypno Chorus":
+        fxNode = new Tone.Chorus({
+          rate: fxParams[fxName].rate,
+          depth: fxParams[fxName].depth,
+          feedback: fxParams[fxName].feedback
+        }).start();
+        break;
+
+      case "Super Delay":
+        fxNode = new Tone.FeedbackDelay({
+          delayTime: fxParams[fxName].delayTime,
+          feedback: fxParams[fxName].feedback
+        });
+        break;
+
+      case "Complex Distortion":
+        fxNode = new Tone.Distortion({
+          distortion: fxParams[fxName].distortion,
+          oversample: fxParams[fxName].oversample
+        });
+        break;
+    }
+
+    // ROUTING
+    instrument.volumeNode.disconnect();
+    instrument.volumeNode.connect(fxNode);
+    fxNode.toDestination();
+
+    samplerNode.connect(instrument.volumeNode);
+
+    // Update state
     setInstrumentList(prev => ({
       ...prev,
-      [selectedSlot.channel]: {
-        ...prev[selectedSlot.channel],
-        fx: null
+      [instrumentName]: {
+        ...instrument,
+        fx: fxName,
+        fxNode
       }
     }));
-    return;
   }
 
-  // 🔹 Création du nouvel effet
-  let fxNode;
-  switch (fxName) {
-    case "Reverberator":
-      fxNode = new Tone.Reverb({
-        decay: fxParams[fxName].decay,
-        wet: fxParams[fxName].wet
-      }).toDestination();
-      break;
-    case "Hypno Chorus":
-      fxNode = new Tone.Chorus({
-        rate: fxParams[fxName].rate,
-        depth: fxParams[fxName].depth,
-        feedback: fxParams[fxName].feedback
-      }).toDestination().start();
-      break;
-    case "Super Delay":
-      fxNode = new Tone.FeedbackDelay({
-        delayTime: fxParams[fxName].delayTime,
-        feedback: fxParams[fxName].feedback
-      }).toDestination();
-      break;
-    case "Complex Distortion":
-      fxNode = new Tone.Distortion({
-        distortion: fxParams[fxName].distortion,
-        oversample: fxParams[fxName].oversample
-      }).toDestination();
-      break;
-    default:
-      fxNode = null; // pas de fallback obligatoire
-  }
-
-  // 🔹 Application du nouvel FX si défini
-  if (fxNode) {
-    instrument.sampler.connect(fxNode);
-    instrument.fx = fxNode;
-  }
-
-  // 🔹 Mise à jour de l'état
-  setInstrumentList(prev => ({
-    ...prev,
-    [selectedSlot.channel]: {
-      ...prev[selectedSlot.channel],
-      fx: fxName || null
-    }
-  }));
-}
-  /*
-  const updateFXParam = (fxName, param, value) => {
-    setFXParams(prev => ({
-      ...prev,
-      [fxName]: {
-        ...prev[fxName],
-        [param]: value
-      }
-    }));
-  };
-
-  */
   const handleApplyFX = (e, assignedChannel) => {
   const selectedFX = e.target.value;
 
@@ -203,7 +202,28 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
                     updateInstrumentSlot(assignedChannel, s);
                   }
                 }}
-                onChange={(e) => setVolume(e.target.value)}
+                onChange={(e) => {
+                    if (!assignedChannel) return;
+
+                    const value = Number(e.target.value); // 0 → 50
+                    
+                    setInstrumentList(prev => {
+                      const inst = prev[assignedChannel];
+                      if (!inst?.volumeNode) return prev;
+
+                
+                      inst.volumeNode.volume.value = value - 50; 
+
+                      return {
+                        ...prev,
+                        [assignedChannel]: {
+                          ...inst,
+                          volume: value
+                        }
+                      };
+                    });
+                  }}
+
               />
             </div>
           );
