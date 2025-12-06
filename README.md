@@ -20,10 +20,9 @@ DREAM_SEQUENCER is built around two main playback modes:
 A dedicated module for rhythm creation and sample playback.
 
 * Load custom audio samples per channel
-* Assign samples to pads / tracks
+* Assign samples to tracks
 * Trigger and play the currently selected pattern
 * Real-time playback in Pattern Mode
-* Per-channel sound control
 
 The DrumRack acts as the rhythmic backbone of DREAM_SEQUENCER, allowing fast construction of beats and groove structures.
 
