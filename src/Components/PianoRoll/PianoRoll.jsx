@@ -161,7 +161,6 @@ const PianoRoll = ({
   const selectedPatternIDRef = useRef(selectedPatternID);
   const noteLabelsRef = useRef([]);
   const playModeRef = useRef();
-  //const {numSteps, setNumSteps} = useProjectManager();
   
   // Hooks
   const { generateChordNotes } = useChordGenerator({
@@ -644,6 +643,7 @@ const PianoRoll = ({
 
     loopRef.current.start(0);
     Tone.Transport.start();
+    
 
     return () => {
       if (loopRef.current) {
@@ -653,6 +653,18 @@ const PianoRoll = ({
      
     };
   }, [isPlaying, COLS, getSampler, getSynth]);
+
+  useEffect(() => {
+    // Quand la lecture s'arrête (isPlaying = false)
+    if (!isPlaying) {
+      Tone.Transport.stop();
+      Tone.Transport.position = 0;
+
+      stepRef.current = 0;
+      setCurrentStep(0);
+    }
+  }, [isPlaying]);
+
 
   // === RENDER
   return (
