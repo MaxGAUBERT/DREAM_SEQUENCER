@@ -8,6 +8,7 @@ import { useGlobalColorContext } from "../Contexts/GlobalColorContext";
 
 const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
   const slotRefs = useRef({});
+  const {volume, setVolume} = usePlayContext();
   const {updateInstrumentSlot} = useProjectManager()
   const { slots, selectedSlot, setSelectedSlot, fxParams, setFXParams } = useFXChain();
   const {colorsComponent} = useGlobalColorContext();
@@ -20,40 +21,19 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
     return entry?.[0] || null;
   };
 
- 
-  function applyFXChainToInstrument(instrument, fxName) { 
-  if (!instrument || !instrument.sampler) return;
-
-  const sampler = instrument.sampler;
-  const canConnect = typeof sampler.connect === "function";
-  const canDisconnect = typeof sampler.disconnect === "function";
+  function applyFXChainToInstrument(instrument, fxName) {
+  if (!instrument?.sampler) return;
 
   // 🔹 Nettoyage de l'ancien FX
   if (instrument.fx) {
-    try {
-      if (canDisconnect) {
-        sampler.disconnect();
-      }
-    } catch (e) {
-      console.warn("Sampler disconnect failed:", e);
-    }
-
-    try {
-      if (typeof instrument.fx.dispose === "function") {
-        instrument.fx.dispose();
-      }
-    } catch (e) {
-      console.warn("FX dispose failed:", e);
-    }
-
+    instrument.sampler.disconnect(instrument.fx);
+    instrument.fx.dispose?.();
     instrument.fx = null;
-  } 
+  }
 
   // 🔹 Si aucun effet sélectionné → on quitte
   if (!fxName || fxName === "-- Select an effect --") {
-    if (canConnect) {
-      sampler.connect(Tone.Destination);
-    }
+    instrument.sampler.connect(Tone.Destination);
     setInstrumentList(prev => ({
       ...prev,
       [selectedSlot.channel]: {
@@ -65,57 +45,41 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
   }
 
   // 🔹 Création du nouvel effet
-  let fxNode = null;
-
+  let fxNode;
   switch (fxName) {
     case "Reverberator":
       fxNode = new Tone.Reverb({
         decay: fxParams[fxName].decay,
-        wet:   fxParams[fxName].wet
-      });
+        wet: fxParams[fxName].wet
+      }).toDestination();
       break;
-
     case "Hypno Chorus":
       fxNode = new Tone.Chorus({
-        rate:     fxParams[fxName].rate,
-        depth:    fxParams[fxName].depth,
+        rate: fxParams[fxName].rate,
+        depth: fxParams[fxName].depth,
         feedback: fxParams[fxName].feedback
-      });
-      fxNode.start();
+      }).toDestination().start();
       break;
-
     case "Super Delay":
       fxNode = new Tone.FeedbackDelay({
         delayTime: fxParams[fxName].delayTime,
-        feedback:  fxParams[fxName].feedback
-      });
+        feedback: fxParams[fxName].feedback
+      }).toDestination();
       break;
-
     case "Complex Distortion":
       fxNode = new Tone.Distortion({
         distortion: fxParams[fxName].distortion,
         oversample: fxParams[fxName].oversample
-      });
+      }).toDestination();
       break;
-
     default:
-      fxNode = null;
+      fxNode = null; // pas de fallback obligatoire
   }
 
   // 🔹 Application du nouvel FX si défini
-  if (fxNode && canConnect) {
-    try {
-      if (canDisconnect) {
-        sampler.disconnect();
-      }
-      sampler.connect(fxNode);
-      if (typeof fxNode.connect === "function") {
-        fxNode.connect(Tone.Destination);
-      }
-      instrument.fx = fxNode;
-    } catch (e) {
-      console.warn("FX routing failed:", e);
-    }
+  if (fxNode) {
+    instrument.sampler.connect(fxNode);
+    instrument.fx = fxNode;
   }
 
   // 🔹 Mise à jour de l'état
@@ -127,8 +91,6 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
     }
   }));
 }
-
-
   /*
   const updateFXParam = (fxName, param, value) => {
     setFXParams(prev => ({
@@ -142,8 +104,6 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
 
   */
   const handleApplyFX = (e, assignedChannel) => {
-
-  if (!assignedChannel) return;
   const selectedFX = e.target.value;
 
   setInstrumentList(prev => {
@@ -164,12 +124,12 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
   useEffect(() => {
     if (selectedSlot.channel !== null) {
       console.log("✅ selectedSlot mis à jour :", selectedSlot, instrumentList[selectedSlot.channel].fx);
+      console.log("Volume pour cet instru:", volume);
     }
   }, [selectedSlot, instrumentList]);
 
   useEffect(() => {
     console.log("🎛 FX actuel :", instrumentList[selectedSlot.channel]?.fx);
-    console.log("🔊 Volume actuel :", instrumentList[selectedSlot.channel]?.volume);
   }, [instrumentList]);
 
 
@@ -233,28 +193,18 @@ const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
                 type="range"
                 min="0"
                 max="50"
-                value={instrumentList[assignedChannel]?.volume ?? 50}
+                defaultValue="0"
+                value={selectedSlot.volume}
                 className="h-50 w-[200px] rotate-[-90deg] mt-4"
                 disabled={!assignedChannel}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  const value = Number(e.target.value);
-                  const db = Tone.gainToDb(value / 50);
-
-                  setInstrumentList(prev => {
-                    const updated = { ...prev };
-
-                    if (updated[assignedChannel]?.volumeNode) {
-                      updated[assignedChannel].volumeNode.volume.value = db;
-                    }
-
-                    updated[assignedChannel].volume = value;
-
-                    return updated;
-                  });
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (assignedChannel){
+                    updateInstrumentSlot(assignedChannel, s);
+                  }
                 }}
+                onChange={(e) => setVolume(e.target.value)}
               />
-
             </div>
           );
         })}

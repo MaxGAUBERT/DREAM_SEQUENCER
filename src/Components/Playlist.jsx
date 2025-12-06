@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { MdDelete } from "react-icons/md";
 import { IoClose } from "react-icons/io5";
 import * as Tone from "tone";
-import { useHistoryContext } from "../Contexts/HistoryProvider";
+
 import { usePlayContext } from "../Contexts/PlayContext";
 import { rowToNoteName } from "./Utils/noteUtils";
 import { useProjectManager } from "../Hooks/useProjectManager";
@@ -63,7 +63,6 @@ const Playlist = ({
   const { isPlaying, playMode, bpm } = usePlayContext();
   const { width, setWidth, height, setHeight, CELL_SIZE } = useProjectManager();
   const { getSampler } = useSampleContext();
-  const {dispatchAction} = useHistoryContext();
 
   const [isLoop, setIsLoop] = useState(true);
   const [currentColumn, setCurrentColumn] = useState(null);
@@ -148,45 +147,14 @@ const Playlist = ({
     };
   }, [isPlaying, playMode, bpm, cells, patterns, numSteps, width, height]);
 
-    const placePattern = useCallback((index) => {
-      const previousValue = cells[index];
-      const newValue = previousValue === selectedPatternID + 1
-      ? null
-      : selectedPatternID + 1;
-
-      dispatchAction({
-        type: "PLACE_PATTERN_IN_PLAYLIST",
-
-        apply: () => {
-          setCells(prev => {
-            const next = [...prev];
-            next[index] = newValue;
-            return next;
-          });
-        },
-
-        revert: () => {
-          setCells(prev => {
-            const next = [...prev];
-            next[index] = previousValue;
-            return next;
-          });
-        }
-      });
-  }, [cells, selectedPatternID, dispatchAction]);
-
-  const handleDeleteAll = () => {
-    dispatchAction({
-      type: "CLEAR_PLAYLIST",
-      apply: () => {
-        setCells(Array(width * height).fill(null));
-      },
-      revert: () => {
-        setCells(cells);
-      }
+  // Prevent re-creation on each render
+  const placePattern = useCallback((index) => {
+    setCells(prev => {
+      const next = [...prev];
+      next[index] = next[index] === selectedPatternID + 1 ? null : selectedPatternID + 1;
+      return next;
     });
-  };
-
+  }, [selectedPatternID]);
 
   return (
     <div className="h-full w-full bg-gray-900 rounded-xl p-3 text-white flex flex-col">
@@ -195,7 +163,7 @@ const Playlist = ({
       <div className="flex justify-between items-center mb-3 bg-gray-800 p-3 rounded-lg">
         <div className="flex items-center gap-4">
           <button
-            onClick={handleDeleteAll}
+            onClick={() => setCells(Array(width * height).fill(null))}
             className="p-2 bg-red-600 hover:bg-red-700 rounded-lg"
           >
             <MdDelete size={18} />
@@ -233,7 +201,7 @@ const Playlist = ({
       <div className="overflow-auto flex-1 border border-gray-700 rounded-md">
         {Array.from({ length: height }).map((_, row) => (
           <div key={row} className="grid items-center odd:bg-gray-700 even:bg-gray-850" style={gridStyle}>
-            <div className="text-xs italic text-gray-300 pl-2">Track {row + 1}</div>
+            <div className="text-xs text-gray-300 pl-2">Track {row + 1}</div>
 
             {Array.from({ length: width }).map((_, col) => {
               const index = row * width + col;
