@@ -650,10 +650,7 @@ const PianoRoll = ({
         loopRef.current.dispose();
         loopRef.current = null;
       }
-      Tone.Transport.stop();
-      Tone.Transport.cancel();
-      setCurrentStep(0);
-      stepRef.current = 0;
+     
     };
   }, [isPlaying, COLS, getSampler, getSynth]);
 
