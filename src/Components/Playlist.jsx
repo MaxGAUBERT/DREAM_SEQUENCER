@@ -29,7 +29,9 @@ function resizeCells(prevCells, oldWidth, oldHeight, newWidth, newHeight) {
 }
 
 // Cell memoized = énorme gain FPS
-const Cell = React.memo(({ cell, index, onClick, isActive, color, size }) => {
+const Cell = React.memo(({ cell, index, onClick, isActive, color, size}) => {
+
+
   return (
     <button
       onClick={() => onClick(index)}
@@ -41,7 +43,7 @@ const Cell = React.memo(({ cell, index, onClick, isActive, color, size }) => {
         height: size * 0.6
       }}
     >
-      {cell && (
+     {cell&& (
         <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white pointer-events-none select-none">
           {cell}
         </span>
@@ -49,6 +51,7 @@ const Cell = React.memo(({ cell, index, onClick, isActive, color, size }) => {
     </button>
   );
 });
+
 
 const Playlist = ({
   selectedPatternID,
@@ -68,10 +71,12 @@ const Playlist = ({
   const [currentColumn, setCurrentColumn] = useState(null);
   const [prevDimensions, setPrevDimensions] = useState({ width, height });
 
+
   // Memo grid dimensions
   const gridStyle = useMemo(() => ({
     gridTemplateColumns: `80px repeat(${width}, ${CELL_SIZE}px)`
   }), [width, CELL_SIZE]);
+
 
   // ======= DIM RESIZE OPTIM =======
   useEffect(() => {
@@ -211,12 +216,13 @@ const Playlist = ({
                 <Cell
                   key={index}
                   index={index}
-                  cell={cell}
+                  cell={cell ? cell : null}
                   onClick={placePattern}
                   isActive={isPlaying && currentColumn === col}
                   color={cell ? colorByIndex(cell - 1) : null}
                   size={CELL_SIZE}
                 />
+
               );
             })}
           </div>
