@@ -4,16 +4,16 @@ import "./index.css";
 import App from "./App";
 import { HistoryProvider } from "./Contexts/HistoryProvider";
 import { SettingsProvider } from "./Contexts/SettingsContexts";
-import { ThemeProvider } from "../src/Contexts/ThemeContext";
+import { ThemeProvider } from "./Contexts/ThemeContext";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ThemeProvider>
-        <SettingsProvider>
-          <HistoryProvider>
-            <App />
-          </HistoryProvider>
-        </SettingsProvider>
+      <SettingsProvider>
+        <HistoryProvider>
+          <App />
+        </HistoryProvider>
+      </SettingsProvider>
     </ThemeProvider>
   </StrictMode>
 );
