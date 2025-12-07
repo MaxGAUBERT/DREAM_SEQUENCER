@@ -1,21 +1,29 @@
-// tailwind.config.js
-export default {
+module.exports = {
+  darkMode: "class",
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  safelist: [
-    "bg-red-500",
-    "bg-blue-500",
-    "bg-green-500",
-    "bg-yellow-500",
-    "bg-pink-500",
-    "bg-purple-500",
-    "bg-orange-500",
-    "bg-teal-500",
+    "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        neon: {
+          bg: "#0d0221",
+          text: "#7DF9FF",
+          accent: "#ff0099",
+        },
+        studio: {
+          bg: "#1E1E1E",
+          text: "#FFD369",
+          accent: "#FF8800",
+        },
+        forest: {
+          bg: "#0b2812",
+          text: "#b5f7c8",
+          accent: "#2ecc71",
+        },
+      },
+    },
   },
   plugins: [],
-}
+};
