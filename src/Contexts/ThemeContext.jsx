@@ -1,12 +1,27 @@
-import { createContext, useContext, useMemo } from "react";
-import { useTheme } from "next-themes";
+import { createContext, useContext, useState, useEffect, useMemo } from "react";
 
-const ThemeContext = createContext();
+// Contexte
+const ThemeContext = createContext(null);
 
-export function ThemeProviderContext({ children }) {
-  const { theme } = useTheme();
+// Provider principal, sans next-themes,
+// version compatible Vite / Vercel / React
+export function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "light";
+    return localStorage.getItem("theme") || "light";
+  });
 
-  // Styles globaux par thème
+  // appliquer la classe HTML
+  useEffect(() => {
+    const root = document.documentElement;
+
+    root.classList.remove("light", "dark", "neon", "studio", "forest");
+
+    root.classList.add(theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  // Styles globaux dérivés du thème
   const themeStyles = useMemo(() => {
     switch (theme) {
       case "light":
@@ -54,11 +69,9 @@ export function ThemeProviderContext({ children }) {
           accent: "#2ecc71",
         };
 
-      case "system":
       default:
-        // next-themes gère system mais on choisit ici un fallback
         return {
-          name: "system",
+          name: "light",
           bg: "#ffffff",
           text: "#111111",
           panel: "#f3f3f3",
@@ -68,10 +81,10 @@ export function ThemeProviderContext({ children }) {
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, themeStyles }}>
+    <ThemeContext.Provider value={{ theme, setTheme, themeStyles }}>
       {children}
     </ThemeContext.Provider>
   );
 }
 
-export const useThemeContext = () => useContext(ThemeContext);
+export const useTheme = () => useContext(ThemeContext);
