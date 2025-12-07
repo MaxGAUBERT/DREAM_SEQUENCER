@@ -13,7 +13,7 @@ export default function useDrumRackHandlers({
   numSteps,
   selectedPatternID
 }) {
-  const { assignSampleToInstrument } = useProjectManager();
+  const { assignSampleToInstrument, initializeInstrumentList } = useProjectManager();
   const { getSampler, loadSample } = useSampleContext();
   const { addAction, undo, redo, canUndo, canRedo } = useHistoryContext();
   const { setSelectedSlot, selectedSlot} = useFXChain();
@@ -219,11 +219,11 @@ export default function useDrumRackHandlers({
     addAction(action);
   }, [setInstrumentList, instrumentList, selectedSlot, setSelectedSlot, addAction]);
 
-  const handleReset = useCallback(() => {
+  const handleClear = useCallback(() => {
     const prevState = { ...instrumentList };
     
     const action = {
-      type: "resetPattern",
+      type: "clearPattern",
       payload: { selectedPatternID, numSteps, prevState },
       apply: () => {
         setInstrumentList(prev => {
@@ -303,6 +303,40 @@ export default function useDrumRackHandlers({
     action.apply();
     addAction(action);
   }, [instrumentName, instrumentList, setInstrumentList, setInstrumentName, selectedSlot, setSelectedSlot, addAction]);
+
+  const handleReset = useCallback(() => {
+  // snapshot pour UNDO (copie profonde)
+  const prevState = structuredClone(instrumentList);
+
+  // reconstruire la drum rack par défaut
+  const defaultInstruments = initializeInstrumentList();
+
+  const action = {
+    type: "resetAllInstruments",
+    payload: { prevState },
+
+    apply: () => {
+      setInstrumentList(structuredClone(defaultInstruments));
+      setSelectedSlot({ channel: null, slot: 0 }); // reset FX chain
+    },
+
+    revert: () => {
+      setInstrumentList(structuredClone(prevState));
+      setSelectedSlot({ channel: null, slot: 0 });
+    }
+  };
+
+  action.apply();
+  addAction(action);
+
+}, [
+  instrumentList,
+  setInstrumentList,
+  addAction,
+  setSelectedSlot
+]);
+
+
 
   const handleAddInstrument = useCallback((e) => {
     e?.preventDefault?.();
@@ -412,6 +446,7 @@ export default function useDrumRackHandlers({
     onSlotChange: handleSlotChange,
     onSampleLoad: handleSampleLoad,
     onDeleteInstrument: handleDeleteInstrument,
+    onClear: handleClear,
     onReset: handleReset,
     onDeleteAll: handleDeleteAll,
     onRename: handleRename,
