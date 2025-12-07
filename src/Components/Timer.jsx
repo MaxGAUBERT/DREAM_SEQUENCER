@@ -11,7 +11,6 @@ const formatTime = (totalSeconds) => {
 
 
 const Timer = ({ isPlaying }) => {
-  console.log("isPlaying from props:", isPlaying);
   const [time, setTime] = useState(0); // en secondes
 
   useEffect(() => {
