@@ -6,6 +6,7 @@ import { PiMetronomeBold } from "react-icons/pi";
 import * as Tone from "tone";
 import Timer from "./Timer";
 import { useGlobalColorContext } from "../Contexts/GlobalColorContext";
+import {useSettings} from "../Contexts/SettingsContexts";
 
 const TransportBar = () => {
     const {bpm, setBpm, metronome, metronomeSampler, setMetronome, isPlaying, setIsPlaying, playMode, setPlayMode, sequencesRef} = usePlayContext();
