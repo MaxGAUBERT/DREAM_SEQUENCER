@@ -204,7 +204,7 @@ export const TopBar = ({
         <IoClose size={15} />
       </button>
       <label className="static left-2 px-2 py-2 bg-gray-800 rounded text-sm font-medium">
-        {selectedInstrument}
+        {selectedInstrument || "No Instrument Selected"}
       </label>
 
       {/* Mode Buttons */}
