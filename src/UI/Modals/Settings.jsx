@@ -6,6 +6,7 @@ import { FaRegKeyboard } from "react-icons/fa";
 import { IoMdHome } from "react-icons/io";
 import { FcAbout } from "react-icons/fc";
 import { useTheme } from "../../Contexts/ThemeContext";
+import { useSettings } from "../../Contexts/SettingsContexts";
 
 
 function classNames(...arr){ return arr.filter(Boolean).join(" "); }
@@ -21,6 +22,7 @@ function Settings({
   const overlayRef = useRef(null);
   const firstFocusableRef = useRef(null);
   const { theme, setTheme } = useTheme();
+  const {settings, updateSetting} = useSettings();
 
   useEffect(() => { setActive(initialTab); }, [initialTab]);
 
@@ -75,31 +77,15 @@ function Settings({
     content: (
       <div className="flex flex-col gap-4">
         <label className="flex flex-col">
-          <span>BPM</span>
+          <span>Default BPM</span>
           <input
             type="number"
             min="20"
             max="300"
-            defaultValue={120}
             className="bg-black/40 border rounded p-1"
+            value={settings.bpm}
+            onChange={(e) => updateSetting("bpm", Number(e.target.value))}
           />
-        </label>
-        <label className="flex flex-col">
-          <span>Sample rate</span>
-          <select className="bg-black/40 border rounded p-1">
-            <option>44100 Hz</option>
-            <option>48000 Hz</option>
-            <option>96000 Hz</option>
-          </select>
-        </label>
-        <label className="flex flex-col">
-          <span>Buffer Size</span>
-          <select className="bg-black/40 border rounded p-1">
-            <option>128</option>
-            <option>256</option>
-            <option>512</option>
-            <option>1024</option>
-          </select>
         </label>
       </div>
     ),
