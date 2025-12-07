@@ -12,8 +12,8 @@ export default function LoadProjectModal({ savedProjects, onClose, onLoad, onDel
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: colorsComponent.BackgroundIO, color: colorsComponent.TextIO, borderColor: colorsComponent.Border }}>
-      <div className="p-6 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] relative bg-white">
-        <h2 className="text-2xl font-bold mb-4">Load Project</h2>
+      <div className="p-6 rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] relative overflow-y-auto bg-white border">
+        <h2 className="text-2xl font-bold mb-4 text-black">Load Project</h2>
          <button 
             onClick={(e) => {
               e.stopPropagation();
