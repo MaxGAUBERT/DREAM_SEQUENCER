@@ -5,6 +5,7 @@ import { IoMdSettings } from "react-icons/io";
 import { FaRegKeyboard } from "react-icons/fa";
 import { IoMdHome } from "react-icons/io";
 import { FcAbout } from "react-icons/fc";
+import { useTheme } from "next-themes";
 
 function classNames(...arr){ return arr.filter(Boolean).join(" "); }
 
@@ -18,6 +19,7 @@ function Settings({
   const [active, setActive] = useState(initialTab);
   const overlayRef = useRef(null);
   const firstFocusableRef = useRef(null);
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => { setActive(initialTab); }, [initialTab]);
 
@@ -42,10 +44,25 @@ function Settings({
     label: "General",
     content: (
       <div className="flex flex-col gap-4">
-        <label className="flex items-center gap-2">
-          <input type="checkbox" />
-          <span>Thème sombre</span>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium">Thème</span>
+
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value)}
+            className="border rounded p-1 bg-gray-100 dark:bg-gray-800"
+          >
+            <option value="light">Clair</option>
+            <option value="dark">Sombre</option>
+            <option value="system">Système</option>
+
+            {/* Thèmes personnalisés */}
+            <option value="neon">Neon</option>
+            <option value="studio">Studio</option>
+            <option value="forest">Forest</option>
+          </select>
         </label>
+
         <label className="flex items-center gap-2">
           <input type="checkbox" />
           <span>Activer l’historique global (undo/redo)</span>

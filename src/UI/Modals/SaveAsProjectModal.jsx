@@ -43,7 +43,7 @@ const SaveAsProjectModal = ({ onClose, onSaveAs }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-10" style={{backgroundColor: colorsComponent.BackgroundIO, color: colorsComponent.TextIO}}>
-      <div className="p-6 rounded-xl shadow-xl w-full max-w-md relative bg-white">
+      <div className="p-6 rounded-xl shadow-xl w-full max-w-md relative" style={{backgroundColor: colorsComponent.Panel, color: colorsComponent.Text}}>
         <h2 className="text-2xl font-bold mb-4">Save Project As</h2>
         
         <form onSubmit={handleSubmit} className="space-y-4">
