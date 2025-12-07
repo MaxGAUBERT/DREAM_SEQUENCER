@@ -9,9 +9,6 @@ import ChannelModal from "../../UI/Modals/ChannelModal";
 import { usePlayContext } from "../../Contexts/PlayContext";
 import * as Tone from "tone";
 import {useSampleContext} from "../../Contexts/ChannelProvider";
-import { LiaVolumeMuteSolid } from "react-icons/lia";
-import { RxMixerVertical } from "react-icons/rx";
-import { FaListOl } from "react-icons/fa";
 import { IoClose } from "react-icons/io5";
 import MiniBrowser from "./MiniBrowser";
 
@@ -38,6 +35,7 @@ const DrumRack = ({
     onSlotChange,
     onSampleLoad,
     onDeleteInstrument,
+    onClear,
     onReset,
     onDeleteAll,
     onRename,
@@ -170,6 +168,7 @@ const DrumRack = ({
       <DrumRackControls
         numSteps={numSteps}
         setNumSteps={setNumSteps}
+        onClear={onClear}
         onReset={onReset}
         onDeleteAll={onDeleteAll}
         onAddToggle={() => setInput(v => !v)}

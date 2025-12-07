@@ -3,10 +3,11 @@ import React from "react";
 import { IoAddOutline } from "react-icons/io5";
 import { MdDeleteOutline } from "react-icons/md";
 import { GrClearOption } from "react-icons/gr";
+import { RiResetLeftLine } from "react-icons/ri";
 
 const iconSize = 20;
 
-const DrumRackControls = ({ numSteps, setNumSteps, onReset, onDeleteAll, onAddToggle }) => {
+const DrumRackControls = ({ numSteps, setNumSteps, onClear, onReset, onDeleteAll, onAddToggle }) => {
 
   return (
     <>
@@ -19,8 +20,12 @@ const DrumRackControls = ({ numSteps, setNumSteps, onReset, onDeleteAll, onAddTo
           <MdDeleteOutline size={iconSize} />
         </button>
 
-        <button onClick={onReset} className="hover:text-white" title="Clear current pattern">
+        <button onClick={onClear} className="hover:text-white" title="Clear all steps from current pattern">
           <GrClearOption size={iconSize} />
+        </button>
+
+        <button onClick={onReset} className="hover:text-white" title="Reset channels to default">
+          <RiResetLeftLine size={iconSize}/>
         </button>
       </div>
 
