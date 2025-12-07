@@ -158,22 +158,12 @@ const DrumRack = ({
     </button>
   </div>
 
-  {/* Toolbar icônes */}
-  <div className="flex justify-left ml-15 p-4 space-x-2 py-2 border-b border-white/10">
-    <LiaVolumeMuteSolid size={18} className="hover:opacity-80" />
-    <RxMixerVertical size={18} className="hover:opacity-80" />
-    <div className="flex ml-15">
-      <FaListOl size={18} className="hover:opacity-80" />
-    </div>
-
-  </div>
-
   {/* Zone scrollable */}
   <div className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden scrollbar-custom px-2 py-2">
     <InstrumentList
       {...{ instrumentList, selectedPatternID, numSteps, setChannelModalOpen,
             setInstrumentName, toggleStep, onMute, onSlotChange, onSampleLoad,
-            onDeleteInstrument, onSelectSample }}
+            onDeleteInstrument, onSelectSample, onOpenPianoRoll }}
     />
 
     <div className="mt-3">

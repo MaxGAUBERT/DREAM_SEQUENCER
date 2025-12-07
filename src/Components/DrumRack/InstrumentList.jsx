@@ -1,5 +1,6 @@
 import React from "react";
 import { FiUpload } from "react-icons/fi";
+import { MdPiano } from "react-icons/md";
 
 const STEP_SIZE = 24; 
 
@@ -14,8 +15,8 @@ const InstrumentList = ({
   onSlotChange,
   onSampleLoad,
   onDeleteInstrument,
-  // 👇 NOUVEAU: permet de déposer une URL externe (depuis MiniBrowser)
-  onSelectSample, // (instrumentName, url)
+  onSelectSample,
+  onOpenPianoRoll
 }) => {
   // petite aide visuelle facultative (classes utilitaires)
   const dropClasses =
@@ -58,7 +59,7 @@ const InstrumentList = ({
         return (
           <div key={name} className="flex items-center border-b border-gray-600">
             <div
-              className={`flex items-center gap-3 w-64 min-w-64 p-2 bg-gray-800 ${dropClasses}`}
+              className={`flex items-center gap-1 w-64 min-w-64 p-2 bg-gray-800 ${dropClasses}`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
@@ -82,11 +83,20 @@ const InstrumentList = ({
               <input
                 type="checkbox"
                 checked={data.muted}
+                title="Mute / Unmute"
                 onChange={(e) => onMute(name, e.target.checked)}
               />
 
+              <button
+                onClick={() => onOpenPianoRoll(name)}
+                title="Piano Roll"
+              >
+                <MdPiano size={16} />
+              </button>
+
               <input
                 type="number"
+                title="Assign to mixer"
                 min={0}
                 max={200}
                 step={1}
@@ -100,11 +110,12 @@ const InstrumentList = ({
                   setChannelModalOpen(true);
                   setInstrumentName(name);
                 }}
+                title={`Edit ${name}`}
                 onMouseDown={(e) => {
                   e.preventDefault();
                   if (e.button === 2) onDeleteInstrument(name);
                 }}
-                className="font-semibold hover:text-white text-gray-300"
+                className="font-semibold hover:bg-gray-600 text-gray-300"
               >
                 {name}
               </button>
