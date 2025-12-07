@@ -4,19 +4,16 @@ import "./index.css";
 import App from "./App";
 import { HistoryProvider } from "./Contexts/HistoryProvider";
 import { SettingsProvider } from "./Contexts/SettingsContexts";
-import { ThemeProvider } from "next-themes";
-import { ThemeProviderContext } from "./Contexts/ThemeContext";
+import { ThemeProvider } from "../src/Contexts/ThemeContext";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <ThemeProvider attribute="class" defaultTheme="dark">
-      <ThemeProviderContext>
+    <ThemeProvider>
         <SettingsProvider>
           <HistoryProvider>
             <App />
           </HistoryProvider>
         </SettingsProvider>
-      </ThemeProviderContext>
     </ThemeProvider>
   </StrictMode>
 );
