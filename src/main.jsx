@@ -5,9 +5,11 @@ import App from "./App";
 import { HistoryProvider } from "./Contexts/HistoryProvider";
 import { SettingsProvider } from "./Contexts/SettingsContexts";
 import { ThemeProvider } from "./Contexts/ThemeContext";
+import ChannelProvider from "./Contexts/ChannelProvider";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
+    <ChannelProvider>
     <ThemeProvider>
       <SettingsProvider>
         <HistoryProvider>
@@ -15,5 +17,6 @@ createRoot(document.getElementById("root")).render(
         </HistoryProvider>
       </SettingsProvider>
     </ThemeProvider>
+    </ChannelProvider>
   </StrictMode>
 );

@@ -1,50 +1,55 @@
 import { createContext, useContext, useRef } from "react";
 import * as Tone from "tone";
 
-// Création du contexte
 const SampleContext = createContext(null);
-
-// Hook pour y accéder facilement
 export const useSampleContext = () => useContext(SampleContext);
 
-// Provider
 export const ChannelProvider = ({ children }) => {
-  const samplersRef = useRef({}); 
+  const samplersRef = useRef({});
 
-   const loadSample = (instrumentName, sampleUrl) => {
+  // Charger un nouveau sampler
+  const loadSample = (instrumentName, sampleUrl) => {
     if (!instrumentName || !sampleUrl) {
       return Promise.reject(new Error("loadSample: bad arguments"));
     }
-    // Remplace proprement l'ancien sampler s'il existe
+
+    // Détruire l'ancien sampler
     const old = samplersRef.current[instrumentName];
     if (old) {
       try { old.dispose(); } catch {}
-      samplersRef.current[instrumentName] = undefined;
     }
+
+    samplersRef.current[instrumentName] = null;
 
     return new Promise((resolve) => {
       const sampler = new Tone.Sampler({
         urls: { C4: sampleUrl },
         onload: () => {
           samplersRef.current[instrumentName] = sampler;
-          console.log(`Sampler loaded for ${instrumentName}`);
+          console.log(`🎵 Sampler loaded for ${instrumentName}`);
           resolve(sampler);
         },
       }).toDestination();
     });
   };
 
-  const getSampler = (instrumentName) =>
-    samplersRef.current?.[instrumentName] || null;
+  // Détruire explicitement un sampler
+  const unloadSample = (instrumentName) => {
+    const old = samplersRef.current[instrumentName];
+    if (old) {
+      try { old.dispose(); } catch {}
+    }
+    samplersRef.current[instrumentName] = null;
+    console.log(`🗑 Sampler unloaded for ${instrumentName}`);
+  };
 
-
-  const contextValue = {
-    loadSample,
-    getSampler
+  // Récupérer un sampler
+  const getSampler = (instrumentName) => {
+    return samplersRef.current[instrumentName] || null;
   };
 
   return (
-    <SampleContext.Provider value={contextValue}>
+    <SampleContext.Provider value={{ loadSample, unloadSample, getSampler }}>
       {children}
     </SampleContext.Provider>
   );

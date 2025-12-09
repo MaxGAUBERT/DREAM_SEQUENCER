@@ -51,7 +51,7 @@ const DrumRack = ({
   });
 
   const {isPlaying, playMode, bpm, sequencesRef} = usePlayContext();
-  const {getSampler} = useSampleContext();
+  const {getSampler, loadSample} = useSampleContext();
 
   function padPattern(pattern, numSteps) {
     const padded = [...pattern];
@@ -88,10 +88,24 @@ const DrumRack = ({
 
     Object.entries(instrumentList).forEach(([instrumentName, instrumentData]) => {
       const rawPattern = instrumentData.grids?.[selectedPatternID];
-      const sampler = getSampler(instrumentName);
+
+      let sampler = getSampler(instrumentName);
+
+      // Si aucun sampler n'existe encore, DrumRack demande au ChannelProvider de le charger
+      if (!sampler) {
+        const url = instrumentData.sampleUrl;
+        if (!url) return; // pas de sample → canal muet
+
+        console.log(`↻ DrumRack loading sampler for ${instrumentName}: ${url}`);
+
+        loadSample(instrumentName, url);
+        return; // attendre le prochain passage du useEffect
+      }
+
+
 
       if (!Array.isArray(rawPattern)) return;
-      if (instrumentData.muted || playMode !== 'Pattern') return;
+      if (instrumentData.muted || playMode !== "Pattern") return;
 
       const pattern = padPattern(rawPattern, numSteps);
       const hasActiveSteps = pattern.some(step => step === true);
@@ -100,7 +114,7 @@ const DrumRack = ({
       try {
         const seq = new Tone.Sequence((time, stepIndex) => {
           if (pattern[stepIndex]) {
-            if (sampler && sampler.loaded !== false) {
+            if (sampler.loaded !== false) {
               sampler.triggerAttackRelease("C4", "4n", time);
             }
           }
@@ -113,6 +127,7 @@ const DrumRack = ({
         console.error(`Error creating sequence for ${instrumentName}:`, error);
       }
     });
+
 
     // Démarrer le transport seulement s'il y a des séquences valides
     if (hasValidSequences) {
@@ -135,6 +150,7 @@ const DrumRack = ({
     // Cleanup au démontage
     return cleanup;
   }, [isPlaying, bpm, playMode, numSteps, instrumentList, selectedPatternID]);
+
 
   return (
     <div

@@ -100,7 +100,8 @@ export default function App() {
     setNumSteps,
     deleteAllProjects, 
     openComponents,
-    setOpenComponents
+    setOpenComponents, 
+    DEFAULT_SAMPLES,
   } = useProjectManager();
 
   const [pianoRollInstrument, setPianoRollInstrument] = useState(null);
@@ -251,7 +252,7 @@ useEffect(() => {
 
       {/* ====== Top bar ====== */}
       <GlobalColorContextProvider>
-        <ChannelProvider>
+        <ChannelProvider instrumentList={instrumentList} DEFAULT_SAMPLES={DEFAULT_SAMPLES}>
           <StripMenu onAction={handleRunAction} />
 
           <ModalManager

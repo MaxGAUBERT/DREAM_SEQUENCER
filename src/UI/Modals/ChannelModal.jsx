@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useSoundBank } from '../../Hooks/useSoundBank';
 import { useFXChain } from '../../Hooks/useFXChain';
+import { useProjectManager } from '../../Hooks/useProjectManager';
+
 
 const ChannelModal = ({ 
   onClose, 
@@ -14,12 +16,14 @@ const ChannelModal = ({
   const [activeTab, setActiveTab] = useState("General");
   const [localName, setLocalName] = useState(instrumentName);
   const [selectedSoundId, setSelectedSoundId] = useState(null);
-  const { setSelectedSlot, selectedSlot } = useFXChain();
+  const {selectedSlot } = useFXChain();
 
   const {
     audioObjects, 
     soundBank: bank
   } = useSoundBank();
+
+  const {resetSampleForInstrument, instrumentList} = useProjectManager();
   
   // Synchroniser avec le nom de l'instrument quand il change
   useEffect(() => {
@@ -44,9 +48,6 @@ const ChannelModal = ({
       : readable;
   }
 
-  useEffect(() => {
-    
-  })
   const handleSave = () => {
     if (onRename) {
       onRename(localName);
@@ -57,7 +58,7 @@ const ChannelModal = ({
     // Attribuer un sample si sélectionné
     if (onSelectSample && selectedSoundId && audioObjects[selectedSoundId]) {
       const soundObject = audioObjects[selectedSoundId];
-      const rawPath = soundObject.soundData.url;
+      const rawPath = soundObject.url;
       const displayName = cleanSampleName(rawPath, 20);
 
       const sampleData = {
@@ -73,17 +74,11 @@ const ChannelModal = ({
   };
 
   const handleReset = () => {
-    setLocalName(instrumentName);
-    
-    if (selectedSlot) {
-      setSelectedSlot({channel: null, slot: null});
-    }
-    
-    onSelectSample("", instrumentName);
-    if (typeof dispatch === 'function') {
-      dispatch({ type: "RESET_ALL" });
-    }
-  };
+  resetSampleForInstrument(instrumentName); 
+  setSelectedSoundId(null);                 
+  onClose();
+};
+
 
   const handleCancel = () => {
     setLocalName(instrumentName);
@@ -110,7 +105,12 @@ const ChannelModal = ({
            <div>
             <p>Channel properties</p>
             <label className="block text-sm text-red-600 font-medium mb-2">
-              Sample url: {channelUrl}
+              Sample url: {
+                selectedSoundId && audioObjects[selectedSoundId]
+                  ? audioObjects[selectedSoundId].url
+                  : instrumentList[instrumentName]?.sampleUrl
+              }
+
             </label>
             <label className="block text-sm text-gray-600 font-medium mb-2">
               Rename {instrumentName}
@@ -136,7 +136,7 @@ const ChannelModal = ({
                 <option value="">-- Select --</option>
                 {Object.entries(audioObjects).map(([soundId, soundObj]) => (
                   <option key={soundId} value={soundId}>
-                    {soundObj.url ? soundObj.name : soundObj.soundData.name}
+                    {soundObj.name}
                   </option>
                 ))}
               </select>
