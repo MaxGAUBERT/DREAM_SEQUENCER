@@ -14,6 +14,7 @@ export function SettingsProvider({ children }) {
         bpm: 130,
         sampleRate: 44100,
         bufferSize: 256,
+        channels: null
       };
     }
 

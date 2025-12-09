@@ -3,6 +3,7 @@ import { stringify, parse } from "flatted";
 import { useSoundBank } from "./useSoundBank";
 import * as Tone from "tone";
 import { useSampleContext } from "../Contexts/ChannelProvider";
+import { useSettings } from "../Contexts/SettingsContexts";
 
 function getColorByIndex(i) {
   const colors = [
@@ -38,6 +39,7 @@ export function useProjectManager() {
       setAudioObjects
     } = useSoundBank();
     const { unloadSample, loadSample } = useSampleContext();
+    const { settings } = useSettings();
 
     const initLength = 8;
 
@@ -54,13 +56,17 @@ export function useProjectManager() {
 
     const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
     
-    const DEFAULT_INSTRUMENTS = ["Kick", "Snare", "HiHat", "Clap"];
+    const DEFAULT_INSTRUMENTS = Array.from({ length: settings.channels }, (_, i) => {
+      const DEFAULTS = ["Kick", "Snare", "HiHat", "Clap"];
+      return DEFAULTS[i] || `Channel ${i + 1}`;
+    });
+
 
     const DEFAULT_SAMPLES = {
-    Kick: "/Audio/Drums/Progressive_Kick.wav",
-    Snare: "/Audio/Drums/VEC1_Snare_025.wav",
-    HiHat: "/Audio/Drums/VEC4_Closed_HH_018.wav",
-    Clap: "/Audio/Drums/VEH3_Claps_011.wav",
+      Kick: "/Audio/Drums/Progressive_Kick.wav",
+      Snare: "/Audio/Drums/VEC1_Snare_025.wav",
+      HiHat: "/Audio/Drums/VEC4_Closed_HH_018.wav",
+      Clap: "/Audio/Drums/VEH3_Claps_011.wav",
   };
 
 

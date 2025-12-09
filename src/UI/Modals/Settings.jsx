@@ -50,7 +50,7 @@ function Settings({
        <select
           value={theme}
           onChange={(e) => setTheme(e.target.value)}
-          className="border rounded p-1 bg-gray-100 dark:bg-gray-800"
+          className="border rounded p-1 bg-gray-100 dark:bg-gray-200"
         >
           <option value="light">Clair</option>
           <option value="dark">Sombre</option>
@@ -87,6 +87,19 @@ function Settings({
             onChange={(e) => updateSetting("bpm", Number(e.target.value))}
           />
         </label>
+
+        <label className="flex flex-col">
+          <input
+            type="number"
+            className="bg-black/40 border rounded p-1"
+            value={settings.channels}
+            onChange={(e) => updateSetting("channels", Number(e.target.value))}
+          />
+          <span>Number of default channels</span>
+        </label>
+
+
+
       </div>
     ),
   },

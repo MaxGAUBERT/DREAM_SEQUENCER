@@ -4,6 +4,7 @@ import { useProjectManager } from "./useProjectManager";
 import { useSampleContext } from "../Contexts/ChannelProvider";
 import { useHistoryContext } from "../Contexts/HistoryProvider";
 import useFXChain from "./useFXChain";
+import { useSettings } from "../Contexts/SettingsContexts";
 
 export default function useDrumRackHandlers({
   instrumentName,
@@ -17,6 +18,31 @@ export default function useDrumRackHandlers({
   const { getSampler, loadSample } = useSampleContext();
   const { addAction, undo, redo, canUndo, canRedo } = useHistoryContext();
   const { setSelectedSlot, selectedSlot} = useFXChain();
+  const {settings} = useSettings();
+
+  function cloneInstrumentListSafe(list) {
+  if (!list || typeof list !== "object") return {};
+
+  const clone = {};
+
+  for (const [name, inst] of Object.entries(list)) {
+    const {
+      sample,
+      sampler,
+      player,
+      context,
+      buffer,
+      audioBuffer,
+      audioContext,
+      ...rest
+    } = inst;
+
+    clone[name] = structuredClone(rest);
+  }
+
+  return clone;
+}
+
 
   useEffect(() => {
     console.log("SelectedSlot updated:", selectedSlot);
@@ -303,12 +329,13 @@ export default function useDrumRackHandlers({
     action.apply();
     addAction(action);
   }, [instrumentName, instrumentList, setInstrumentList, setInstrumentName, selectedSlot, setSelectedSlot, addAction]);
+  
 
   const handleReset = useCallback(() => {
-  // snapshot pour UNDO (copie profonde)
-  const prevState = structuredClone(instrumentList);
+  // snapshot SAFE pour l’UNDO
+  const prevState = cloneInstrumentListSafe(instrumentList);
 
-  // reconstruire la drum rack par défaut
+  // reconstruire selon settings.channels
   const defaultInstruments = initializeInstrumentList();
 
   const action = {
@@ -316,12 +343,12 @@ export default function useDrumRackHandlers({
     payload: { prevState },
 
     apply: () => {
-      setInstrumentList(structuredClone(defaultInstruments));
-      setSelectedSlot({ channel: null, slot: 0 }); // reset FX chain
+      setInstrumentList(defaultInstruments);
+      setSelectedSlot({ channel: null, slot: 0 });
     },
 
     revert: () => {
-      setInstrumentList(structuredClone(prevState));
+      setInstrumentList(prevState);
       setSelectedSlot({ channel: null, slot: 0 });
     }
   };
@@ -331,10 +358,12 @@ export default function useDrumRackHandlers({
 
 }, [
   instrumentList,
+  settings.channels,
   setInstrumentList,
   addAction,
   setSelectedSlot
 ]);
+
 
 
 
@@ -455,6 +484,6 @@ export default function useDrumRackHandlers({
     onUndo: handleUndo,
     onRedo: handleRedo,
     canUndo,
-    canRedo
+    canRedo, 
   };
 }
