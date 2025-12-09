@@ -288,9 +288,9 @@ useEffect(() => {
                   }}
                   >
                     {/* Haut : DrumRack */}
-                    <div className="min-h-0 min-w-0 overflow-hidden">
+                    <div className="min-h-0 min-w-0 border-2 overflow-hidden">
                       {openComponents['Drum Rack'] && (
-                        <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/15 bg-gray-900">
+                        <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl bg-gray-900">
                           <DrumRack
                             {...{ numSteps, setNumSteps, patterns, instrumentList, setInstrumentList,
                             selectedPatternID, channelModalOpen, setChannelModalOpen,
@@ -303,9 +303,9 @@ useEffect(() => {
                     </div>
 
     {/* Bas : PianoRoll */}
-    <div className="min-h-0 min-w-0">
+    <div className="min-h-0 border-2 min-w-0">
       {openComponents['Piano Roll'] && (
-      <div className="h-full w-full min-h-0 min-w-0 overflow-auto scrollbar-custom rounded-xl ring-1 ring-white/10 bg-gray-900">
+      <div className="h-full w-full min-h-0 min-w-0 overflow-auto scrollbar-custom rounded-xl bg-gray-900">
 
           <PianoRoll
             {...{ selectedPatternID, instrumentList, setInstrumentList, numSteps, setNumSteps }}
@@ -335,8 +335,8 @@ useEffect(() => {
                 return g;
               }}
             >
-              <div className="min-h-0 min-w-0 overflow-hidden">
-                <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/5 bg-gray-900 scrollbar-custom">
+              <div className="min-h-0 min-w-0 border-2 overflow-hidden">
+                <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl bg-gray-900 scrollbar-custom">
                   <Playlist {...{ selectedPatternID, patterns, instrumentList, cells, setCells, numSteps }}
                     colorByIndex={getColorByIndex}
                     onClose={() => setOpenComponents(p => ({ ...p, "Playlist": false }))}
@@ -344,8 +344,8 @@ useEffect(() => {
                 </div>
               </div>
 
-              <div className="min-h-0 min-w-0 overflow-hidden">
-                <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl ring-1 ring-white/5 bg-gray-900 scrollbar-custom">
+              <div className="min-h-0 min-w-0 border-2 overflow-hidden">
+                <div className="h-full w-full min-h-0 min-w-0 overflow-hidden rounded-xl bg-gray-900 scrollbar-custom">
                   <FXChain
                     {...{ instrumentList, setInstrumentList }}
                     onClose={() => setOpenComponents(p => ({ ...p, "FXChain": false }))}
