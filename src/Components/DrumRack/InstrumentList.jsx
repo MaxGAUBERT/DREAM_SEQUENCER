@@ -59,7 +59,7 @@ const InstrumentList = ({
         return (
           <div key={name} className="flex items-center border-b border-gray-600">
             <div
-              className={`flex items-center gap-1 w-64 min-w-64 p-2 bg-gray-800 ${dropClasses}`}
+              className={`flex items-center w-64 min-w-64 bg-gray-800 ${dropClasses}`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}

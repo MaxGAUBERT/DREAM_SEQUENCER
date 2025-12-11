@@ -29,8 +29,21 @@ function resizeCells(prevCells, oldWidth, oldHeight, newWidth, newHeight) {
 }
 
 // Cell memoized = énorme gain FPS
-const Cell = React.memo(({ cell, index, onClick, isActive, color, size}) => {
+const Cell = React.memo(({ cell, index, onClick, isActive, color, size, patterns }) => {
+  // cell = stored value (patternId+1) OR null
+  const placedPatternId = cell !== null ? cell - 1 : null;
 
+  // Rendu du label
+  const label = (() => {
+    if (placedPatternId === null) return null;
+
+    const p = patterns.find(p => p.id === placedPatternId);
+    if (!p) return `P${placedPatternId + 1}`;
+
+    return p.name && p.name.trim() !== "" 
+      ? p.name
+      : `P${placedPatternId + 1}`;
+  })();
 
   return (
     <button
@@ -43,14 +56,15 @@ const Cell = React.memo(({ cell, index, onClick, isActive, color, size}) => {
         height: size * 0.6
       }}
     >
-     {cell&& (
-        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white pointer-events-none select-none">
-          {cell}
+      {label && (
+        <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white pointer-events-none select-none">
+          {label}
         </span>
       )}
     </button>
   );
 });
+
 
 
 const Playlist = ({
@@ -221,6 +235,7 @@ const Playlist = ({
                   isActive={isPlaying && currentColumn === col}
                   color={cell ? colorByIndex(cell - 1) : null}
                   size={CELL_SIZE}
+                  patterns={patterns}
                 />
 
               );
