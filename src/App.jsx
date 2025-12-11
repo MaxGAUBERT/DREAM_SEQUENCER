@@ -6,9 +6,8 @@ import PatternSelector from "./Components/PatternSelector/PatternSelector";
 import NewProjectModal from "./UI/Modals/NewProjectModal";
 import LoadProjectModal from "./UI/Modals/LoadProjectModal";
 import SaveAsProjectModal from "./UI/Modals/SaveAsProjectModal";
-import {useProjectManager} from "./Hooks/useProjectManager";
+import {useProjectStorage} from "./Hooks/Storage/useProjectStorage";
 import PlayContext from "./Contexts/PlayContext";
-import { MdGraphicEq } from "react-icons/md";
 import GlobalColorContextProvider from "./Contexts/GlobalColorContext";
 import TransportBar from "./Components/TransportBar";
 import PianoRoll from "./Components/PianoRoll/PianoRoll";
@@ -18,6 +17,8 @@ import { useHistoryContext } from "./Contexts/HistoryProvider";
 import FXChain from "./Components/FXChain";
 import Split from "react-split";
 import Settings from "./UI/Modals/Settings";
+import usePatternManager from "./Hooks/Patterns/usePatternManager";
+import useDatas from "./Hooks/Data/useDatas";
 
 
 const getColorByIndex = (() => {
@@ -81,28 +82,24 @@ const ModalManager = ({
 export default function App() {
   const {
     projects,
-    instrumentList,
-    setInstrumentList,
-    initializeInstrumentList,
-    DEFAULT_INSTRUMENTS,
-    cells, setCells,
     currentProject,
-    initLength,
-    patterns,
-    setPatterns,
-    selectedPatternID,
-    setSelectedPatternID,
     createProject,
     saveCurrentProject,
     saveAsProject,
     loadProject,
-    numSteps,
-    setNumSteps,
     deleteAllProjects, 
     openComponents,
-    setOpenComponents, 
-    DEFAULT_SAMPLES,
-  } = useProjectManager();
+    setOpenComponents,
+    DEFAULT_SAMPLES 
+  } = useProjectStorage();
+
+  const {
+    patterns, setPatterns, selectedPatternID, setSelectedPatternID
+  } = usePatternManager();
+
+  const {
+    instrumentList, setInstrumentList, numSteps, setNumSteps, cells, setCells, initLength
+  } = useDatas();
 
   const [pianoRollInstrument, setPianoRollInstrument] = useState(null);
   const [instrumentName, setInstrumentName] = useState("");

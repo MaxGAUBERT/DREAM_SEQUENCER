@@ -4,7 +4,7 @@ import { usePlayContext } from '../../Contexts/PlayContext';
 import { TopBar } from './TopBar';
 import { NoteBlock } from './NoteBlock';
 import { NoteLabels } from './NoteLabels';
-import { useChordGenerator } from '../../Hooks/useChordGenerator';
+import { useChordGenerator } from '../../Hooks/Music/useChordGenerator';
 import { rowToNoteName } from '../Utils/noteUtils';
 import { useSampleContext } from '../../Contexts/ChannelProvider';
 import { useHistoryContext } from '../../Contexts/HistoryProvider';

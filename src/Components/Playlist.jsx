@@ -5,7 +5,7 @@ import * as Tone from "tone";
 
 import { usePlayContext } from "../Contexts/PlayContext";
 import { rowToNoteName } from "./Utils/noteUtils";
-import { useProjectManager } from "../Hooks/useProjectManager";
+import { useProjectStorage } from "../Hooks/Storage/useProjectStorage";
 import { useSampleContext } from "../Contexts/ChannelProvider";
 
 // ---------------- OPTIM PERFS HELPERS ----------------
@@ -64,7 +64,7 @@ const Playlist = ({
   onClose
 }) => {
   const { isPlaying, playMode, bpm } = usePlayContext();
-  const { width, setWidth, height, setHeight, CELL_SIZE } = useProjectManager();
+  const { width, setWidth, height, setHeight, CELL_SIZE } = useProjectStorage();
   const { getSampler } = useSampleContext();
 
   const [isLoop, setIsLoop] = useState(true);

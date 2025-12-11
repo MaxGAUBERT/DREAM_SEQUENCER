@@ -1,20 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { stringify, parse } from "flatted";
-import { useSoundBank } from "./useSoundBank";
+import { useSoundBank } from "../Samples/useSoundBank";
 import * as Tone from "tone";
-import { useSampleContext } from "../Contexts/ChannelProvider";
-import { useSettings } from "../Contexts/SettingsContexts";
-
-function getColorByIndex(i) {
-  const colors = [
-    "bg-red-500", "bg-blue-500", "bg-green-500", "bg-yellow-500",
-    "bg-pink-500", "bg-purple-500", "bg-orange-500", "bg-teal-500",
-  ];
-  return colors[i % colors.length];
-}
+import { useSampleContext } from "../../Contexts/ChannelProvider";
 
 
-export function useProjectManager() {
+
+export function useProjectStorage() {
       // Mémoiser openComponents pour éviter les re-renders
     const [openComponents, setOpenComponents] = useState(() => ({
       "Drum Rack": true,
@@ -24,50 +16,15 @@ export function useProjectManager() {
       "FXChain": true
     }));
 
-    const INITIAL_PATTERN_ID = 0;
-    const [width, setWidth] = useState(20); 
-    const [height, setHeight] = useState(50); 
-    const CELL_SIZE = 100;
-    const [cells, setCells] = useState(Array(width * height).fill(0));
-    const [numSteps, setNumSteps] = useState(64);
     const [notes, setNotes] = useState([]);
-    const [projects, setProjects] = useState([]);
-    const [currentProjectId, setCurrentProjectId] = useState(0);
     const [selectedSoundId, setSelectedSoundId] = useState("");
     const {
       audioObjects,
       setAudioObjects
     } = useSoundBank();
     const { unloadSample, loadSample } = useSampleContext();
-    const { settings } = useSettings();
+    const [projects, setProjects] = useState([]);
 
-    const initLength = 8;
-
-    const [patterns, setPatterns] = useState(() =>
-      Array.from({ length: initLength }, (_, i) => ({
-        id: i, 
-        name: `Pattern ${i + 1}`,
-        color: getColorByIndex(i),
-        grid: Array(16).fill(false), 
-        pianoData: []              
-      }))
-    );
-
-
-    const [selectedPatternID, setSelectedPatternID] = useState(INITIAL_PATTERN_ID);
-    
-    const DEFAULT_INSTRUMENTS = Array.from({ length: settings.channels }, (_, i) => {
-      const DEFAULTS = ["Kick", "Snare", "HiHat", "Clap"];
-      return DEFAULTS[i] || `Channel ${i + 1}`;
-    });
-
-
-    const DEFAULT_SAMPLES = {
-      Kick: "/Audio/Drums/Progressive_Kick.wav",
-      Snare: "/Audio/Drums/VEC1_Snare_025.wav",
-      HiHat: "/Audio/Drums/VEC4_Closed_HH_018.wav",
-      Clap: "/Audio/Drums/VEH3_Claps_011.wav",
-  };
 
 
   useEffect(() => {
@@ -84,144 +41,13 @@ export function useProjectManager() {
       }
   }, []);
 
-  const initializeInstrumentList = useCallback(() => {
-    return Object.fromEntries(
-      DEFAULT_INSTRUMENTS.map((inst, idx) => {
-        const defaultSampleUrl = DEFAULT_SAMPLES[inst] ?? null;
-
-        const sampler = defaultSampleUrl
-          ? new Tone.Sampler({
-              urls: { C4: defaultSampleUrl },
-              onload: () => console.log(`Sample chargé: ${inst}`)
-            }).toDestination()
-          : null;
-
-        return [
-          inst,
-          {
-            grids: Object.fromEntries(
-              Array.from({ length: initLength }, (_, i) => [
-                i,
-                Array(16).fill(false)
-              ])
-            ),
-
-            pianoData: {
-              [selectedPatternID]: []
-            },
-
-            volume: 5,
-            fx: null,
-            muted: false,
-
-            sample: {
-              id: null,
-              url: defaultSampleUrl,  
-              urls: defaultSampleUrl ? { C4: defaultSampleUrl } : {},
-              name: inst,
-            },
-
-            sampleUrl: defaultSampleUrl, 
-            fileName: defaultSampleUrl ? defaultSampleUrl.split("/").pop() : null,
-            sampler,
-            slot: idx + 1,
-          }
-        ];
-      })
-    );
-  }, [initLength, selectedPatternID]);
-  
-  const [instrumentList, setInstrumentList] = useState(initializeInstrumentList);
-
-const resetSampleForInstrument = useCallback((instrumentName) => {
-  setInstrumentList(prev => {
-    const inst = prev[instrumentName];
-    if (!inst) return prev;
-
-    const defaultUrl = DEFAULT_SAMPLES[instrumentName];
-
-    // 1. Détruire l'ancien sampler dans ChannelProvider
-    unloadSample(instrumentName);
-
-    // 2. Recharger le sampler par défaut dans ChannelProvider
-    loadSample(instrumentName, defaultUrl);
-
-    // 3. Mettre à jour l'état React
-    return {
-      ...prev,
-      [instrumentName]: {
-        ...inst,
-
-        sample: {
-          id: null,
-          url: defaultUrl,
-          urls: { C4: defaultUrl },
-          name: instrumentName
-        },
-
-        sampleUrl: defaultUrl,
-        fileName: defaultUrl.split("/").pop(),
-
-        sampler: null // DrumRack utilisera getSampler()
-      }
-    };
-  });
-}, [DEFAULT_SAMPLES]);
+ 
 
 
-    const applyInstrumentChange = useCallback((updateFn) => {
-      setInstrumentList((prev) => {
-          const updated = updateFn(prev);
-          return updated;
-      });
-    }, []);
 
-    const getInstrumentListSnapshot = useCallback(() => {
-    return structuredClone(instrumentList);
-    }, [instrumentList]);
+   
 
-    const updateInstrumentSlot = useCallback((channelId, newSlot) => {
-      setInstrumentList(prev => {
-        if (!prev[channelId]) {
-          return prev;
-        }
 
-        const updated = {
-          ...prev,
-          [channelId]: {
-              ...prev[channelId], slot: Number(newSlot),
-          },
-        }
-        return updated;
-      });
-    }, [instrumentList])
-
-    const assignSampleToInstrument = useCallback((instrumentName, sample) => {
-    setInstrumentList(prev => {
-      const url = sample.url; // toujours une URL string
-
-      return {
-        ...prev,
-        [instrumentName]: {
-          ...prev[instrumentName],
-
-          sample: {
-            id: sample.id,
-            url,
-            urls: { C4: url },
-            name: sample.name
-          },
-
-          sampleUrl: url,
-          fileName: url.split("/").pop(),
-
-          sampler: new Tone.Sampler({
-            urls: { C4: url }
-          }).toDestination()
-        }
-      };
-    });
-  }, []);
 
   const saveToLocalStorage = (updatedProjects) => {
     localStorage.setItem("projects", stringify(updatedProjects));
@@ -239,7 +65,6 @@ const resetSampleForInstrument = useCallback((instrumentName) => {
       grid: Array(16).fill(false),
     }));
 
-    const newInstrumentList = initializeInstrumentList();
 
     const newProject = {
       id: newId,
@@ -435,31 +260,7 @@ const loadProject = async (projectId, fromProjects = projects) => {
       setProjects([]);
       localStorage.removeItem("projects");
     },
-    // project data
-    numSteps,
-    setNumSteps,
-    cells, setCells,
-    CELL_SIZE, width, height, setWidth, setHeight,
-    currentProjectId,
-    projects,
-    instrumentList,
-    setInstrumentList,
-    initializeInstrumentList,
-    DEFAULT_INSTRUMENTS,
-    // functions for instruments
-    assignSampleToInstrument,
-    resetSampleForInstrument,
-    applyInstrumentChange,
-    getInstrumentListSnapshot,
-    updateInstrumentSlot,
-    // patterns management
-    initLength,
-    patterns,
-    setPatterns,
-    selectedPatternID,
-    setSelectedPatternID,
     // state of project windows
-    openComponents, setOpenComponents,
-    DEFAULT_SAMPLES
+    openComponents, setOpenComponents
   };
 }

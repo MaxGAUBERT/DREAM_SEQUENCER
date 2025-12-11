@@ -1,16 +1,17 @@
 // DrumRack.jsx (composant principal utilisant le système d'historique global)
+import * as Tone from "tone";
 import React, { useState, useEffect } from "react";
 import { useGlobalColorContext } from "../../Contexts/GlobalColorContext";
-import useDrumRackHandlers from "../../Hooks/useDrumRackHandlers";
+import useDrumRackHandlers from "../../Hooks/DrumRack/useDrumRackHandlers";
 import InstrumentList from "../DrumRack/InstrumentList";
 import DrumRackControls from "../DrumRack/DrumRackControls";
 import InstrumentInput from "../DrumRack/InstrumentInput";
 import ChannelModal from "../../UI/Modals/ChannelModal";
 import { usePlayContext } from "../../Contexts/PlayContext";
-import * as Tone from "tone";
 import {useSampleContext} from "../../Contexts/ChannelProvider";
 import { IoClose } from "react-icons/io5";
 import MiniBrowser from "./MiniBrowser";
+import usePatternManager from "../../Hooks/Patterns/usePatternManager";
 
 const DrumRack = ({
   numSteps,

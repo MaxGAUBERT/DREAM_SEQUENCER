@@ -1,6 +1,6 @@
 // hooks/useChordGenerator.js
 import { useCallback } from 'react';
-import { CHORD_TYPES } from '../Components/PianoRoll/TopBar';
+import { CHORD_TYPES } from '../../Components/PianoRoll/TopBar';
 
 export const useChordGenerator = ({ ROWS, selectedChordType, noteLabelsRef, handlePlaySound }) => {
   const generateChordNotes = useCallback((row, col) => {

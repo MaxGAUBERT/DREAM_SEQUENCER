@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useSoundBank } from '../../Hooks/useSoundBank';
-import { useFXChain } from '../../Hooks/useFXChain';
-import { useProjectManager } from '../../Hooks/useProjectManager';
+import { useSoundBank } from '../../Hooks/Samples/useSoundBank';
+import { useFXChain } from '../../Hooks/DrumRack/useFXChain';
+import { useProjectStorage } from '../../Hooks/Storage/useProjectStorage';
 
 
 const ChannelModal = ({ 
@@ -10,7 +10,6 @@ const ChannelModal = ({
   setInstrumentName, 
   onRename, 
   onSelectSample, 
-  channelUrl, 
   onOpenPianoRoll
 }) => {
   const [activeTab, setActiveTab] = useState("General");
@@ -23,7 +22,7 @@ const ChannelModal = ({
     soundBank: bank
   } = useSoundBank();
 
-  const {resetSampleForInstrument, instrumentList} = useProjectManager();
+  const {resetSampleForInstrument, instrumentList} = useProjectStorage();
   
   // Synchroniser avec le nom de l'instrument quand il change
   useEffect(() => {

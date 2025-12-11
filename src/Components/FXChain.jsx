@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
-import { useProjectManager } from "../Hooks/useProjectManager";
-import useFXChain from "../Hooks/useFXChain";
+import { useProjectStorage } from "../Hooks/Storage/useProjectStorage";
+import useFXChain from "../Hooks/DrumRack/useFXChain";
 import * as Tone from "tone";
 import { usePlayContext } from "../Contexts/PlayContext";
 import { IoClose } from "react-icons/io5";
@@ -10,7 +10,7 @@ import { useSampleContext } from "../Contexts/ChannelProvider";
 const FXChain = ({instrumentList, setInstrumentList, onClose}) => {
   const slotRefs = useRef({});
   const {volume} = usePlayContext();
-  const {updateInstrumentSlot} = useProjectManager()
+  const {updateInstrumentSlot} = useProjectStorage()
   const { slots, selectedSlot, setSelectedSlot, fxParams } = useFXChain();
   const {colorsComponent} = useGlobalColorContext();
   const {getSampler} = useSampleContext();
