@@ -12,8 +12,8 @@ const InstrumentList = ({
 }) => {
   const { toggleStep, muteInstrument, setSlot, deleteInstrument } = useDrumRackStore();
 
-  // Les callbacks sont stables grâce à useCallback + store stable
-  const handleToggle    = useCallback((name, idx) => toggleStep(name, selectedPatternID, idx), [selectedPatternID]);
+  const handleToggle = useCallback((name, patternID, idx) => {toggleStep(name, patternID, idx);}, [toggleStep]
+);
   const handleMute      = useCallback((name, v)   => muteInstrument(name, v), []);
   const handleSlot      = useCallback((name, v)   => setSlot(name, v), []);
   const handleDelete    = useCallback((name)       => deleteInstrument(name), []);

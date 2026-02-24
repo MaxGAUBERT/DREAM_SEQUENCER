@@ -4,26 +4,34 @@ import { immer } from "zustand/middleware/immer";
 const DEFAULT_NUM_STEPS = 16;
 
 const makeChannel = (name, sampleUrl = null) => ({
+  name,
   sampleUrl,
   muted: false,
   slot: 0,
-  grids: {}, // { [patternID]: boolean[] }
+  grids: {}, 
 });
 
 export const useDrumRackStore = create(
   immer((set, get) => ({
     // ─── État ────────────────────────────────────────────────────────────────
     numSteps: DEFAULT_NUM_STEPS,
-    instrumentList: {},          // { [name]: Channel }
+    instrumentList: {},       
     channelModalOpen: false,
-    activeInstrumentName: "",    // canal sélectionné (modal, piano roll…)
+    activeInstrumentName: "", 
     showAddInput: false,
 
     // ─── Steps ───────────────────────────────────────────────────────────────
     toggleStep: (instrumentName, patternID, stepIndex) =>
       set((state) => {
-        const grid = state.instrumentList[instrumentName]?.grids?.[patternID];
-        if (grid) grid[stepIndex] = !grid[stepIndex];
+        const ch = state.instrumentList[instrumentName];
+        if (!ch) return;
+
+        if (!Array.isArray(ch.grids[patternID])) {
+          ch.grids[patternID] = Array(state.numSteps).fill(false);
+        }
+
+        ch.grids[patternID][stepIndex] =
+          !ch.grids[patternID][stepIndex];
       }),
 
     clearPattern: (patternID) =>

@@ -111,6 +111,7 @@ const InstrumentRow = ({
       <StepGrid
         name={name}
         grid={grid}
+        selectedPattern={selectedPatternID}
         onToggleStep={onToggleStep}
       />
     </div>
