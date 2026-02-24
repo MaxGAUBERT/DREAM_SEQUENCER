@@ -1,4 +1,7 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+// components/Playlist/Playlist.jsx
+// Composant pur affichage — aucune logique audio, aucun prop drilling.
+// Lit les stores directement, délègue l'audio à usePlaylistAudio.
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { MdDelete } from "react-icons/md";
 import { IoClose } from "react-icons/io5";
 import { usePlayContext } from "../../Contexts/PlayContext";
@@ -40,11 +43,13 @@ const Playlist = ({ onClose }) => {
   const patterns         = usePatternStore((s) => s.patterns);
   const selectedPatternID = usePatternStore((s) => s.selectedPatternID);
 
-  const cells      = usePlaylistStore((s) => s.cells);
-  const width      = usePlaylistStore((s) => s.width);
-  const height     = usePlaylistStore((s) => s.height);
-  const CELL_SIZE  = usePlaylistStore((s) => s.CELL_SIZE);
-  const { setWidth, setHeight, placePattern, clearCells } = usePlaylistStore();
+  const cells         = usePlaylistStore((s) => s.cells);
+  const width         = usePlaylistStore((s) => s.width);
+  const height        = usePlaylistStore((s) => s.height);
+  const pendingWidth  = usePlaylistStore((s) => s.pendingWidth);
+  const pendingHeight = usePlaylistStore((s) => s.pendingHeight);
+  const CELL_SIZE     = usePlaylistStore((s) => s.CELL_SIZE);
+  const { setWidth, setHeight, commitResize, placePattern, clearCells } = usePlaylistStore();
 
   // Audio découplé
   const { activeColRef } = usePlaylistAudio();
@@ -62,8 +67,8 @@ const Playlist = ({ onClose }) => {
   const [isLoop, setIsLoop] = useState(true);
 
   const gridStyle = useMemo(() => ({
-    gridTemplateColumns: `80px repeat(${width}, ${CELL_SIZE}px)`,
-  }), [width, CELL_SIZE]);
+    gridTemplateColumns: `80px repeat(${pendingWidth}, ${CELL_SIZE}px)`,
+  }), [pendingWidth, CELL_SIZE]);
 
   const handleCellClick = useCallback((index) => {
     placePattern(index, selectedPatternID);
@@ -95,21 +100,23 @@ const Playlist = ({ onClose }) => {
           <label className="flex items-center gap-2 text-sm">
             Width
             <input
-              type="range" min={5} max={100} value={width}
+              type="range" min={5} max={100} value={pendingWidth}
               onChange={(e) => setWidth(Number(e.target.value))}
+              onPointerUp={commitResize}
               className="w-20"
             />
-            <span>{width}</span>
+            <span>{pendingWidth}</span>
           </label>
 
           <label className="flex items-center gap-2 text-sm">
             Height
             <input
-              type="range" min={5} max={100} value={height}
+              type="range" min={5} max={100} value={pendingHeight}
               onChange={(e) => setHeight(Number(e.target.value))}
+              onPointerUp={commitResize}
               className="w-20"
             />
-            <span>{height}</span>
+            <span>{pendingHeight}</span>
           </label>
         </div>
 
@@ -122,7 +129,7 @@ const Playlist = ({ onClose }) => {
       <div className="sticky top-0 z-10 bg-gray-900">
         <div className="grid" style={gridStyle}>
           <div />
-          {Array.from({ length: width }, (_, col) => (
+          {Array.from({ length: pendingWidth }, (_, col) => (
             <div
               key={col}
               className={`text-center text-xs font-semibold ${
@@ -137,11 +144,11 @@ const Playlist = ({ onClose }) => {
 
       {/* ── Grille ───────────────────────────────────────────────────────────── */}
       <div className="overflow-auto flex-1 border border-gray-700 rounded-md">
-        {Array.from({ length: height }, (_, row) => (
+        {Array.from({ length: pendingHeight }, (_, row) => (
           <div key={row} className="grid items-center odd:bg-gray-700 even:bg-gray-850" style={gridStyle}>
             <div className="text-xs text-gray-300 pl-2">Track {row + 1}</div>
 
-            {Array.from({ length: width }, (_, col) => {
+            {Array.from({ length: pendingWidth }, (_, col) => {
               const index = row * width + col;
               return (
                 <Cell

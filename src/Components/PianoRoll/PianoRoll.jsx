@@ -12,8 +12,8 @@ import { useSampleContext }  from "../../Contexts/ChannelProvider";
 import { useDrumRackStore }  from "../../store/useDrumRackStore";
 import { usePatternStore }   from "../../store/usePatternStore";
 import { usePianoRollStore } from "../../store/usePianoRollStore";
-import { usePianoRollNotes } from "../../hooks/PianoRoll/usePianoRollNotes";
-import { usePianoRollAudio } from "../../hooks/PianoRoll/usePianoRollAudio";
+import { usePianoRollNotes } from "../../Hooks/PianoRoll/usePianoRollNotes";
+import { usePianoRollAudio } from "../../Hooks/PianoRoll/usePianoRollAudio";
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 export const ROWS        = 48;
