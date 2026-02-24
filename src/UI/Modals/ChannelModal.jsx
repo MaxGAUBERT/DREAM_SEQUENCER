@@ -1,234 +1,235 @@
+// UI/Modals/ChannelModal.jsx
+// Adapté à l'interface du store refactorisé :
+// - onRename(newName)           → store.renameInstrument(activeInstrument, newName)
+// - onSelectSample(name, url, displayName) → store.selectSample(...)
+// Plus de setInstrumentName prop.
 import { useState, useEffect } from 'react';
 import { useSoundBank } from '../../Hooks/Samples/useSoundBank';
 import { useFXChain } from '../../Hooks/DrumRack/useFXChain';
 import { useProjectStorage } from '../../Hooks/Storage/useProjectStorage';
+import { useDrumRackStore } from '../../store/useDrumRackStore';
 
+function cleanSampleName(filePath, maxLength = 30) {
+  if (!filePath) return "";
+  const fileName    = filePath.split("/").pop() ?? filePath;
+  const noExtension = fileName.replace(/\.[^/.]+$/, "");
+  const readable    = noExtension.replace(/[_\-]+/g, " ");
+  return readable.length > maxLength
+    ? readable.slice(0, maxLength).trim() + "…"
+    : readable;
+}
 
-const ChannelModal = ({ 
-  onClose, 
-  instrumentName, 
-  setInstrumentName, 
-  onRename, 
-  onSelectSample, 
-  onOpenPianoRoll
+const TABS = ["General", "Effects", "Advanced"];
+
+const ChannelModal = ({
+  onClose,
+  instrumentName,   // nom du canal actif (string)
+  onRename,         // (newName: string) => void
+  onSelectSample,   // (instrumentName, url, displayName) => void
+  onOpenPianoRoll,  // (instrumentName) => void
 }) => {
-  const [activeTab, setActiveTab] = useState("General");
-  const [localName, setLocalName] = useState(instrumentName);
+  const [activeTab,      setActiveTab]      = useState("General");
+  const [localName,      setLocalName]      = useState(instrumentName);
   const [selectedSoundId, setSelectedSoundId] = useState(null);
-  const {selectedSlot } = useFXChain();
 
-  const {
-    audioObjects, 
-    soundBank: bank
-  } = useSoundBank();
+  const { audioObjects }                        = useSoundBank();
+  const { selectedSlot }                        = useFXChain();
+  const { resetSampleForInstrument } = useProjectStorage();
+  const currentChannelUrl = useDrumRackStore(
+    (s) => s.instrumentList[instrumentName]?.sampleUrl
+  );
 
-  const {resetSampleForInstrument, instrumentList} = useProjectStorage();
-  
-  // Synchroniser avec le nom de l'instrument quand il change
-  useEffect(() => {
-    setLocalName(instrumentName);
-  }, [instrumentName]);
+  // Sync si le canal actif change pendant que la modal est ouverte
+  useEffect(() => { setLocalName(instrumentName); }, [instrumentName]);
 
-  useEffect(() => {
-    if (selectedSlot.channel && selectedSlot.slot !== null) {
-      console.log("SelectedSlot updated:", selectedSlot);
-    }
-  }, [selectedSlot]);
-
-  function cleanSampleName(filePath, maxLength) {
-    if (!filePath) return "";
-
-    const fileName = filePath.split("/").pop() || filePath;
-    const noExtension = fileName.replace(/\.[^/.]+$/, "");
-    const readable = noExtension.replace(/[_\-]+/g, " ");
-
-    return readable.length > maxLength
-      ? readable.slice(0, maxLength).trim() + "..."
-      : readable;
-  }
+  // ── Actions ──────────────────────────────────────────────────────────────
 
   const handleSave = () => {
-    if (onRename) {
-      onRename(localName);
-    } else if (setInstrumentName) {
-      setInstrumentName(localName);
+    // 1. Renommage
+    const trimmed = localName.trim();
+    if (trimmed && trimmed !== instrumentName && onRename) {
+      onRename(trimmed);                        // ← 1 seul argument
     }
 
-    // Attribuer un sample si sélectionné
-    if (onSelectSample && selectedSoundId && audioObjects[selectedSoundId]) {
-      const soundObject = audioObjects[selectedSoundId];
-      const rawPath = soundObject.url;
-      const displayName = cleanSampleName(rawPath, 20);
-
-      const sampleData = {
-        id: selectedSoundId,
-        url: rawPath,
-        name: displayName
-      };
-
-      onSelectSample(sampleData, instrumentName);
+    // 2. Sample sélectionné dans la banque
+    if (selectedSoundId && audioObjects[selectedSoundId] && onSelectSample) {
+      const soundObj    = audioObjects[selectedSoundId];
+      const displayName = cleanSampleName(soundObj.url ?? soundObj.name);
+      onSelectSample(instrumentName, soundObj.url, displayName); // ← (name, url, display)
     }
 
     onClose();
   };
 
   const handleReset = () => {
-  resetSampleForInstrument(instrumentName); 
-  setSelectedSoundId(null);                 
-  onClose();
-};
-
+    resetSampleForInstrument(instrumentName);
+    setSelectedSoundId(null);
+    onClose();
+  };
 
   const handleCancel = () => {
     setLocalName(instrumentName);
     onClose();
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSave();
-    } else if (e.key === 'Escape') {
-      handleCancel();
-    }
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter")  handleSave();
+    if (e.key === "Escape") handleCancel();
   };
 
   const handleOpenPianoRoll = () => {
-    onOpenPianoRoll(instrumentName);
+    onOpenPianoRoll?.(instrumentName);
     onClose();
   };
+
+  // ── Onglets ──────────────────────────────────────────────────────────────
+
+  const currentSampleUrl =
+    selectedSoundId && audioObjects[selectedSoundId]
+      ? audioObjects[selectedSoundId].url
+      : currentChannelUrl;
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "General":
         return (
-           <div>
-            <p>Channel properties</p>
-            <label className="block text-sm text-red-600 font-medium mb-2">
-              Sample url: {
-                selectedSoundId && audioObjects[selectedSoundId]
-                  ? audioObjects[selectedSoundId].url
-                  : instrumentList[instrumentName]?.sampleUrl
-              }
+          <div className="flex flex-col gap-4">
+            {/* Sample actif */}
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Sample actuel</p>
+              <p className="text-sm text-red-400 break-all">
+                {currentSampleUrl ?? "Aucun sample"}
+              </p>
+            </div>
 
-            </label>
-            <label className="block text-sm text-gray-600 font-medium mb-2">
-              Rename {instrumentName}
-            </label>
-            <input
-              type="text"
-              placeholder="Rename channel"
-              value={localName}
-              onChange={(e) => setLocalName(e.target.value)}
-              onKeyDown={handleKeyPress}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              autoFocus
-            />
-            <div className='w-full mt-2'>
-              <label className="block text-sm text-gray-600 font-medium mb-2">
-                Assign a sample
+            {/* Renommage */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">
+                Renommer <span className="text-white font-semibold">{instrumentName}</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Nom du canal"
+                value={localName}
+                onChange={(e) => setLocalName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+                autoFocus
+                maxLength={30}
+              />
+            </div>
+
+            {/* Sélection sample depuis la banque */}
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">
+                Assigner un sample (banque)
               </label>
               <select
-                className="w-full px-4 py-2 text-white bg-gray-500 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedSoundId || ""}
-                onChange={(e) => setSelectedSoundId(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedSoundId ?? ""}
+                onChange={(e) => setSelectedSoundId(e.target.value || null)}
               >
-                <option value="">-- Select --</option>
-                {Object.entries(audioObjects).map(([soundId, soundObj]) => (
-                  <option key={soundId} value={soundId}>
-                    {soundObj.name}
+                <option value="">-- Sélectionner --</option>
+                {Object.entries(audioObjects).map(([id, obj]) => (
+                  <option key={id} value={id}>
+                    {obj.name ?? cleanSampleName(obj.url)}
                   </option>
                 ))}
               </select>
-              
-              <button
-                type="button"
-                className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                onClick={handleOpenPianoRoll}
-              >
-                PianoRoll
-              </button>
             </div>
+
+            {/* Piano Roll */}
+            <button
+              type="button"
+              onClick={handleOpenPianoRoll}
+              className="self-start px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+            >
+              Ouvrir Piano Roll
+            </button>
           </div>
         );
 
       case "Effects":
         return (
           <div className="text-white">
-            <p className="mb-4">Assign channel to FX slots</p>
+            <p className="mb-4 text-gray-400">Assigner le canal aux slots FX</p>
             <div className="grid grid-cols-2 gap-4">
-              
+              {/* Slots FX — à implémenter */}
             </div>
-
           </div>
-        );      
+        );
 
       case "Advanced":
         return (
           <div className="text-white">
-            <p>Advanced settings</p>
-            {/* Ajoute ici les options avancées */}
+            <p className="text-gray-400">Paramètres avancés</p>
+            {/* À implémenter */}
           </div>
         );
+
       default:
         return null;
     }
   };
 
+  // ── Rendu ─────────────────────────────────────────────────────────────────
+
   return (
-      <div className="bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto">
-        <h2 className="text-2xl text-white font-bold mb-4">{instrumentName}</h2>
+    <div className="relative bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+      {/* Titre */}
+      <h2 className="text-2xl text-white font-bold mb-4">{instrumentName}</h2>
 
-        {/* Tabs */}
-        <div className="flex space-x-4 mb-4 border-b border-gray-700">
-          {["General", "Effects", "Advanced"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-2 text-white ${
-                activeTab === tab
-                  ? "border-b-2 border-blue-500 font-semibold"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
+      {/* Bouton fermeture */}
+      <button
+        onClick={onClose}
+        className="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors"
+        aria-label="Fermer"
+      >
+        ✕
+      </button>
 
-        {/* Tab Content */}
-        <form className="mb-4">{renderTabContent()}</form>
-
-        {/* Buttons */}
-        <div className="flex justify-end space-x-2">
+      {/* Onglets */}
+      <div className="flex gap-4 mb-4 border-b border-gray-700">
+        {TABS.map((tab) => (
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            onClick={handleSave}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`pb-2 transition-colors ${
+              activeTab === tab
+                ? "border-b-2 border-blue-500 text-white font-semibold"
+                : "text-gray-400 hover:text-white"
+            }`}
           >
-            Save
+            {tab}
           </button>
+        ))}
+      </div>
 
-          <button
-            className='bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700'
-            onClick={handleReset}
-          >
-            Reset
-          </button>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white px-4 py-2"
-          >
-            Cancel
-          </button>
-        </div>
+      {/* Contenu onglet */}
+      <div className="mb-6">{renderTabContent()}</div>
 
-        {/* Close Icon */}
+      {/* Actions */}
+      <div className="flex justify-end gap-2">
         <button
-          onClick={onClose}
-          className="absolute top-2 right-2 text-gray-400 hover:text-white"
+          onClick={handleSave}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
         >
-          ✕
+          Enregistrer
+        </button>
+        <button
+          onClick={handleReset}
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+        >
+          Réinitialiser
+        </button>
+        <button
+          onClick={handleCancel}
+          className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+        >
+          Annuler
         </button>
       </div>
+    </div>
   );
 };
 

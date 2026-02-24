@@ -1,75 +1,106 @@
-import { useContext, createContext, useRef, useState, useMemo, useEffect } from "react";
+import {
+  createContext, useContext, useRef,
+  useState, useMemo, useEffect, useCallback,
+} from "react";
 import * as Tone from "tone";
 import { useSettings } from "./SettingsContexts";
 
-const CreatePlayContext = createContext(null);
-export const usePlayContext = () => useContext(CreatePlayContext);
+const PlayContextValue = createContext(null);
+export const usePlayContext = () => useContext(PlayContextValue);
+
+// sequencesRef partagé via un module singleton — les hooks audio l'importent directement
+// sans polluer le contexte React.
+export const sharedSequencesRef = { current: [] };
 
 const PlayContext = ({ children }) => {
-    const { settings } = useSettings();   // ✅ hook appelé dans le composant
+  const { settings } = useSettings();
 
-    const sequencesRef = useRef([]);
-    const [playMode, setPlayMode] = useState("Song");
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [bpm, setBpm] = useState(settings.bpm ?? 130);  // valeur initiale = settings
+  const [playMode,  setPlayMode]  = useState("Song");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [bpm,       setBpm]       = useState(settings?.bpm ?? 130);
+  const [volume,    setVolume]    = useState(0);      // dB, 0 = nominal
+  const [metronome, setMetronome] = useState(false);
 
-    const [volume, setVolume] = useState(0);
-    const [metronome, setMetronome] = useState(false);
+  // ── Métronome ────────────────────────────────────────────────────────────
+  const metronomeSamplerRef = useRef(null);
+  const metronomeSeqRef     = useRef(null);
 
-    // Charger le sampler une seule fois
-    const metronomeSampler = useMemo(() => {
-        return new Tone.Sampler({
-            urls: { C4: "metronome.mp3" },
-            baseUrl: "/Audio/",
-            onload: () => console.log("Metronome loaded")
-        }).toDestination();
-    }, []);
+  useEffect(() => {
+    const sampler = new Tone.Sampler({
+      urls: { C4: "metronome.mp3" },
+      baseUrl: "/Audio/",
+    }).toDestination();
 
-    // 🚀 Synchroniser le BPM local avec les Settings — auto quand user change le BPM dans Settings
-    useEffect(() => {
-        if (settings?.bpm !== undefined) {
-            setBpm(settings.bpm);
-        }
-    }, [settings.bpm]);
+    metronomeSamplerRef.current = sampler;
 
-    // 🚀 Appliquer le BPM au moteur audio Tone.js
-    useEffect(() => {
-        Tone.Transport.bpm.value = bpm;
-    }, [bpm]);
+    return () => {
+      try { sampler.dispose(); } catch { /* silencieux */ }
+    };
+  }, []);
 
-    // Contexte mémoïsé
-    const contextValue = useMemo(() => ({
-        playMode,
-        setPlayMode,
-        sequencesRef,
+  // Démarrer / arrêter le métronome selon l'état
+  useEffect(() => {
+    if (!metronomeSamplerRef.current) return;
 
-        isPlaying,
-        setIsPlaying,
+    if (metronome && isPlaying) {
+      const seq = new Tone.Sequence(
+        (time) => metronomeSamplerRef.current?.triggerAttackRelease("C4", "8n", time),
+        [0],
+        "4n"
+      );
+      seq.start(0);
+      metronomeSeqRef.current = seq;
+    } else {
+      metronomeSeqRef.current?.stop();
+      metronomeSeqRef.current?.dispose();
+      metronomeSeqRef.current = null;
+    }
 
-        bpm,
-        setBpm,            
-                            
-        volume,
-        setVolume,
+    return () => {
+      metronomeSeqRef.current?.stop();
+      metronomeSeqRef.current?.dispose();
+      metronomeSeqRef.current = null;
+    };
+  }, [metronome, isPlaying]);
 
-        metronome,
-        setMetronome,
+  // ── BPM ──────────────────────────────────────────────────────────────────
+  // Sync depuis Settings
+  useEffect(() => {
+    if (settings?.bpm !== undefined) setBpm(settings.bpm);
+  }, [settings?.bpm]);
 
-        metronomeSampler,
-    }), [
-        playMode,
-        isPlaying,
-        bpm,
-        volume,
-        metronome,
-        metronomeSampler
-    ]);
+  // Applique au transport
+  useEffect(() => {
+    Tone.Transport.bpm.value = bpm;
+  }, [bpm]);
 
-    return (
-        <CreatePlayContext.Provider value={contextValue}>
-            {children}
-        </CreatePlayContext.Provider>
-    );
+  // ── Volume ───────────────────────────────────────────────────────────────
+  // Applique au master (Tone.Destination = master output)
+  useEffect(() => {
+    Tone.Destination.volume.value = volume;
+  }, [volume]);
+
+  // ── Helpers stables ──────────────────────────────────────────────────────
+  // Accesseur pour les hooks audio qui ont besoin de sequencesRef
+  const getSequencesRef = useCallback(() => sharedSequencesRef, []);
+
+  // ── Valeur du contexte ───────────────────────────────────────────────────
+  // On n'expose PAS metronomeSampler ni sequencesRef directement —
+  // ce sont des détails d'implémentation audio.
+  const contextValue = useMemo(() => ({
+    playMode,  setPlayMode,
+    isPlaying, setIsPlaying,
+    bpm,       setBpm,
+    volume,    setVolume,
+    metronome, setMetronome,
+    getSequencesRef,            // pour les hooks audio uniquement
+  }), [playMode, isPlaying, bpm, volume, metronome, getSequencesRef]);
+
+  return (
+    <PlayContextValue.Provider value={contextValue}>
+      {children}
+    </PlayContextValue.Provider>
+  );
 };
 
 export default PlayContext;
